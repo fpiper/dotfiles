@@ -1,0 +1,8 @@
+#+PROPERTY: header-args:conf :tangle tangle/.ledgerrc :results silent
+
+#+begin_src conf
+--file ~/.personal/f/ledger/main.ledger
+#+end_src
+#+begin_src shell
+ln -sf $(pwd)/tangle/.ledgerrc ~/
+#+end_src
