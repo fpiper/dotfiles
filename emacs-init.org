@@ -18,7 +18,21 @@ the =.org= file on every save and load the tangled =.el= file
 directly. This saves time on startup as tangling does not occur
 everytime and also allows for more flexibility regarding tangling file
 locations in this configuration file. Namely I can include the content
-of =init.el= in this file without problems. 
+of =init.el= in this file without problems.
+
+To share this configuration publicly, even though it contains private
+information, several solutions are possible. To keep everything in one
+file, [[elisp:(find-library "org-crypt")][org-crypt]] is a possible solution. Marking the headings with
+private information with the tag =:crypt:= and adding the following to
+=init.el= works as a basic setup for =org-crypt=. Also make sure to
+disable ~buffer-auto-save-file-name~ for the files.
+#+BEGIN_SRC emacs-lisp
+(require 'org)
+(require 'org-crypt)
+(org-crypt-use-before-save-magic)
+(setq org-tags-exclude-from-inheritance (quote ("crypt")))
+(setq org-crypt-key "C12356B984BA799943824FD5DB31E653435C87C6")
+#+END_SRC
 
 I use =.org= configuration files also for my other dotfiles. To ensure
 they are tangled upon save I use this function.
@@ -30,65 +44,46 @@ they are tangled upon save I use this function.
     (org-babel-tangle)
     (message "%s tangled" buffer-file-name)))
 
-(add-hook 'after-save-hook #'fpi/tangle-dotfiles)
+(add-hook 'org-mode-hook (lambda () (add-hook 'before-save-hook #'fpi/tangle-dotfiles nil t)) t)
+#+END_SRC
+As I use =org-crypt= all =.org= files need to be decrypted before
+tangling, saved without encrypting and encrypted after tangling and
+saved again. The latter part is not directly supported by =org=.
+~org-babel-post-tangle-hook~ is executed in the created tangled files
+and not inside the source =.org= file. Instead I add an advice to
+~org-babel-tangle~.
+#+BEGIN_SRC emacs-lisp
+(defun save-without-hook ()
+  (let ((before-save-hook nil))
+    (save-buffer)))
+
+(setq org-babel-pre-tangle-hook '(org-decrypt-entries save-without-hook))
+;; (setq org-babel-post-tangle-hook '(org-encrypt-entries save-without-hook))
+(advice-add 'org-babel-tangle :after '(lambda (&rest r)
+                                        (org-encrypt-entries)
+                                        (save-without-hook)))
 #+END_SRC
 
-To share this configuration publicly, even though it contains private
-information, several solutions are possible. To keep everything in one
-file, [[elisp:(find-library "org-crypt")][org-crypt]] is a possible solution. Marking the headings with
-private information with the tag =:crypt:= and adding the following to
-=init.el= works as a basic setup for =org-crypt=. Also make sure to
-disable ~buffer-auto-save-file-name~ in this file.
-#+begin_src emacs-lisp :tangle no :eval never
-(require 'org-crypt)
-(org-crypt-use-before-save-magic)
-(setq org-tags-exclude-from-inheritance (quote ("crypt")))
-(setq org-crypt-key my-gpg-key-id)
-#+end_src
-To properly tangle this configuration all blocks need to be decrypted
-before tangling. Given the structure of =org-babel-tangle= this leads
-to saving the file twice each time. The first time unencrypted and
-then after tangling is complete once again encrypted. The following
-code can achieve this.
-#+begin_src emacs-lisp :tangle no :eval never
-;; Make sure buffers are decrypted before tangling
-(defun save-buffer-without-tangle ()
-  (interactive)
-  (let ((b (current-buffer)))
-    (with-temp-buffer
-      (let ((after-save-hook (remove 'fpi/tangle-dotfiles after-save-hook)))
-        (with-current-buffer b
-          (let ((after-save-hook (remove 'fpi/tangle-dotfiles after-save-hook)))
-            (save-buffer)))))))
-
-;; before tangling: decrypt all and save without encrypt
-(advice-add 'org-babel-tangle :before '(lambda (&rest r)
-					 (remove-hook 'before-save-hook 'org-encrypt-entries t)
-					 (org-decrypt-entries)
-					 (save-buffer-without-tangle)))
-;; after tangling: encrypt all entries and re-add hook
-(advice-add 'org-babel-tangle :after '(lambda (&rest r)
-					(org-encrypt-entries)
-					(add-hook 'before-save-hook 'org-encrypt-entries nil t)
-					(save-buffer-without-tangle)))
-#+end_src
-Unfortunately this leads to unusable diffs in =git= for the encrypted
-parts. The approach of using a separate =.el.gpg= or =.org.gpg= file
-has the same problem. But git can be told to decrypt =.gpg= files
-before creating the diff using the following settings (see [[https://magit.vc/manual/magit/How-to-show-diffs-for-gpg_002dencrypted-files_003f.html][here]]).
+Using =org-crypt= unfortunately leads to unusable diffs in =git= for
+the encrypted parts. So I tend to only use it for configuration files
+which I do not want to split into multiple files. The approach of
+using a separate =.el.gpg= or =.org.gpg= file has the same problem.
+But =git= can be told to decrypt =.gpg= files before creating the diff
+using the following settings (see [[https://magit.vc/manual/magit/How-to-show-diffs-for-gpg_002dencrypted-files_003f.html][here]]).
 #+begin_src shell
 git config --global diff.gpg.textconv "gpg --no-tty --decrypt"
 echo "*.gpg filter=gpg diff=gpg" > .gitattributes
 #+end_src
 A similar behaviour can be achieved using [[https://github.com/AGWA/git-crypt][git-crypt]]. I save private
-details in =emacs-private.el.gpg= and load this file here.
+details regarding my emacs configuration in =emacs-private.el.gpg= and
+load this file here.
 #+begin_src emacs-lisp
 (setq secret-file (expand-file-name "emacs-private.el.gpg"
-				    user-emacs-directory))
+                                    user-emacs-directory))
 (load secret-file)
 #+end_src
 
-This is the content of =init.el=. Notice the ~:tangle tange/init.el~
+This is the content of =init.el=. Notice the ~:tangle tangle/init.el~
 header argument in the source code.
 #+begin_src emacs-lisp :tangle tangle/init.el
 (require 'package)
@@ -202,18 +197,18 @@ I am still not quite sure on my choice of font.
 availability. When starting with =emacs --daemon= it does not work as
 =(font-family-list)= won't return anything.
 #+begin_src emacs-lisp :tangle no
-  (use-package emacs
-    :config
-    (defun fpi/set-font ()
-      (interactive)
-      (cond
-       ((member "Hack" (font-family-list)e)
-	(add-to-list 'default-frame-alist '(font . "Hack-12")))
-       ((member "Source Code Pro" (font-family-list))
-	(add-to-list 'default-frame-alist '(font . "Source Code Pro-12")))))
-      (add-to-list 'default-frame-alist '(font . "Hack-12"))
-    ;; :hook (after-init . fpi/set-font)
-    )
+(use-package emacs
+  :config
+  (defun fpi/set-font ()
+    (interactive)
+    (cond
+     ((member "Hack" (font-family-list)e)
+      (add-to-list 'default-frame-alist '(font . "Hack-12")))
+     ((member "Source Code Pro" (font-family-list))
+      (add-to-list 'default-frame-alist '(font . "Source Code Pro-12")))))
+    (add-to-list 'default-frame-alist '(font . "Hack-12"))
+  ;; :hook (after-init . fpi/set-font)
+  )
 #+end_src
 
 Instead of the above code I set the font directly using =set-face-attribute=.
@@ -1351,7 +1346,7 @@ on the amount of displayed text.
 #+end_src
 *** window-numbering
 This is a nice package for easy window focus switching. I prefer it
-over =windmove=, as it does not interfere with org keybindings. 
+over =windmove=, as it does not interfere with org keybindings.
 #+begin_src emacs-lisp
 (use-package window-numbering
   :ensure t
@@ -1432,7 +1427,7 @@ make sure to compile the tex document with the option ~--synctex=1~.
 #+BEGIN_SRC emacs-lisp
 (use-package pdf-tools
   :ensure t
-  :config 
+  :config
   (setq pdf-info-epdfinfo-program (concat user-emacs-directory "epdfinfo"))
   (pdf-tools-install))
 #+END_SRC
@@ -2266,7 +2261,7 @@ user: root
   :config (auth-source-pass-enable))
 #+END_SRC
 ** Ledger
-Here is a good [[https://www.reddit.com/r/emacs/comments/8x4xtt][reddit thread]] about using ledger 
+Here is a good [[https://www.reddit.com/r/emacs/comments/8x4xtt][reddit thread]] about using ledger
 #+BEGIN_SRC emacs-lisp
 (use-package ledger-mode
   :ensure t
@@ -2831,17 +2826,17 @@ want it to be consistent within a file.
 Instead of =$= use =⏎= to indicate newlines
 #+begin_src emacs-lisp
 (use-package whitespace
-:custom (whitespace-display-mappings '((space-mark 32
-	                                        [183]
-	                                        [46])
-                                    (space-mark 160
-	                                        [164]
-	                                        [95])
-                                    (newline-mark 10
-	                                          [9166 10]) ;;[36 10]
-                                    (tab-mark 9
-	                                      [187 9]
-	                                      [92 9]))))
+  :custom (whitespace-display-mappings '((space-mark 32
+                                                     [183]
+                                                     [46])
+                                         (space-mark 160
+                                                     [164]
+                                                     [95])
+                                         (newline-mark 10
+                                                       [9166 10]) ;;[36 10]
+                                         (tab-mark 9
+                                                   [187 9]
+                                                   [92 9]))))
 #+end_src
 ** Undo
 
