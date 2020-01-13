@@ -211,7 +211,8 @@ availability. When starting with =emacs --daemon= it does not work as
   )
 #+end_src
 
-Instead of the above code I set the font directly using =set-face-attribute=.
+Instead of the above code I set the font directly using
+=set-face-attribute=. This is overwritten by my theme settings.
 #+begin_src emacs-lisp
 (set-face-attribute 'default nil :font "Hack-11")
 #+end_src
@@ -299,8 +300,9 @@ The above macro can be used like this.
 ;; (set-face-attribute 'variable-pitch nil :font "EtBookOt-11")
  ;; Settings
  ((default
-    ()
-    (:foreground ,bg-dark))
+    (:family ,sans-mono-font)
+    (:family ,sans-mono-font
+             :foreground ,bg-dark))
   (variable-pitch
    (:family ,sans-font)
    (:family ,et-font
