@@ -1,0 +1,17 @@
+* My dotfiles
+The config files are organized in emacs org files. They are tangled
+and symlinked to the appropriate directories.
+
+[[file:emacs-init.org::*tangle%20dotfiles][A hook]] tangles all files automatically on each save.
+~emacs-init.org~ is special and not automatically tangled. The >100 src
+blocks make tangling take several seconds and ~org-babel-load-file~ in
+~init.el~ tangles the init org file on each emacs start anyway.
+
+For now the symlinks need to be created by manually running the
+appropriate src block in each configuration file.
+
+* Window manager
+I use [[https://github.com/ch11ng/exwm][exwm]] and [[https://awesomewm.org/][awesome]] as my window managers. When doing a lot of
+coding and similar stuff I tend to use exwm as I will spend most of my
+time in emacs anyway.
+
