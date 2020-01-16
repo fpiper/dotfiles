@@ -398,6 +398,10 @@ The above macro can be used like this.
                 :slant italic)
    (:height 1.2
             :slant italic))
+  (org-archived
+   nil
+   (:inherit shadow
+             :height 0.6))
   (org-level-1
    (:inherit variable-pitch
              :height 1.3
