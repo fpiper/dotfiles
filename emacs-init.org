@@ -479,9 +479,8 @@ The above macro can be used like this.
              :background ,bg-dark)
    nil)
   (org-headline-done
-   (:strike-through t)
-   (:family ,et-font
-            :strike-through t))
+   (nil)
+   (:family ,et-font))
   (org-quote
    (:background ,bg-dark
                 :family ,sans-mono-font)
@@ -580,10 +579,8 @@ The above macro can be used like this.
    nil)
   (org-agenda-done
    (:inherit nil
-             :strike-through t
              :foreground ,doc)
-   (:strike-through t
-                    :foreground ,doc))
+   (:foreground ,doc))
   (org-ellipsis
    (:underline nil
                :foreground ,comment)
