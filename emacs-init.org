@@ -2192,6 +2192,31 @@ Skip project and sub-project tasks, habits, and project related tasks."
        (t
         nil)))))
 #+end_src
+** Deft
+
+#+begin_quote
+Deft is an Emacs mode for quickly browsing, filtering, and editing
+directories of plain text notes, inspired by Notational Velocity. It
+was designed for increased productivity when writing and taking notes
+by making it fast and simple to find the right file at the right time
+and by automating many of the usual tasks such as creating new files
+and saving files.
+#+end_quote
+
+I use =Deft= to organize my =Zettelkasten=. It contains many single
+files about various topics. =Deft= handles searching and file
+creation.
+#+begin_src emacs-lisp
+(use-package deft
+  :ensure t
+  :custom ((deft-directory "~/zettel")
+           (deft-extensions '("org"))
+           (deft-default-extension "org")
+           (deft-use-filename-as-title t)
+           (deft-recursive t)
+           (deft-use-filter-string-for-filename t)))
+#+end_src
+
 ** Shell
 #+begin_src emacs-lisp
 (use-package shell
