@@ -1657,7 +1657,7 @@ Here is a list of nice ones: ◉, ○, ►, •. The default ones are ~'("◉" "
 #+begin_src emacs-lisp
 (use-package org-bullets
   :ensure t
-  :custom (org-bullets-bullet-list '(" "))
+  :custom (org-bullets-bullet-list '("✧"))
   :config (add-hook 'org-mode-hook (lambda () (org-bullets-mode 1))))
 #+end_src
 Use imagemagick and standalone class for latex preview.
