@@ -302,6 +302,7 @@ The above macro can be used like this.
  ((default
     (:family ,sans-mono-font)
     (:family ,sans-mono-font
+             :background ,bg-white
              :foreground ,bg-dark))
   (variable-pitch
    (:family ,sans-font)
