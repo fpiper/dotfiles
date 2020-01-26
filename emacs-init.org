@@ -2204,7 +2204,7 @@ and by automating many of the usual tasks such as creating new files
 and saving files.
 #+end_quote
 
-I use =Deft= to organize my =Zettelkasten=. It contains many single
+I use =Deft= to organize my /Zettelkasten/. It contains many single
 files about various topics. =Deft= handles searching and file
 creation.
 #+begin_src emacs-lisp
@@ -2216,6 +2216,33 @@ creation.
            (deft-use-filename-as-title t)
            (deft-recursive t)
            (deft-use-filter-string-for-filename t)))
+#+end_src
+
+[[https://github.com/EFLS/zetteldeft][Zetteldeft]] provides further functions to search and link between
+different /Zettel/. As /Zettel/ are scattered in separate files,
+normal org file links using IDs lack in comparison to the introduced
+custom link format.
+
+#+begin_src emacs-lisp
+(use-package zetteldeft
+  :ensure t
+  :bind (:map fpi-map (("d d" . deft)
+                       ("d D" . zetteldeft-deft-new-search)
+                       ("d R" . deft-refresh)
+                       ("d s" . zetteldeft-search-at-point)
+                       ("d c" . zetteldeft-search-current-id)
+                       ("d f" . zetteldeft-follow-link)
+                       ("d F" . zetteldeft-avy-file-search-ace-window)
+                       ("d l" . zetteldeft-avy-link-search)
+                       ("d t" . zetteldeft-avy-tag-search)
+                       ("d T" . zetteldeft-tag-buffer)
+                       ("d i" . zetteldeft-find-file-id-insert)
+                       ("d I" . zetteldeft-find-file-full-title-insert)
+                       ("d o" . zetteldeft-find-file)
+                       ("d n" . zetteldeft-new-file)
+                       ("d N" . zetteldeft-new-file-and-link)
+                       ("d r" . zetteldeft-file-rename)
+                       ("d x" . zetteldeft-count-words))))
 #+end_src
 
 ** Shell
