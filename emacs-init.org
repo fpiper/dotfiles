@@ -513,7 +513,7 @@ The above macro can be used like this.
    (:underline nil
                :weight normal
                :foreground ,slate)
-   (:foreground ,bg-dark))
+   (:foreground ,builtin))
   (org-special-keyword
    (:height 0.9
             :foreground ,comment)
