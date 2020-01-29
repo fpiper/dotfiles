@@ -481,6 +481,7 @@ Quake
 -- Command to create emacsclient with Quake buffer and set wm_class to QuakeDD
 -- emacsclient -c -e '(progn (display-buffer (get-buffer-create "Quake")) (delete-window))'&;sleep  1;xprop -name "Quake" -f WM_CLASS 8s -set WM_CLASS "QuakeDD"
 local quake = lain.util.quake({app="tilix", argname = "--new-process --name %s", followtag = true})
+local quake_emacs = lain.util.quake({app="emacsclient", name="_Quake_Emacs_", argname = "-e \"(fpi/make-floating-frame nil nil t \\\"*Quake Emacs*\\\")\"", followtag = true, height = 400})
 #+END_SRC
 *** Wibox
     #+BEGIN_SRC lua
@@ -667,14 +668,11 @@ end)
    -- {{{ Key bindings
    globalkeys = gears.table.join(
       --awful.key({ modkey }, "z", function() spawn("tilix --quake", "Tilix", nil, "class") end),
-      awful.key({ modkey }, "z", function() quakeemacs:toggle() end),
+      awful.key({ modkey }, "z", function() quake_emacs:toggle() end),
       awful.key({ modkey }, "e", function() quake:toggle() end),
       awful.key({ modkey }, "c", function() awful.placement.centered(client.focus) end),
-      awful.key({ modkey }, "ä", function()
-            awful.util.spawn_with_shell("emacsclient -c", {
-                                floating = true
-                  });
-      end),
+      awful.key({ modkey }, "ä", function() awful.spawn("emacsclient -e \"(fpi/make-floating-frame)\"") end),
+      awful.key({ modkey }, "ö", function() awful.spawn("emacsclient -e \"(fpi/make-floating-capture-frame)\"") end),
       awful.key ({ modkey }, "w", function()
             awful.screen.focused().mywibox.visible = not awful.screen.focused().mywibox.visible
                                   end,
