@@ -1693,6 +1693,7 @@ Use imagemagick and standalone class for latex preview.
 #+END_SRC
 
 *** Org-Capture
+Templates
 #+BEGIN_SRC emacs-lisp
 (use-package org-capture
   :custom (
@@ -1760,6 +1761,36 @@ Use imagemagick and standalone class for latex preview.
               )
             )))
 #+END_SRC
+Setup for floating capture window. For reference see [[https://www.windley.com/archives/2010/12/capture_mode_and_emacs.shtml][here]].
+#+begin_src emacs-lisp
+(defun fpi/make-floating-frame (&optional width height minibuffer name)
+  (interactive)
+  (let ((width (or width 80))
+        (height (or height 36))
+        (name (or name "*Floating Emacs*")))
+    (make-frame `((name . ,name)
+                  (window-system . x)
+                  (width . ,width)
+                  (height . ,height)
+                  (minibuffer . ,minibuffer)))))
+
+(defadvice org-capture-finalize
+    (after delete-capture-frame activate)
+  "Advise capture-finalize to close the frame"
+  (if (equal "*Capture*" (frame-parameter nil 'name))
+      (delete-frame)))
+(defadvice org-capture-destroy
+    (after delete-capture-frame activate)
+  "Advise capture-destroy to close the frame"
+  (if (equal "*Capture*" (frame-parameter nil 'name))
+      (delete-frame)))
+(defun fpi/make-floating-capture-frame ()
+  (interactive)
+  (select-frame (fpi/make-floating-frame 70 20 t "*Capture*"))
+  (add-hook 'org-capture-mode-hook 'delete-other-windows)
+  (org-capture)
+  (remove-hook 'org-capture-mode-hook 'delete-other-windows))
+#+end_src
 *** Ricing
 #+begin_src emacs-lisp
 (setq line-spacing 0.1)
