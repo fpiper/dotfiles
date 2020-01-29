@@ -505,6 +505,10 @@ The above macro can be used like this.
                 :height 0.8
                 :family ,sans-mono-font
                 :foreground ,slate))
+  (org-meta-line
+   (:foreground ,comment)
+   (:height 0.8
+            :foreground ,gray))
   (org-document-info-keyword
    (:foreground ,comment)
    (:height 0.8
