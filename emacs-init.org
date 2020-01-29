@@ -1436,10 +1436,21 @@ make sure to compile the tex document with the option ~--synctex=1~.
   (pdf-tools-install))
 #+END_SRC
 
-Add support for pdf annotations.
+Add support for pdf annotations. Rebind ~pdf-annot-minor-mode-map~ to
+an easier prefix and undefine the bindings of ~image-mode~ for this
+prefix. For now they are unbound globally as I never use them. It
+would be better to unbind them only when in ~pdf-view-mode~.
 #+BEGIN_SRC emacs-lisp
+(use-package image-mode
+  :config
+  (define-key image-mode-map "a+" nil)
+  (define-key image-mode-map "a-" nil)
+  (define-key image-mode-map "a0" nil)
+  (define-key image-mode-map "ar" nil))
+
 (use-package pdf-annot
-  :bind (:map pdf-annot-minor-mode-map ("C-c C-a d" . pdf-annot-delete)))
+  :init (setq pdf-annot-minor-mode-map-prefix "a")
+  :bind (:map pdf-annot-minor-mode-map ("a d" . pdf-annot-delete)))
 #+END_SRC
 ** Latex
 #+begin_src emacs-lisp
