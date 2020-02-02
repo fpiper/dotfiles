@@ -1687,6 +1687,20 @@ Use imagemagick and standalone class for latex preview.
 [DEFAULT-PACKAGES]
 \\pagestyle{empty}             % do not remove")
 #+end_src
+*** org-caldav
+#+begin_src emacs-lisp
+(use-package org-caldav
+  :ensure t
+  :custom
+  (org-caldav-url private/calendar-url)
+  (org-caldav-calendar-id private/calendar-id)
+  (org-caldav-inbox "~/sync/w.org")
+  (org-caldav-files nil)
+  (org-caldav-sync-direction 'cal->org)
+  (org-caldav-delete-calendar-entries 'never)
+  (org-caldav-exclude-tags '(nocal))
+)
+#+end_src
 *** ox-reveal
 #+BEGIN_SRC emacs-lisp
 (use-package ox-reveal
