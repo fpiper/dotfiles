@@ -300,7 +300,9 @@ The above macro can be used like this.
 ;; (set-face-attribute 'variable-pitch nil :font "EtBookOt-11")
  ;; Settings
  ((default
-    (:family ,sans-mono-font)
+    (:family ,sans-mono-font
+             :background ,bg-dark
+             :foreground ,bg-white)
     (:family ,sans-mono-font
              :background ,bg-white
              :foreground ,bg-dark))
@@ -523,6 +525,16 @@ The above macro can be used like this.
             :foreground ,comment)
    (:family ,sans-mono-font
             :height 0.8))
+  (org-property-value
+   (:height 0.9
+            :foreground ,comment)
+   (:family ,sans-mono-font
+            :height 0.8))
+  (org-drawer
+   (:height 0.9
+            :foreground ,comment)
+   (:family ,sans-mono-font
+            :height 0.8))
   (org-todo
    (:foreground ,builtin
                 :background ,bg-dark)
@@ -558,15 +570,12 @@ The above macro can be used like this.
             :inherit variable-pitch)
    nil)
   (org-agenda-date
-   (:foreground ,doc
-                :inherit variable-pitch)
-   (:inherit variable-pitch
-             :height 1.1))
+   (:foreground ,doc)
+   (:foreground ,doc))
   (org-agenda-date-today
    (:height 1.5
-            :foreground ,keyword
-            :inherit variable-pitch)
-   nil)
+            :foreground ,keyword)
+   (:height 1.2))
   (org-agenda-date-weekend
    (:inherit org-agenda-date)
    nil)
