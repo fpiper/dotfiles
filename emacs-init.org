@@ -1741,9 +1741,19 @@ Templates
                 ,org-journal-file)
                "** %<%H:%M> %?
 %i" )
-
-
-
+              ("i" "Interrupt"
+               entry
+               (id "802014b3-fddf-4090-b140-7fb62cb982f2")
+               "** Interrupt: %?
+:PROPERTIES:
+:CREATED: %T
+:SOURCE: %a
+:END:
+:LOGBOOK:
+:END:
+"
+:clock-in t
+:clock-resume t)
   ;;             ("a" "Appointment" entry (file "~/sync/a.org")
   ;;              "* %i%?%(and (org-id-get-create) nil)\n:PROPERTIES:\n:CREATED: %U%(when %a \"\n:SOURCE: %a\")\n:END:\n%^t")
   ;;             ("t" "Soonish task" entry (file "~/sync/refile.org")
