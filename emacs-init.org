@@ -2135,9 +2135,7 @@ The separate functions are needed so they can be used in the hydra.
 
 (defun rrix/clock-in-lunch-task ()
   (interactive)
-  (bh/clock-in-task-by-id fpi/lunch-task)
-  (org-clock-goto)
-  (org-add-note))
+  (bh/clock-in-task-by-id fpi/lunch-task))
 (defun rrix/clock-in-break-task ()
   (interactive)
   (bh/clock-in-task-by-id fpi/break-task)
