@@ -1585,8 +1585,8 @@ Hansen's]] configs.
               (ditaa . t)
               (plantuml . t)
               ;; (hvm . t)
-              (ledger . t)
-              )))
+              (ledger . t)))
+  :hook (org-babel-after-execute . org-display-inline-images))
 #+end_src
 #+BEGIN_SRC emacs-lisp
 (use-package org-noter
