@@ -900,6 +900,7 @@ This was inspired from [[http://endlessparentheses.com/the-toggle-map-and-wizard
 (define-key fpi/toggle-map "q" #'toggle-debug-on-quit)
 (define-key fpi/toggle-map "r" #'dired-toggle-read-only)
 (autoload 'dired-toggle-read-only "dired" nil t)
+(define-key fpi/toggle-map "v" #'visible-mode)
 (define-key fpi/toggle-map "w" #'whitespace-mode)
 (define-key fpi/toggle-map "W" #'whitespace-toggle-options)
 #+END_SRC
