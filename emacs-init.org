@@ -1641,7 +1641,13 @@ Hansen's]] configs.
   (org-agenda-dim-blocked-tasks t)
   (org-agenda-custom-commands
       '(("n" "Agenda and all TODOs"
-         ((agenda) (tags-todo "+soon")
+         ((todo "INPROGRESS"
+                ((org-agenda-overriding-header "Inprogress Tasks")))
+          (agenda)
+          (tags-todo "+soon+LEVEL=2"
+                     ((org-agenda-overriding-header "2nd Level /Soon/ Tasks")))
+          (tags-todo "+soon"
+                     ((org-agenda-overriding-header "All /Soon/ Tasks")))
           (tags-todo "+shelve")
           (tags-todo "+habit")
           (todo "IDLE")
