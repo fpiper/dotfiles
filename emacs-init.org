@@ -1516,6 +1516,11 @@ Hansen's]] configs.
 - Babel languages :: Enable more languages to use in org-babel blocks.
 - Youtube links :: See [[http://endlessparentheses.com/embedding-youtube-videos-with-org-mode-links.html][this blog post]] for more info.
 - Ellipsis :: I currently use =" "= and previously used ="⚡⚡⚡"=.
+- Refile Targets :: Use the full outline path so I can distinguish
+  headlines with the same name & disable step-wise completion as I
+  think from the refile target backwards, not from top-level
+  downwards.
+
 #+begin_src emacs-lisp
 (use-package org
   :ensure org-plus-contrib
@@ -1557,6 +1562,8 @@ Hansen's]] configs.
         ("gmap"      . "http://maps.google.com/maps?q=%s")
         ("omap"      . "http://nominatim.openstreetmap.org/search?q=%s&polygon=1")))
   (org-ellipsis " ")
+  (org-refile-use-outline-path 'file)
+  (org-outline-path-complete-in-steps nil)
   :config
   (add-hook 'org-mode-hook 'turn-on-org-cdlatex)
   (add-to-list 'org-structure-template-alist (cons "f" "figure"))
