@@ -1861,6 +1861,10 @@ Templates
 :END:
 "
                )
+              ("b" "Bibtex entry"
+               entry
+               (id "efc97963-b714-4020-94b6-c23ad2a286ee")
+               (function fpi/add-org-from-doi))
   ;;             ("a" "Appointment" entry (file "~/sync/a.org")
   ;;              "* %i%?%(and (org-id-get-create) nil)\n:PROPERTIES:\n:CREATED: %U%(when %a \"\n:SOURCE: %a\")\n:END:\n%^t")
   ;;             ("t" "Soonish task" entry (file "~/sync/refile.org")
@@ -1978,6 +1982,35 @@ A small function to toggle the encryption state of the current entry.
   (org-ref-bibliography-notes "~/s/ma/notes.org")
   (org-ref-default-bibliography '("~/s/ma/ma.bib"))
   (org-ref-pdf-directory "~/s/ma/lit/"))
+#+end_src
+I store my bibtex references in an org file together with my notes. In
+addition to saving the meta information in properties using the same
+functions as =doi-utils-doi-to-org-bibtex=, I also store them a second
+time in a bibtex src block in the heading. The src blocks are tangled
+to compile into a separate =.bib= file. The function below creates new
+entries from a given doi and is called in my respective capture
+template.
+#+begin_src emacs-lisp
+(defun fpi/add-org-from-doi (&optional doi)
+  "Get bibtex entry from doi and format as Org header with
+properties and additional bibtex src block. Also downloads the
+pdf if available."
+  (let* ((doi (or doi (read-string "Enter doi: ")))
+         (content (replace-regexp-in-string "\n$" "" (doi-utils-doi-to-bibtex-string doi)))
+         (cleaned (with-temp-buffer
+                    (insert content)
+                    (org-ref-clean-bibtex-entry)
+                    (org-bibtex-read)
+                    (buffer-substring (point-min) (point-max)))))
+    (with-temp-buffer
+      (org-mode)
+      (org-bibtex-write)
+      (goto-char (point-max))
+      (insert "#+BEGIN_SRC bibtex\n")
+      (insert cleaned)
+      (insert "\n#+END_SRC\n")
+      (org-demote)
+      (buffer-substring (point-min) (point-max)))))
 #+end_src
 *** Todo settings
 - WAITING tasks are waiting on the completion of other tasks
