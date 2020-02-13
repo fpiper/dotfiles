@@ -91,6 +91,13 @@ header argument in the source code.
 ;; (setq safe-local-variable-values (list (cons 'buffer-auto-save-file-name nil)
                                        ;; (cons 'header-line-format " ")))
 (setq vc-follow-symlinks t)
+
+;; For use on Windows via SSH X-Forwarding
+;; See https://emacs.stackexchange.com/a/42440/25850
+(setq default-frame-alist
+         (append default-frame-alist '((inhibit-double-buffering . t))))
+(setq posframe-inhibit-double-buffering t)
+
 (load (expand-file-name "emacs-init.el" user-emacs-directory))
 #+end_src
 
