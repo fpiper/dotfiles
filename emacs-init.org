@@ -1661,6 +1661,8 @@ Hansen's]] configs.
   (org-agenda-skip-scheduled-if-done t)
   (org-agenda-dim-blocked-tasks t)
   (org-sort-agenda-notime-is-late t)
+  ;; See emacs.christianbaeuerlein.com/my-org-config.html
+  (org-agenda-block-separator 9472)
   (org-agenda-custom-commands
       '(("n" "Agenda and all TODOs"
          ((todo "INPROGRESS"
