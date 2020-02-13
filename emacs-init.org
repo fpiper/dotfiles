@@ -1527,6 +1527,8 @@ Hansen's]] configs.
   headlines with the same name & disable step-wise completion as I
   think from the refile target backwards, not from top-level
   downwards.
+  - Drawer for Notes :: Notes go into the =NOTES= drawer. Clocking
+    times should stay separate in the =LOGBOOK= drawer.
 
 #+begin_src emacs-lisp
 (use-package org
@@ -1571,6 +1573,8 @@ Hansen's]] configs.
   (org-ellipsis " ")
   (org-refile-use-outline-path 'file)
   (org-outline-path-complete-in-steps nil)
+  (org-log-state-notes-into-drawer "NOTES")
+  (org-clock-into-drawer "LOGBOOK")
   :config
   (add-hook 'org-mode-hook 'turn-on-org-cdlatex)
   (add-to-list 'org-structure-template-alist (cons "f" "figure"))
