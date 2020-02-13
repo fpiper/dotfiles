@@ -1529,6 +1529,8 @@ Hansen's]] configs.
   downwards.
   - Drawer for Notes :: Notes go into the =NOTES= drawer. Clocking
     times should stay separate in the =LOGBOOK= drawer.
+  - Align tags left :: Fixes problems with line breaking on small
+    window width.
 
 #+begin_src emacs-lisp
 (use-package org
@@ -1575,6 +1577,7 @@ Hansen's]] configs.
   (org-outline-path-complete-in-steps nil)
   (org-log-state-notes-into-drawer "NOTES")
   (org-clock-into-drawer "LOGBOOK")
+  (org-tags-column 0)
   :config
   (add-hook 'org-mode-hook 'turn-on-org-cdlatex)
   (add-to-list 'org-structure-template-alist (cons "f" "figure"))
