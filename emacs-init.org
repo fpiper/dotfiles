@@ -1203,6 +1203,15 @@ while for directories with lots of nested files.
   :ensure t
   :config (setq dired-du-size-format 't))
 #+END_SRC
+** Tramp
+Set Tramp to prefer the path settings in =~/.profile= over the value
+of src_shell{getconf "PATH"}. See [[elisp:(describe-variable
+'tramp-remote-path)]] for more info.
+#+begin_src emacs-lisp
+(use-package tramp
+  :config
+  (add-to-list 'tramp-remote-path 'tramp-own-remote-path))
+#+end_src
 ** Magit
 
 #+BEGIN_SRC emacs-lisp
