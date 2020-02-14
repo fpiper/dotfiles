@@ -807,6 +807,12 @@ The above macro can be used like this.
    (:background nil
                 :inherit nil))))
 #+end_src
+Advice =load-theme= to also update the colors for
+=pdf-view-midnight-mode=.
+#+begin_src emacs-lisp
+(defadvice load-theme (after update-pdf-view-midnight-color activate)
+  (setq pdf-view-midnight-colors `(,(face-attribute 'default :foreground) . ,(face-attribute 'default :background))))
+#+end_src
 
 Finally load the theme.
 #+begin_src emacs-lisp
