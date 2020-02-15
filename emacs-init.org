@@ -835,7 +835,7 @@ This saves the state emacs was in.
   (setq desktop-dirname user-emacs-directory)
   (setq desktop-base-file-name "desktop")
   (setq desktop-globals-to-clear nil)
-  (setq desktop-missing-file-warning t)
+  (setq desktop-missing-file-warning nil)
   (setq desktop-restore-eager 5)
   (setq desktop-restore-frames nil)
   (setq desktop-save 'ask-if-new)
