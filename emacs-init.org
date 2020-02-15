@@ -2489,8 +2489,7 @@ To open and hide a shell quickly I use =shell-pop=.
   :ensure t
   :bind (("C-!" . shell-pop))
   :custom
-    (shell-pop-shell-type (quote ("shell" "*shell*" (lambda nil (shell)))))
-    (shell-pop-term-shell "/bin/bash"))
+  (shell-pop-shell-type (quote ("eshell" "*eshell*" (lambda nil (eshell))))))
 #+end_src
 ** Proced
 Built-in process monitor.
