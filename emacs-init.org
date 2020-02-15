@@ -1996,7 +1996,9 @@ A small function to toggle the encryption state of the current entry.
   :custom
   (org-ref-bibliography-notes "~/s/ma/notes.org")
   (org-ref-default-bibliography '("~/s/ma/ma.bib"))
-  (org-ref-pdf-directory "~/s/ma/lit/"))
+  (org-ref-pdf-directory "~/s/ma/lit/")
+  :config
+  (bibtex-set-dialect 'BibTeX))
 #+end_src
 I store my bibtex references in an org file together with my notes. In
 addition to saving the meta information in properties using the same
