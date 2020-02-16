@@ -1994,9 +1994,9 @@ A small function to toggle the encryption state of the current entry.
 (use-package org-ref
   :ensure t
   :custom
-  (org-ref-bibliography-notes "~/s/ma/notes.org")
-  (org-ref-default-bibliography '("~/s/ma/ma.bib"))
-  (org-ref-pdf-directory "~/s/ma/lit/")
+  (org-ref-bibliography-notes "~/git/projects/personal/bib.org")
+  (org-ref-default-bibliography '("~/git/projects/personal/bib.bib"))
+  (org-ref-pdf-directory "~/git/projects/personal/Lit/")
   :config
   (bibtex-set-dialect 'BibTeX))
 #+end_src
