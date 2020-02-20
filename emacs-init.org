@@ -1831,6 +1831,32 @@ the newly set value. Open the PROPERTIES drawer."
     ("p" (jmm/org-edna-set-trigger-and-point "parent todo!(DONE)") "Parent DONE")
     ("q" nil "cancel")))
 #+end_src
+*** org-attach
+=org-attach= is useful to attach reference material to org files. This can be reference images, data or other files. A special link type is available for attached files: ~[[attachment:file]]~.
+
+- Inheritance :: While inheritance for attachments sounds useful, so subheadings can access their parents attachments, I find that the current implementation (Org 9.3.1) instead of inheriting just sets the attachment dir of all children to that of the parent. So for now I decided not to use it.
+- Attachment Folder :: While I do not like the default double nested
+  folder structure it creates, I also do not want to set an individual
+  =DIR= property for all headings I want to attach something to.
+  Instead I define a new function to use the uuid directly as the
+  folder name.
+#+begin_src emacs-lisp
+(use-package org-attach
+  :custom
+  (org-attach-use-inheritance nil)
+  :config
+  (defun fpi/org-attach-id-folder-format (id)
+    id)
+  (add-to-list 'org-attach-id-to-path-function-list 'fpi/org-attach-id-folder-format))
+#+end_src
+=org-attach-git= auto-commits changes to attachments if the directory
+is a git repository. I want every attachments to be saved using
+=git-annex=.
+#+begin_src emacs-lisp
+(use-package org-attach-git
+  :custom
+  (org-attach-git-annex-cutoff 0))
+#+end_src
 *** Org-Capture
 Templates
 #+BEGIN_SRC emacs-lisp
