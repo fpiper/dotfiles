@@ -12,13 +12,13 @@ appropriate src block in each configuration file.
 
 ** Git Setup
 Every program's configuration lives in its own branch. All branches
-are then merged into =master=. To keep the git history clean, I use
-this script:
+except the ones which end with a plus sign are then merged into
+=master=. To keep the git history clean, I use this script:
 
 #+begin_src shell :shebang "#!/bin/bash" :tangle tangle/merge.sh
 git checkout master
 git reset --hard init
-git branch | grep -v private | sed "s/[ *] //" | xargs git merge
+git branch | grep -v -e +$ -e master | sed "s/[ *] //" | xargs git merge
 git push --force origin master
 #+end_src
 
