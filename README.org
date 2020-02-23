@@ -18,7 +18,7 @@ except the ones which end with a plus sign are then merged into
 #+begin_src shell :shebang "#!/bin/bash" :tangle tangle/merge.sh
 git checkout master
 git reset --hard init
-git branch | grep -v -e +$ -e master | sed "s/[ *] //" | xargs git merge
+git branch -a | grep -v -e +$ -e master | sed "s/[ *] //" | xargs git merge
 git push --force origin master
 #+end_src
 
