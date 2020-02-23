@@ -1,0 +1,69 @@
+# -*- coding: utf-8-unix -*-
+#+PROPERTY: header-args:gnuplot :tangle tangle/.gnuplot :eval query
+* Symlink
+First create a symlink to the desired config location.
+#+begin_src shell :results silent
+ln -s $(pwd)/tangle/.gnuplot ~/
+#+end_src
+* Main configuration
+#+begin_src gnuplot
+reset
+
+set style line 1 lc rgb '#cb1a0e' pt 1 ps 1 lt 1 lw 2 # --- red
+set style line 2 lc rgb '#5e9c36' pt 6 ps 1 lt 1 lw 2 # --- green
+set style line 3 lc 3 pt 1 ps 1 lt 1 lw 2 # --- blue
+set style line 4 lc 7 pt 6 ps 1 lt 1 lw 2 # --- black
+set style line 5 lc 9 pt 1 ps 1 lt 1 lw 2 # --- grey
+set style line 6 lc 4 pt 1 ps 1 lt 1 lw 2 # --- pink
+set style line 11 lc rgb '#808080' lt 1
+set border 3 back ls 11
+set tics nomirror
+set style line 12 lc rgb '#808080' lt 0 lw 1
+set grid back ls 12
+
+set style increment user
+set style data lp
+
+set macros
+#+end_src
+* Interactive Label Placement
+[[http://www.gnuplotting.org/interactive-label-placing/][Source]]. I adapted the =label_loop= function to newer gnuplot syntax &
+added functionality for multiple arguments. The function call to
+=label_loop= is stored inside a string and can then be executeds as a
+macro like this: src_gnuplot{@iLabel "label1" "label2"}.
+
+#+begin_src gnuplot
+iLabel = "call '~/git/projects/dotfiles/tangle/label_loop.gp "
+#+end_src
+
+#+begin_src gnuplot :tangle tangle/label_loop.gp
+# label_loop
+# This loop adds a label to a plot by pressing the left mouse key.
+# If you are not convinced with your chosen position, just klick the mouse key
+# again and it will be positioned at another place. If you are finished, just
+# press another key.
+#
+# Original AUTHOR: Hagen Wierstorf
+
+# Initialize a label number
+if (!exists("label_number")) { label_number = 1 }
+
+do for [ELEMENT in ARG1." ".ARG2." ".ARG3." ".ARG4." ".ARG5] {
+  while (1) {
+    # Waiting for the  key press
+    pause mouse any ELEMENT
+
+    # Check if the left mouse key is pressed and add the given label to the plot.
+    # Otherwise stop the loop and count the added label
+    if( MOUSE_BUTTON==1 ) {
+      set label label_number ELEMENT at MOUSE_X,MOUSE_Y textcolor ls 1
+      print " at ",MOUSE_X,MOUSE_Y
+      replot
+    } else {
+      label_number = label_number+1
+      print "\n"
+      break
+    }
+  }
+}
+#+end_src
