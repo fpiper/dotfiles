@@ -1218,7 +1218,8 @@ of src_shell{getconf "PATH"}. See [[elisp:(describe-variable
   :config
   (add-to-list 'tramp-remote-path 'tramp-own-remote-path))
 #+end_src
-** Magit
+** Git
+*** Magit
 
 #+BEGIN_SRC emacs-lisp
 (use-package magit
@@ -1258,6 +1259,13 @@ Only highlight the changes within a line, not the whole line.
   :custom
   (magit-diff-refine-hunk 'all))
 #+END_SRC
+**** gitflow
+Add support for [[https://nvie.com/posts/a-successful-git-branching-model/][gitflow]].
+#+begin_src emacs-lisp
+(use-package magit-gitflow
+   :ensure t
+   :hook (magit-mode . turn-on-magit-gitflow))
+#+end_src
 *** diff-hl
 Indicates changed lines in the left fringe. The Hydra can be used to
 navigate and revert hunks directly from the buffer. Use =g= to open
@@ -1295,13 +1303,25 @@ navigate and revert hunks directly from the buffer. Use =g= to open
        :color blue))
 )
 #+end_src
-*** gitflow
-Add support for [[https://nvie.com/posts/a-successful-git-branching-model/][gitflow]].
+*** git-auto-commit
+Mode to automatically commit on file save. Ensure that automatic
+pushing is always turned off. To enable this with [[info:emacs#File Variables][File Variables]] set
+some safe local variable values.
 #+begin_src emacs-lisp
-(use-package magit-gitflow
-   :ensure t
-   :hook (magit-mode . turn-on-magit-gitflow))
+(use-package git-auto-commit-mode
+  :ensure t
+  :custom
+  (gac-automatically-push-p nil)
+  :config
+  (add-to-list 'safe-local-variable-values
+               '(eval add-hook
+                     (quote after-save-hook)
+                     (quote gac-after-save-func)
+                     t t))
+  (add-to-list 'safe-local-variable-values
+               '(git-auto-commit-mode . t)))
 #+end_src
+
 ** Projectile
 
 #+BEGIN_SRC emacs-lisp
