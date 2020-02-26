@@ -2,6 +2,7 @@
 
 #+BEGIN_SRC sh :tangle no :results silent
 ln -sf $(pwd)/tangle/gpg-agent.conf ~/.gnupg/gpg-agent.conf
+ln -sf $(pwd)/tangle/sshcontrol ~/.gnupg/sshcontrol
 #+END_SRC
 
 
@@ -17,3 +18,11 @@ max-cache-ttl-ssh 34560000
 allow-emacs-pinentry
 allow-loopback-pinentry
 #+END_SRC
+* Enable use as ssh keys
+#+begin_src conf
+enable-ssh-support
+#+end_src
+
+#+begin_src conf :tangle tangle/sshcontrol
+4AFDEF6B35160F892F61666CE891B2456D755807
+#+end_src
