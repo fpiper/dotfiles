@@ -31,7 +31,7 @@ disable ~buffer-auto-save-file-name~ for the files.
 (require 'org-crypt)
 (org-crypt-use-before-save-magic)
 (setq org-tags-exclude-from-inheritance (quote ("crypt")))
-(setq org-crypt-key "C12356B984BA799943824FD5DB31E653435C87C6")
+(setq org-crypt-key "F1EF502F9E81D81381B1679AF973BBEA6994521B")
 #+END_SRC
 
 I use =.org= configuration files also for my other dotfiles. To ensure
