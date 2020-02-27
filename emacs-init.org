@@ -1871,8 +1871,10 @@ the newly set value. Open the PROPERTIES drawer."
 #+end_src
 =org-attach-git= auto-commits changes to attachments if the directory
 is a git repository. I want every attachments to be saved using
-=git-annex=.
-#+begin_src emacs-lisp
+=git-annex=. I stopped using this because the buildin =git annex
+assistant= seems like a better choice, as it also handles automatic
+content syncing upon commit.
+#+begin_src emacs-lisp :tangle no
 (use-package org-attach-git
   :custom
   (org-attach-git-annex-cutoff 0))
