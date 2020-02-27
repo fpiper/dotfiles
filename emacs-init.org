@@ -1566,6 +1566,8 @@ Hansen's]] configs.
     times should stay separate in the =LOGBOOK= drawer.
   - Align tags left :: Fixes problems with line breaking on small
     window width.
+  - Inline image width :: Resize images to 400px but respect width
+    specifications in attribute lines.
 
 #+begin_src emacs-lisp
 (use-package org
@@ -1613,6 +1615,7 @@ Hansen's]] configs.
   (org-log-state-notes-into-drawer "NOTES")
   (org-clock-into-drawer "LOGBOOK")
   (org-tags-column 0)
+  (org-image-actual-width '(400))
   :config
   (add-hook 'org-mode-hook 'turn-on-org-cdlatex)
   (add-to-list 'org-structure-template-alist (cons "f" "figure"))
