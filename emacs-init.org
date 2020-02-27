@@ -2075,6 +2075,15 @@ pdf if available."
       (org-demote)
       (buffer-substring (point-min) (point-max)))))
 #+end_src
+Here's a function to easily copy a doi from the results of =crossref-lookup=.
+#+begin_src emacs-lisp
+(defun fpi/biblio-get-doi ()
+  (interactive)
+  (let ((doi (alist-get 'doi (cdr (biblio--selection-metadata-at-point)))))
+    (kill-new doi)
+    (message "Copied doi %s" doi)))
+(define-key biblio-selection-mode-map "d" #'fpi/biblio-get-doi)
+#+end_src
 *** Todo settings
 - WAITING tasks are waiting on the completion of other tasks
 - NEXT tasks can be picked up
