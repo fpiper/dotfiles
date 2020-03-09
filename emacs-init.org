@@ -1746,6 +1746,7 @@ Hansen's]] configs.
   (org-agenda-sticky t)
   (org-agenda-todo-ignore-deadlines 'near) ;; or future?
   (org-agenda-todo-ignore-scheduled 'future)
+  (org-agenda-skip-deadline-prewarning-if-scheduled t)
   (org-agenda-tags-todo-honor-ignore-options t)
   (org-agenda-todo-list-sublevels t) ;; nil to exclude sublevels of todos
   (org-agenda-sorting-strategy '((agenda habit-down time-up priority-down category-keep)
