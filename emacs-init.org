@@ -1859,6 +1859,10 @@ Use imagemagick and standalone class for latex preview.
 ;;(setq org-reveal-root "http://cdn.jsdelivr.net/reveal.js/3.0.0/")
 #+END_SRC
 
+*** ol-bbdb
+#+begin_src emacs-lisp
+(use-package ol-bbdb)
+#+end_src
 *** Org-edna
 =Org-edna= is a great tool to manage =TODO= dependencies. I mainly use
 it to mark tasks as =NEXT= after switching another task to =DONE=. The
@@ -3015,6 +3019,30 @@ For now I use this bad code.
       (goto-char (point-max))
       (or (bolp) (newline)))))
 #+END_SRC
+** BBDB
+#+begin_src emacs-lisp
+(use-package bbdb
+  :ensure t)
+(bbdb-initialize 'gnus 'message)
+(bbdb-mua-auto-update-init 'gnus 'message)
+
+;; size of the bbdb popup
+(setq bbdb-pop-up-window-size 0.15)
+(setq bbdb-mua-pop-up-window-size 0.15)
+
+;; What do we do when invoking bbdb interactively
+(setq bbdb-mua-update-interactive-p '(query . create))
+
+;; Make sure we look at every address in a message and not only the
+;; first one
+(setq bbdb-message-all-addresses t)
+
+;; use ; on a message to invoke bbdb interactively
+(add-hook
+ 'gnus-summary-mode-hook
+ (lambda ()
+    (define-key gnus-summary-mode-map (kbd ";") 'bbdb-mua-edit-field)))
+#+end_src
 ** Context aware hydra
 :PROPERTIES:
 :ID:       22750e48-aaee-4f60-bdce-1d511ebe3375
