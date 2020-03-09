@@ -1863,6 +1863,22 @@ Use imagemagick and standalone class for latex preview.
 #+begin_src emacs-lisp
 (use-package ol-bbdb)
 #+end_src
+*** org-roam
+#+begin_src emacs-lisp
+(use-package org-roam
+  :delight
+  :hook
+  (after-init . org-roam-mode)
+  :load-path "~/git/clone/org-roam"
+  :custom
+  (org-roam-directory "~/git/projects/zettel/")
+  :bind (:map org-roam-mode-map
+              (("C-c n l" . org-roam)
+               ("C-c n f" . org-roam-find-file)
+               ("C-c n g" . org-roam-show-graph))
+              :map org-mode-map
+              (("C-c n i" . org-roam-insert))))
+#+end_src
 *** Org-edna
 =Org-edna= is a great tool to manage =TODO= dependencies. I mainly use
 it to mark tasks as =NEXT= after switching another task to =DONE=. The
@@ -2580,10 +2596,10 @@ creation.
 #+begin_src emacs-lisp
 (use-package deft
   :ensure t
-  :custom ((deft-directory "~/zettel")
+  :custom ((deft-directory "~/git/projects/zettel")
            (deft-extensions '("org"))
            (deft-default-extension "org")
-           (deft-use-filename-as-title t)
+           (deft-use-filename-as-title nil)
            (deft-recursive t)
            (deft-use-filter-string-for-filename t)))
 #+end_src
