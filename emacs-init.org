@@ -147,6 +147,7 @@ to get a list of available commands. =which-key= shows these in a
 small popup, which I think is more handy.
 #+begin_src emacs-lisp
 (use-package which-key
+  :delight
   :ensure t
   :custom (which-key-idle-delay 0.4)
   :config (which-key-mode 1))
@@ -224,7 +225,7 @@ Instead of the above code I set the font directly using
 (set-face-attribute 'default nil :font "Hack-11")
 #+end_src
 
-** Theme
+** Theme & Faces
 =hc-zenburn= is the theme I chose for a long time. Lately I started to
 appreciate light themes more. [[https://gitlab.com/protesilaos/modus-themes][modus-operandi]] is an interesting light
 theme promising high color contrast. I ended up using the
@@ -233,6 +234,13 @@ theme promising high color contrast. I ended up using the
 (package-install 'spacemacs-theme)
 #+end_src
 
+=Face-remap= is a library for basic face remapping. =Buffer-face-mode=
+is enabled when using =variable-pitch-mode= to show the face defined
+in =variable-pitch= instead of =default=.
+#+begin_src emacs-lisp
+(use-package face-remap
+  :delight (buffer-face-mode))
+#+end_src
 To do some custom adjustments to it I use the following macro which
 adds an advice to ~load-theme~.
 #+begin_src emacs-lisp
@@ -935,7 +943,11 @@ This was inspired from [[http://endlessparentheses.com/the-toggle-map-and-wizard
 (define-key fpi-map (kbd "n") 'sauron-toggle-hide-show)
 (define-key fpi-map (kbd "j") (lambda () (interactive) (find-file org-journal-file)))
 #+END_SRC
-
+** Base commands (simple.el)
+#+begin_src emacs-lisp
+(use-package simple
+  :delight (visual-line-mode))
+#+end_src
 * Selection and search methods
 ** Completion frameworks
 Having used ido, ivy, icicles and helm in the past, I'm trying to
@@ -1309,6 +1321,7 @@ pushing is always turned off. To enable this with [[info:emacs#File Variables][F
 some safe local variable values.
 #+begin_src emacs-lisp
 (use-package git-auto-commit-mode
+  :delight
   :ensure t
   :custom
   (gac-automatically-push-p nil)
@@ -1348,6 +1361,10 @@ brackets containing their path.
   (uniquify-strip-common-suffix t)
   (uniquify-after-kill-buffer-p t))
 #+END_SRC
+#+begin_src emacs-lisp
+(use-package autorevert
+  :delight (auto-revert-mode))
+#+end_src
 *** ibuffer
 
 #+BEGIN_SRC emacs-lisp
@@ -1536,6 +1553,12 @@ needed.
   :init
   (add-hook 'emacs-lisp-mode-hook 'speed-of-thought-mode))
 #+end_src
+=Eldoc= displays information on variables and functions in the echo
+area.
+#+begin_src emacs-lisp
+(use-package eldoc
+  :delight)
+#+end_src
 ** Org mode
 Org is the mode you never need to leave, if you do not want to. My org
 TODO and clocking setup is largely inspired by [[http://doc.rix.si/cce/cce-org.html][Ryan Rix's]] and [[http://doc.norang.ca/org-mode.html][Bernt
@@ -1572,6 +1595,7 @@ Hansen's]] configs.
 #+begin_src emacs-lisp
 (use-package org
   :ensure org-plus-contrib
+  :delight (org-cdlatex-mode)
   :defer t
   :bind
   (("C-c c" . org-capture)
@@ -1582,7 +1606,6 @@ Hansen's]] configs.
              ("begin" "$1" "$" "$$" "\\(" "\\[")))
   (org-catch-invisible-edits 'smart)
   (org-agenda-diary-file "~/sync/diary.org")
-  (org-startup-indented t)
   (org-use-speed-commands (lambda () (and (looking-at org-outline-regexp) (looking-back "^\**"))))
   (org-pretty-entities t)
   (org-fast-tag-selection-single-key t)
@@ -1620,6 +1643,12 @@ Hansen's]] configs.
   (add-hook 'org-mode-hook 'turn-on-org-cdlatex)
   (add-to-list 'org-structure-template-alist (cons "f" "figure"))
   (add-to-list 'org-tags-exclude-from-inheritance "MARKED"))
+#+end_src
+#+begin_src emacs-lisp
+(use-package org-indent
+  :delight
+  :custom
+  (org-startup-indented t))
 #+end_src
 #+begin_src emacs-lisp
 (use-package ob
@@ -1764,6 +1793,10 @@ Use imagemagick and standalone class for latex preview.
 [PACKAGES]
 [DEFAULT-PACKAGES]
 \\pagestyle{empty}             % do not remove")
+#+end_src
+#+begin_src emacs-lisp
+(use-package org-num
+  :delight)
 #+end_src
 *** org-caldav
 #+begin_src emacs-lisp
