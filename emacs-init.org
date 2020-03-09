@@ -1421,6 +1421,33 @@ on the amount of displayed text.
   (fit-window-to-buffer-horizontally t)
   :bind (:map fpi-map ("s" . fit-window-to-buffer)))
 #+end_src
+*** Window rules
+#+begin_src emacs-lisp
+(use-package window
+  :init
+  (setq display-buffer-alist
+        '(
+          ("\\*\\(Backtrace\\|Warnings\\|Compile-Log\\|Messages\\)\\*"
+           (display-buffer-in-side-window)
+           (window-height . 0.16)
+           (side . top)
+           (slot . 0)
+           (window-parameters . ((no-other-window t))))
+          (".*\\*Completions.*"
+           (display-buffer-in-side-window)
+           (window-height . 0.16)
+           (side . bottom)
+           (slot . 0))
+          ("\\*Help.*"
+           (display-buffer-in-side-window)
+           (window-width . 0.2)
+           (side . left)
+           (slot . 0)
+           (window-parameters . ((no-other-window . t)
+                                 (mode-line-format . (" "
+                                                      mode-line-buffer-identification)))))
+          )))
+#+end_src
 *** window-numbering
 This is a nice package for easy window focus switching. I prefer it
 over =windmove=, as it does not interfere with org keybindings.
