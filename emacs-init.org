@@ -1612,12 +1612,18 @@ Hansen's]] configs.
   headlines with the same name & disable step-wise completion as I
   think from the refile target backwards, not from top-level
   downwards.
-  - Drawer for Notes :: Notes go into the =NOTES= drawer. Clocking
-    times should stay separate in the =LOGBOOK= drawer.
-  - Align tags left :: Fixes problems with line breaking on small
-    window width.
-  - Inline image width :: Resize images to 400px but respect width
-    specifications in attribute lines.
+- Drawer for Notes :: Notes go into the =NOTES= drawer. Clocking
+  times should stay separate in the =LOGBOOK= drawer.
+- Track state changes :: Notes when an entry is switched to done when
+  the deadline or scheduled time change
+- TODO Keywords :: Set my todo keywords, enable fast selection & some
+  custom faces for the todo keywords
+- Change todo state on clock-in :: Switch entries automatically from
+  NEXT to INPROGRESS
+- Align tags left :: Fixes problems with line breaking on small
+  window width.
+- Inline image width :: Resize images to 400px but respect width
+  specifications in attribute lines.
 
 #+begin_src emacs-lisp
 (use-package org
@@ -1630,46 +1636,78 @@ Hansen's]] configs.
    ("C-c l" . org-store-link))
   :custom
   (org-format-latex-options '(:foreground default :background default :scale 1.5 :html-foreground "Black" :html-background "Transparent" :html-scale 1.0 :matchers
-             ("begin" "$1" "$" "$$" "\\(" "\\[")))
+                                          ("begin" "$1" "$" "$$" "\\(" "\\[")))
   (org-catch-invisible-edits 'smart)
   (org-agenda-diary-file "~/sync/diary.org")
   (org-use-speed-commands (lambda () (and (looking-at org-outline-regexp) (looking-back "^\**"))))
   (org-pretty-entities t)
   (org-fast-tag-selection-single-key t)
   (org-tag-alist (quote ((:startgroup)
-                            ("@errand" . ?e)
-                            ("@office" . ?o)
-                            ("@home" . ?H)
-                            (:endgroup)
-                            ("IDLE" . ?i)
-                            ("shelf" . ?s)
-                            ("soon" . ?t)
-                            ("project" . ?p)
-                            ;; ("HOLD" . ?h)
-                            ;; ("PERSONAL" . ?P)
-                            ("WORK" . ?W)
-                            ;; ("ORG" . ?O)
-                            ("crypt" . ?E)
-                            ("NOTE" . ?n)
-                            ;; ("CANCELLED" . ?c)
-                            ("FLAGGED" . ??)
-                            )))
+                         ("@errand" . ?e)
+                         ("@office" . ?o)
+                         ("@home" . ?H)
+                         (:endgroup)
+                         ("IDLE" . ?i)
+                         ("shelf" . ?s)
+                         ("soon" . ?t)
+                         ("project" . ?p)
+                         ;; ("HOLD" . ?h)
+                         ;; ("PERSONAL" . ?P)
+                         ("WORK" . ?W)
+                         ;; ("ORG" . ?O)
+                         ("crypt" . ?E)
+                         ("NOTE" . ?n)
+                         ;; ("CANCELLED" . ?c)
+                         ("FLAGGED" . ??)
+                         )))
   (org-link-abbrev-alist
-      '(("google"    . "http://www.google.com/search?q=")
-        ("ddg"       . "https://duckduckgo.com/?q=")
-        ("gmap"      . "http://maps.google.com/maps?q=%s")
-        ("omap"      . "http://nominatim.openstreetmap.org/search?q=%s&polygon=1")))
+   '(("google"    . "http://www.google.com/search?q=")
+     ("ddg"       . "https://duckduckgo.com/?q=")
+     ("gmap"      . "http://maps.google.com/maps?q=%s")
+     ("omap"      . "http://nominatim.openstreetmap.org/search?q=%s&polygon=1")))
   (org-ellipsis " ")
   (org-refile-use-outline-path 'file)
   (org-outline-path-complete-in-steps nil)
   (org-log-state-notes-into-drawer "NOTES")
   (org-clock-into-drawer "LOGBOOK")
+  (org-log-done 'time)
+  (org-log-redeadline 'time)
+  (org-log-reschedule 'time)
+  (org-todo-keywords '((sequence "PLANNING(p)" "NEXT(n)" "INPROGRESS(i!)" "WAITING(w@/!)" "|" "ICEBOX(x@)" "DONE(d)")
+                       (sequence "S(s)" "DONE(d)")
+                       (sequence "PHONE(P)" "MEETING(m)" "|" "CANCELLED(c)")
+                       (sequence "TODO(t)" "|" "DONE(d)")
+                       (sequence "IDLE(a)")))
+  (org-use-fast-todo-selection t)
+  (org-todo-keyword-faces
+   '(("NEXT" :foreground "light blue" :weight bold)
+     ("INPROGRESS" :foreground "burlywood" :weight bold)
+     ("DONE" :foreground "forest green" :weight bold)
+     ("WAITING" :foreground "orange" :weight bold)
+     ("ICEBOX" :foreground "orange" :weight normal)
+     ("CANCELLED" :foreground "forest green" :weight bold)
+     ("MEETING" :foreground "yellow" :weight bold)
+     ("PHONE" :foreground "yellow" :weight bold)
+     ("IDLE" :foreground "magenta" :weight bold)))
+  (org-clock-in-switch-to-state 'bh/clock-in-to-inprogress)
   (org-tags-column 0)
   (org-image-actual-width '(400))
   :config
   (add-hook 'org-mode-hook 'turn-on-org-cdlatex)
   (add-to-list 'org-structure-template-alist (cons "f" "figure"))
-  (add-to-list 'org-tags-exclude-from-inheritance "MARKED"))
+  (add-to-list 'org-tags-exclude-from-inheritance "MARKED")
+  (defun bh/clock-in-to-inprogress (kw)
+    "Switch a task from NEXT to INPROGRESS when clocking in.
+Skips capture tasks, projects, and subprojects.
+Switch projects and subprojects from NEXT back to TODO"
+    (when (not (and (boundp 'org-capture-mode) org-capture-mode))
+      (cond
+       ((and (member (org-get-todo-state) (list "NEXT"))
+             (bh/is-task-p))
+        "INPROGRESS")
+       ((and (member (org-get-todo-state) (list "NEXT"))
+             (bh/is-project-p))
+        "INPROGRESS")))))
 #+end_src
 #+begin_src emacs-lisp
 (use-package org-indent
@@ -2215,10 +2253,11 @@ digraph hierarch{
 #+RESULTS:
 [[file:/tmp/todo.png]]
 
-#+BEGIN_SRC emacs-lisp
+#+BEGIN_SRC emacs-lisp :tangle no
 (setq org-todo-keywords '((sequence "PLANNING(p)" "NEXT(n)" "INPROGRESS(i)" "WAITING(w@/!)" "|" "ICEBOX(x@)" "DONE(d)")
+                          (sequence "S(s)" "DONE(d)")
                           (sequence "PHONE(P)" "MEETING(m)" "|" "CANCELLED(c)")
-                              (sequence "TODO(t)" "|" "DONE(d)")
+                          (sequence "TODO(t)" "|" "DONE(d)")
                           (sequence "IDLE(a)")))
 (setq org-use-fast-todo-selection t)
 
@@ -2236,9 +2275,8 @@ digraph hierarch{
 #+END_SRC
 
 Switch a todo entry from NEXT to INPROGRESS when clocking in.
-#+begin_src emacs-lisp
+#+begin_src emacs-lisp :tangle no
 (setq org-clock-in-switch-to-state 'bh/clock-in-to-inprogress)
-
 (defun bh/clock-in-to-inprogress (kw)
   "Switch a task from NEXT to INPROGRESS when clocking in.
 Skips capture tasks, projects, and subprojects.
@@ -2252,11 +2290,12 @@ Switch projects and subprojects from NEXT back to TODO"
            (bh/is-project-p))
       "INPROGRESS"))))
 #+end_src
-
 **** State changes
-Track state changes to done
-#+begin_src emacs-lisp
+Track state changes to done & changes to schedules and deadlines.
+#+begin_src emacs-lisp :tangle no
 (setq org-log-done 'time)
+(setq org-log-redeadline 'time)
+(setq org-log-reschedule 'time)
 #+end_src
 *** Toggle drawer visibility
 #+begin_src emacs-lisp
