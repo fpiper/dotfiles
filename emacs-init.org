@@ -2683,6 +2683,11 @@ To open and hide a shell quickly I use =shell-pop=.
   :custom
   (shell-pop-shell-type (quote ("eshell" "*eshell*" (lambda nil (eshell))))))
 #+end_src
+** Grep
+#+begin_src emacs-lisp
+(use-package grep
+  :custom (grep-command "grep --color -nH --null "))
+#+end_src
 ** Proced
 Built-in process monitor.
 #+BEGIN_SRC emacs-lisp
