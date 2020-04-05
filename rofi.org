@@ -1,6 +1,5 @@
-#+begin_src shell :tangle no :results silent
-path=$(pwd)/tangle
-ln -sf $path/config.rasi ~/.config/rofi/
+#+begin_src shell :tangle tangle/symlink.sh :results silent :shebang "#!/bin/bash"
+ln -siv $(pwd)/tangle/config.rasi ~/.config/rofi/
 #+end_src
 
 #+begin_src conf :tangle tangle/config.rasi :eval never
