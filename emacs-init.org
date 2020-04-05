@@ -1850,7 +1850,7 @@ Switch projects and subprojects from NEXT back to TODO"
 (use-package org-screenshot)
 (use-package org-collector)
 (use-package ox)
-(use-package org-notmuch)
+(use-package ol-notmuch)
 (use-package org-expiry
   :custom
   (org-expiry-handler-function 'org-expiry-archive-subtree))
@@ -1922,10 +1922,10 @@ Use imagemagick and standalone class for latex preview.
 *** org-roam
 #+begin_src emacs-lisp
 (use-package org-roam
+  :ensure t
   :delight
   :hook
   (after-init . org-roam-mode)
-  :load-path "~/git/clone/org-roam"
   :custom
   (org-roam-directory "~/git/projects/zettel/")
   :bind (:map org-roam-mode-map
