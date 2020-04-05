@@ -1392,7 +1392,6 @@ brackets containing their path.
   (ibuffer-display-summary nil)
   (ibuffer-use-other-window nil)
   (ibuffer-auto-mode -1)
-  :bind ("C-x C-b" . ibuffer)
   :hook
   (ibuffer-mode . ibuffer-auto-mode))
 #+END_SRC
