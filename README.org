@@ -7,8 +7,8 @@ and symlinked to the appropriate directories.
 blocks make tangling take several seconds and ~org-babel-load-file~ in
 ~init.el~ tangles the init org file on each emacs start anyway.
 
-For now the symlinks need to be created by manually running the
-appropriate src block in each configuration file.
+The symlinks can be created by manually running the appropriate src
+block in each configuration file. For an automated solution see below.
 
 ** Git Setup
 Every program's configuration lives in its own branch. All branches
@@ -55,6 +55,39 @@ emacs --batch --eval="\
                                                  (save-without-hook)))
          (let ((org-confirm-babel-evaluate nil))
            (mapc 'org-babel-tangle-file (split-string \"$(ls *.org *.org.gpg)\"))))"
+#+end_src
+
+** Creating symlinks
+Each config files contains a source block which creates symlinks of
+the tangled configurations to their respective target locations. These
+blocks all have the ~:tangle tangle/symlink.sh~ and ~:shebang
+#!/bin/bash~ header arguments. The symlinks are created with ~ln -siv~
+to list created symlinks (~-v~) and to ask when overwriting existing
+files (~-i~). To always replace all symlinks you can pipe ~yes~ into
+the ~ln -siv~ calls: ~yes | tangle/link.sh~. Make sure to run it from
+the dotfiles directory.
+
+As the symlink shell source blocks are scattered in all configuration
+files, all files are collected together using cat and then all blocks
+with the correct ~:tangle~ target are tangled. Unfortunately there is
+no function to directly only tangle blocks with a certain target, so
+this is not straightforward.
+#+begin_src shell :shebang "#!/bin/bash" :tangle tangle/link.sh
+catFile="concat.org"
+symlinkFile="tangle/symlink.sh"
+
+cat <(cat *.org) <(ls *.org.gpg | xargs gpg --decrypt) > $catFile
+
+emacs --batch --eval="\
+  (progn (require 'org)
+         (let ((org-confirm-babel-evaluate nil))
+           (find-file \"$catFile\")
+           (search-forward \":tangle $symlinkFile\")
+           (org-babel-tangle '(16))))"
+
+rm $catFile
+
+$symlinkFile
 #+end_src
 
 * Window manager
