@@ -3,6 +3,6 @@
 #+begin_src conf
 --file ~/.personal/f/ledger/main.ledger
 #+end_src
-#+begin_src shell
-ln -sf $(pwd)/tangle/.ledgerrc ~/
+#+begin_src shell :tangle tangle/symlink.sh :shebang "#!/bin/bash"
+ln -siv $(pwd)/tangle/.ledgerrc ~/
 #+end_src
