@@ -946,7 +946,26 @@ This was inspired from [[http://endlessparentheses.com/the-toggle-map-and-wizard
 ** Base commands (simple.el)
 #+begin_src emacs-lisp
 (use-package simple
-  :delight (visual-line-mode))
+  :delight (visual-line-mode)
+  :config
+  (defun zap-up-to-char (arg char)
+    "Kill up to and excluding ARGth occurrence of CHAR.
+Case is ignored if `case-fold-search' is non-nil in the current buffer.
+Goes backward if ARG is negative; error if CHAR not found."
+    (interactive (list (prefix-numeric-value current-prefix-arg)
+                       (read-char "Zap to char: " t)))
+    ;; Avoid "obsolete" warnings for translation-table-for-input.
+    (with-no-warnings
+      (if (char-table-p translation-table-for-input)
+          (setq char (or (aref translation-table-for-input char) char))))
+    (kill-region (point) (progn
+                           (search-forward (char-to-string char) nil nil arg)
+                           (if (>= arg 0)
+                               (backward-char)
+                             (forward-char))
+                           (point))))
+  :bind (:map global-map
+              ("M-z" . zap-up-to-char)))
 #+end_src
 * Selection and search methods
 ** Completion frameworks
