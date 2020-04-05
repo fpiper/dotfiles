@@ -1,7 +1,7 @@
 #+PROPERTY: header-args:emacs-lisp :tangle tangle/gnus.el
 
-#+begin_src shell :results silent
-ln -s $(pwd)/tangle/gnus.el ~/.gnus.el
+#+begin_src shell :results silent :tangle tangle/symlink.sh :shebang "#!/bin/bash"
+ln -siv $(pwd)/tangle/gnus.el ~/.gnus.el
 #+end_src
 
 Load private settings
