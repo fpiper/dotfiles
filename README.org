@@ -22,8 +22,42 @@ git branch -a | grep -v -e +$ -e master | sed "s/[ *] //" | xargs git merge
 git push --force origin master
 #+end_src
 
+** Updating all tangled files
+This script (re-)tangles all =.org= and =.org.gpg= files. Run this in
+case the org files were updated outside of your local emacs (e.g.
+after pulling from a remote). Make sure to run it from the dotfiles
+directory.
+
+#+begin_src shell :shebang "#!/bin/bash" :tangle no
+emacs --batch --eval="\
+  (progn (require 'org)
+         (let ((org-confirm-babel-evaluate nil))
+           (mapc 'org-babel-tangle-file (split-string \"$(ls *.org *.org.gpg)\"))))"
+#+end_src
+
+The above won't quite work for me as I use ~org-crypt~ in some
+configuration files and it also needs to be loaded & setup. For
+details see [[file:emacs-init.org][emacs-init.org]].
+
+#+begin_src shell :shebang "#!/bin/bash" :tangle tangle/tangle.sh
+emacs --batch --eval="\
+  (progn (require 'org)
+         (require 'org-crypt)
+         (org-crypt-use-before-save-magic)
+         (setq org-tags-exclude-from-inheritance '(\"crypt\"))
+         (setq org-crypt-key \"F1EF502F9E81D81381B1679AF973BBEA6994521B\")
+         (defun save-without-hook ()
+           (let ((before-save-hook nil))
+             (save-buffer)))
+         (setq org-babel-pre-tangle-hook '(org-decrypt-entries save-without-hook))
+         (advice-add 'org-babel-tangle :after '(lambda (&rest r)
+                                                 (org-encrypt-entries)
+                                                 (save-without-hook)))
+         (let ((org-confirm-babel-evaluate nil))
+           (mapc 'org-babel-tangle-file (split-string \"$(ls *.org *.org.gpg)\"))))"
+#+end_src
+
 * Window manager
 I use [[https://github.com/ch11ng/exwm][exwm]] and [[https://awesomewm.org/][awesome]] as my window managers. When doing a lot of
 coding and similar stuff I tend to use exwm as I will spend most of my
 time in emacs anyway.
-
