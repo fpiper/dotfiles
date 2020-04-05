@@ -61,6 +61,6 @@ lon=9.732010
 
 ** Symlink
 
-   #+BEGIN_SRC sh :tangle no
-   ln -sf $(pwd)/tangle/redshift.conf ~/.config/
+   #+BEGIN_SRC sh :tangle tangle/symlink.sh :shebang "#!/bin/bash"
+   ln -siv $(pwd)/tangle/redshift.conf ~/.config/
    #+END_SRC
