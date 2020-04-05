@@ -1,8 +1,8 @@
 #+PROPERTY: header-args:conf :tangle tangle/gpg-agent.conf :comments org
 
-#+BEGIN_SRC sh :tangle no :results silent
-ln -sf $(pwd)/tangle/gpg-agent.conf ~/.gnupg/gpg-agent.conf
-ln -sf $(pwd)/tangle/sshcontrol ~/.gnupg/sshcontrol
+#+BEGIN_SRC sh :tangle tangle/symlink.sh :results silent :shebang "#!/bin/bash"
+ln -siv $(pwd)/tangle/gpg-agent.conf ~/.gnupg/gpg-agent.conf
+ln -siv $(pwd)/tangle/sshcontrol ~/.gnupg/sshcontrol
 #+END_SRC
 
 
