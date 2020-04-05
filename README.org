@@ -3,9 +3,6 @@ The config files are organized in emacs org files. They are tangled
 and symlinked to the appropriate directories.
 
 [[file:emacs-init.org::*tangle%20dotfiles][A hook]] tangles all files automatically on each save.
-~emacs-init.org~ is special and not automatically tangled. The >100 src
-blocks make tangling take several seconds and ~org-babel-load-file~ in
-~init.el~ tangles the init org file on each emacs start anyway.
 
 The symlinks can be created by manually running the appropriate src
 block in each configuration file. For an automated solution see below.
