@@ -2,8 +2,8 @@
 #+PROPERTY: header-args:gnuplot :tangle tangle/.gnuplot :eval query
 * Symlink
 First create a symlink to the desired config location.
-#+begin_src shell :results silent
-ln -s $(pwd)/tangle/.gnuplot ~/
+#+begin_src shell :results silent :tangle tangle/symlink.sh :shebang "#!/bin/bash"
+ln -siv $(pwd)/tangle/.gnuplot ~/
 #+end_src
 * Main configuration
 #+begin_src gnuplot
