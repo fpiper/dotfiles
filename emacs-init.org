@@ -3097,6 +3097,12 @@ For now I use this bad code.
       (goto-char (point-max))
       (or (bolp) (newline)))))
 #+END_SRC
+** Footnote Mode
+#+begin_src emacs-lisp
+(use-package footnote
+  :custom
+  (footnote-section-tag ""))
+#+end_src
 ** BBDB
 #+begin_src emacs-lisp
 (use-package bbdb
