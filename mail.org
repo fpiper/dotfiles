@@ -462,11 +462,10 @@ See [[id:1e1d7ae0-3e88-4e14-b67f-72c6be66e565][emacs init file]].
 Finally symbolic links to the desired locations are created for all
 the tangled files.
 
-#+BEGIN_SRC shell :tangle no
-path=$(pwd)/tangle
-ln -sf $path/.mbsyncrc ~/
-ln -sf $path/afew.config ~/.config/afew/config
-ln -sf $path/.notmuch-config ~/
-ln -sf $path/.msmtprc ~/
-ln -sf $path/checkmail.sh ~/
+#+BEGIN_SRC shell :tangle tangle/symlink.sh :shebang "#!/bin/bash" :shebang "#!/bin/bash"
+ln -siv $(pwd)/tangle/.mbsyncrc ~/
+ln -siv $(pwd)/tangle/afew.config ~/.config/afew/config
+ln -siv $(pwd)/tangle/.notmuch-config ~/
+ln -siv $(pwd)/tangle/.msmtprc ~/
+ln -siv $(pwd)/tangle/checkmail.sh ~/
 #+END_SRC
