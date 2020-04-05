@@ -1,7 +1,7 @@
 Tangle this to rc.lua for awesome to use it.
 
-#+BEGIN_SRC shell :results silent
-ln -s $(pwd)/tangle/rc.lua ~/.config/awesome/
+#+BEGIN_SRC shell :results silent :tangle tangle/symlink.sh :shebang "#!/bin/bash"
+ln -siv $(pwd)/tangle/rc.lua ~/.config/awesome/
 #+END_SRC
 * External packages
 I make use of these external awesome libraries/packages
