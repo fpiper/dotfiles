@@ -3209,11 +3209,19 @@ _q_ quit
   ("c" org-table-toggle-coordinate-overlays :color blue)
   ("q" nil :color blue))
 
+(defun fpi/org-babel-src-mode-hydra ()
+  "Launch a hydra specific to the src language of the current
+  babel code block if defined."
+  (interactive)
+  (let* ((elem (org-element-context))
+         (lang (plist-get (cadr elem) :language)))
+    (pcase lang
+      ("bibtex" (org-ref-bibtex-hydra/body)))))
 (defhydra hydra-babel-helper (:color pink :hint nil)
   "
 org babel src block helper functions
 _n_ next       _i_ info           _I_ insert header
-_p_ prev       _c_ check
+_p_ prev       _c_ check          _m_ ode hydra
 _h_ goto head  _E_ expand
 ^ ^            _s_ split
 _q_ quit       _r_ remove result  _e_ examplify region
@@ -3229,6 +3237,7 @@ _q_ quit       _r_ remove result  _e_ examplify region
   ("e" org-babel-examplify-region :color blue)
   ("r" org-babel-remove-result :color blue)
   ("h" org-babel-goto-src-block-head)
+  ("m" fpi/org-babel-src-mode-hydra :color blue)
   ("q" nil :color blue))
 
 
