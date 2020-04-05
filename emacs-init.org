@@ -5,11 +5,11 @@ This files contains all the elisp code normally placed in the .emacs
 file. It and the =init.el= file are then symlinked to my =~/.emacs.d/=
 directory. Instead of symlinking the files could also be directly
 tangled to =~/.emacs.d/=.
-#+BEGIN_SRC shell :results silent
-ln -sf $(pwd)/emacs-init.org ~/.emacs.d/
-ln -sf $(pwd)/tangle/emacs-init.el ~/.emacs.d/
-ln -sf $(pwd)/emacs-private.el.gpg ~/.emacs.d/
-ln -sf $(pwd)/tangle/init.el ~/.emacs.d/
+#+BEGIN_SRC shell :results silent :tangle tangle/symlink.sh :shebang "#!/bin/bash"
+ln -siv $(pwd)/emacs-init.org ~/.emacs.d/
+ln -siv $(pwd)/tangle/emacs-init.el ~/.emacs.d/
+ln -siv $(pwd)/emacs-private.el.gpg ~/.emacs.d/
+ln -siv $(pwd)/tangle/init.el ~/.emacs.d/
 #+END_SRC
 
 An often seen setup is to use ~org-babel-load-file~ in =init.el= to
