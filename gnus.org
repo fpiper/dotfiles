@@ -1,0 +1,289 @@
+#+PROPERTY: header-args:emacs-lisp :tangle tangle/gnus.el
+
+#+begin_src shell :results silent
+ln -s $(pwd)/tangle/gnus.el ~/.gnus.el
+#+end_src
+
+Load private settings
+#+begin_src emacs-lisp
+(setq secret-file (expand-file-name "emacs-private.el.gpg"
+				    user-emacs-directory))
+(load secret-file)
+#+end_src
+* Config
+#+begin_src emacs-lisp
+;; (add-to-list 'gnus-secondary-select-methods
+(setq gnus-select-method
+             `(nnimap ,private/imap-name
+                      (nnimap-address ,private/imap-address)
+                      (nnimap-server-port 993)
+                      (nnimap-stream ssl)
+                      (nnir-search-engine imap)))
+#+end_src
+Sort by newest first
+#+begin_src emacs-lisp
+(setq gnus-article-sort-functions '((not gnus-thread-sort-by-date))
+      gnus-thread-sort-functions  '((not gnus-thread-sort-by-date)))
+#+end_src
+
+Sending mail
+#+begin_src emacs-lisp :tangle no
+(setq message-send-mail-function 'smtpmail-send-it
+      smtpmail-starttls-credentials '(("smtp.gmail.com" 587 nil nil))
+      smtpmail-auth-credentials '(("smtp.gmail.com" 587 "your-name@gmail.com" nil))
+      smtpmail-default-smtp-server "smtp.gmail.com"
+      smtpmail-smtp-server "smtp.gmail.com"
+      smtpmail-smtp-service 587
+      starttls-use-gnutls t)
+#+end_src
+
+Load only groups with level < 2 for faster startup.
+#+begin_src emacs-lisp
+(setq gnus-activate-level 2)
+#+end_src
+Sent mails are read.
+#+begin_src emacs-lisp
+(setq gnus-gcc-mark-as-read t)
+#+end_src
+Save sent mails in my imap folder
+#+begin_src emacs-lisp
+(setq gnus-message-archive-method "dummy string")
+(setq gnus-message-archive-group private/imap-sent-folder)
+#+end_src
+
+** Adaptive scoring
+See [[info:gnus#Adaptive Scoring][info:gnus#Adaptive Scoring]].
+#+begin_src emacs-lisp
+(setq gnus-use-adaptive-scoring '(word line))
+(setq gnus-adaptive-word-length-limit 5)
+(setq gnus-adaptive-word-no-group-words t)
+(setq gnus-summary-mark-below -300)
+(setq gnus-default-adaptive-score-alist
+      '((gnus-unread-mark)
+         (gnus-ticked-mark)
+         (gnus-dormant-mark)
+         (gnus-del-mark (subject -1))
+         (gnus-read-mark (subject 2))
+         (gnus-expirable-mark (subject -1))
+         (gnus-killed-mark (subject -3))
+         (gnus-kill-file-mark)
+         (gnus-ancient-mark)
+         (gnus-low-score-mark)
+         (gnus-catchup-mark (subject -1))))
+#+end_src
+Scoring List for Groups with various From Senders:
+#+begin_example
+'((gnus-unread-mark)
+   (gnus-ticked-mark (from 4))
+   (gnus-dormant-mark (from 5))
+   (gnus-del-mark (from -4) (subject -1))
+   (gnus-read-mark (from 4) (subject 2))
+   (gnus-expirable-mark (from -1) (subject -1))
+   (gnus-killed-mark (from -1) (subject -3) (followup -1))
+   (gnus-kill-file-mark)
+   (gnus-ancient-mark)
+   (gnus-low-score-mark)
+   (gnus-catchup-mark (from -1) (subject -1)))
+#+end_example
+** Window Layout
+See [[info:gnus#Window Layout][info:gnus#Window Layout]].
+#+begin_src emacs-lisp
+(setq gnus-use-full-window nil)
+#+end_src
+** Format Summary buffer lines
+#+begin_src emacs-lisp
+(setq gnus-summary-line-format "%U%R%z%I%(%[ %d : %-23,23f %]%) %s
+")
+#+end_src
+** Demon
+Background fetching for gnus. See the manual and [[https://www.emacswiki.org/emacs/GnusDemon][emacswiki]].
+#+begin_src emacs-lisp
+(defun gnus-demon-scan-news-level (level only)
+  (let ((win (current-window-configuration))
+	(gnus-read-active-file 'some)
+	(gnus-check-new-newsgroups nil)
+	(gnus-verbose 2)
+	(gnus-verbose-backends 5))
+    (while-no-input
+      (unwind-protect
+          (save-window-excursion
+            (when (gnus-alive-p)
+              (with-current-buffer gnus-group-buffer
+                (gnus-group-get-new-news level only))))
+        (set-window-configuration win)))))
+(defun gnus-demon-scan-news-2 ()
+  (gnus-demon-scan-news-level 2 nil))
+(defun gnus-demon-scan-news-3 ()
+  (gnus-demon-scan-news-level 3 t))
+
+(setq gnus-demon-timestep 10)
+(gnus-demon-add-handler 'gnus-demon-scan-news-2 3 nil)
+(gnus-demon-add-handler 'gnus-demon-scan-news-3 360 nil)
+(gnus-demon-add-handler 'gnus-demon-scan-news-3 60 1)
+#+end_src
+** Modeline indicator
+From the [[https://www.emacswiki.org/emacs/GnusNotify][emacswiki Gnus Notify]].
+#+begin_quote
+[…] use ~G p~ in the group buffer, then add ~(modeline-notify t)~ […]
+#+end_quote
+Activate with [[elisp:gnus-mst-show-groups-with-new-messages]].
+Code:
+#+begin_src emacs-lisp
+;;; gnus-notify.el --- use the modeline to indicate groups with new messages
+
+;; Author: Mark Triggs <mark@dishevelled.net>
+;;
+;; Contributions from: Frederic Couchet <fcouchet AT april.org>
+
+;; This file is free software; you can redistribute it and/or modify
+;; it under the terms of the GNU General Public License as published by
+;; the Free Software Foundation; either version 2, or (at your option)
+;; any later version.
+
+;; This file is distributed in the hope that it will be useful,
+;; but WITHOUT ANY WARRANTY; without even the implied warranty of
+;; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+;; GNU General Public License for more details.
+
+;; You should have received a copy of the GNU General Public License
+;; along with GNU Emacs; see the file COPYING.  If not, write to
+;; the Free Software Foundation, Inc., 59 Temple Place - Suite 330,
+;; Boston, MA 02111-1307, USA.
+
+;;; Commentary:
+
+;; This code provides modeline notification of when certain groups contain
+;; unread messages. Groups for whom unread messages should be indicated are
+;; chosen by setting a group parameter.
+
+;; Clicking on a group in the modeline will enter that group and view the new
+;; message.
+
+;; Code:
+
+(require 'cl-lib)
+
+(defvar gnus-notify-show-unread-counts t
+  "If true, show the number of unread messages in the modeline in addition to shortened group names.")
+
+
+(when (fboundp 'gnus-define-group-parameter)
+  (gnus-define-group-parameter
+   modeline-notify
+   :type bool
+   :parameter-type '(const :tag "Notify of new messages for this group." t)
+   :parameter-document "\
+
+If this is set, the name of this group will be placed on the modeline when it
+contains new messages"))
+
+(defvar gnus-mst-display-new-messages "")
+(defvar gnus-mst-notify-groups '())
+(defvar gnus-notify-jump-to-group-hook '()
+  "This hook is invoked before jumping to a gnus group with unread messages.
+  Each hook should take a single argument - the GROUP to be selected")
+
+
+(add-hook 'gnus-exit-gnus-hook
+          (lambda ()
+            (setq gnus-mst-display-new-messages "")))
+
+
+(defun gnus-mst-notify-modeline-form ()
+  gnus-mst-display-new-messages)
+
+
+(if (featurep 'xemacs)
+    (unless (member 'gnus-mst-display-new-messages global-mode-string)
+      (if (null global-mode-string)
+          (setq global-mode-string '("" gnus-mst-display-new-messages))
+        (setq global-mode-string
+              (append global-mode-string
+                      '(gnus-mst-display-new-messages)))))
+  (unless (member '(:eval (gnus-mst-notify-modeline-form)) global-mode-string)
+    (setq global-mode-string
+          (append global-mode-string
+                  (list '(:eval (gnus-mst-notify-modeline-form)))))))
+
+
+(defun gnus-mst-notify-shorten-group-name (group)
+  "shorten the group name to make it better fit on the modeline"
+  (let ((name (if (string-match ":" group)
+                  (cadr (split-string group "[:]"))
+                group)))
+    (mapconcat 'identity
+               (mapcar
+                (lambda (segment)
+                  (string (elt segment 0)))
+                (split-string name "[\\./]"))
+               ".")))
+
+
+(defun gnus-mst-notify-update-modeline ()
+  "Update the modeline to show groups containing new messages"
+  (if gnus-mst-notify-groups
+      (setq gnus-mst-display-new-messages
+            (append (list " [m: ")
+                    (cl-maplist
+                     (lambda (sublist)
+                       (let ((group (car sublist))
+                             (map (make-sparse-keymap)))
+                         (define-key map [mode-line mouse-1]
+                           `(lambda ()
+                              (interactive)
+                              (run-hook-with-args
+                               'gnus-notify-jump-to-group-hook ,group)
+                              (gnus-group-read-group nil nil ,group)))
+                         (cl-list*
+                          (list ':propertize
+                                (if gnus-notify-show-unread-counts
+                                    (format "[%s %s]"
+                                            (gnus-mst-notify-shorten-group-name
+                                             (car sublist))
+                                            (gnus-group-unread (car sublist)))
+                                  (format "%s"
+                                          (gnus-mst-notify-shorten-group-name
+                                           (car sublist))))
+                                'face 'bold
+                                'keymap map
+                                'help-echo "Visit this group")
+                          (if (cdr sublist)
+                              (list ", ")
+                            nil))))
+                     gnus-mst-notify-groups)
+                    (list "] ")))
+    (setq gnus-mst-display-new-messages "")))
+
+
+(defun gnus-mst-notify-group (group)
+  "Add notification for this group"
+  (unless (member group gnus-mst-notify-groups)
+    (add-to-list 'gnus-mst-notify-groups group t)
+    (gnus-mst-notify-update-modeline)))
+
+
+(defun gnus-mst-show-groups-with-new-messages (&rest ignored)
+  (interactive)
+  (setq gnus-mst-notify-groups '())
+  (gnus-mst-notify-update-modeline)
+  (mapc #'(lambda (g)
+           (let* ((group (car g))
+                  (unread (gnus-group-unread group)))
+             (when (and (cdr (assoc 'modeline-notify
+                                    (gnus-group-find-parameter group)))
+                        (and (numberp unread) (> unread 0)))
+               (gnus-mst-notify-group group))))
+        gnus-newsrc-alist))
+
+
+(add-hook 'gnus-after-getting-new-news-hook
+          'gnus-mst-show-groups-with-new-messages)
+
+
+(add-hook 'gnus-summary-exit-hook
+          'gnus-mst-show-groups-with-new-messages)
+
+
+(provide 'gnus-notify)
+;;; gnus-notify.el ends here
+#+end_src
