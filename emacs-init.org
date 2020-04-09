@@ -2197,17 +2197,34 @@ A small function to toggle the encryption state of the current entry.
            (org-encrypt-entry))))))
   (define-key fpi/toggle-map "e" #'fpi/org-toggle-crypt-entry))
 #+end_src
-*** org-ref
+*** Reference management
+**** Bibtex
+#+begin_src emacs-lisp
+(use-package bibtex
+  :custom
+  (bibtex-autokey-titlewords 3)
+  (bibtex-autokey-titlewords-stretch 1)
+  (bibtex-autokey-titleword-length 5)
+  :config
+  (bibtex-set-dialect 'BibTeX))
+
+(setq bibtex-completion-bibliography "~/git/projects/zettel/Lit/bib.bib")
+(setq bibtex-completion-notes-path "~/git/projects/zettel/Lit")
+(setq bibtex-completion-notes-extension ".org")
+
+#+end_src
+**** org-ref
 #+begin_src emacs-lisp
 (use-package org-ref
   :ensure t
   :custom
-  (org-ref-bibliography-notes "~/git/projects/personal/bib.org")
+  (org-ref-bibliography-notes nil)
+  (org-ref-notes-function 'org-ref-notes-function-many-files)
+  (org-ref-notes-directory "~/git/projects/zettel/Lit")
   (org-ref-default-bibliography '("~/git/projects/personal/bib.bib"))
-  (org-ref-pdf-directory "~/git/projects/personal/Lit/")
-  :config
-  (bibtex-set-dialect 'BibTeX))
+  (org-ref-pdf-directory "~/git/projects/personal/Lit/"))
 #+end_src
+***** Capturing entries
 I store my bibtex references in an org file together with my notes. In
 addition to saving the meta information in properties using the same
 functions as =doi-utils-doi-to-org-bibtex=, I also store them a second
