@@ -1251,7 +1251,6 @@ of src_shell{getconf "PATH"}. See [[elisp:(describe-variable
 #+end_src
 ** Git
 *** Magit
-
 #+BEGIN_SRC emacs-lisp
 (use-package magit
   :ensure t
@@ -1296,6 +1295,18 @@ Add support for [[https://nvie.com/posts/a-successful-git-branching-model/][gitf
 (use-package magit-gitflow
    :ensure t
    :hook (magit-mode . turn-on-magit-gitflow))
+#+end_src
+*** git-identity
+Found it in this [[https://www.manueluberti.eu/emacs/2020/03/30/lockdown-beam-git-identity/][blog post]] from Manuel Uberti. An easy way to handle multiple git identities.
+
+#+begin_src emacs-lisp
+(use-package git-identity
+  :ensure t
+  :custom
+  (git-identity-verify t)
+  (git-identity-list private/git-identity-list)
+  :config (git-identity-magit-mode 1)
+  :bind (:map magit-status-mode-map ("I" . git-identity-info)))
 #+end_src
 *** diff-hl
 Indicates changed lines in the left fringe. The Hydra can be used to
@@ -1353,7 +1364,6 @@ some safe local variable values.
   (add-to-list 'safe-local-variable-values
                '(git-auto-commit-mode . t)))
 #+end_src
-
 ** Projectile
 
 #+BEGIN_SRC emacs-lisp
