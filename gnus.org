@@ -50,7 +50,10 @@ Save sent mails in my imap folder
 (setq gnus-message-archive-method "dummy string")
 (setq gnus-message-archive-group private/imap-sent-folder)
 #+end_src
-
+Disable indenting a topic. I always do it by accident.
+#+begin_src emacs-lisp
+(define-key gnus-topic-mode-map (kbd "<tab>") nil)
+#+end_src
 ** Adaptive scoring
 See [[info:gnus#Adaptive Scoring][info:gnus#Adaptive Scoring]].
 #+begin_src emacs-lisp
@@ -94,6 +97,12 @@ See [[info:gnus#Window Layout][info:gnus#Window Layout]].
 #+begin_src emacs-lisp
 (setq gnus-summary-line-format "%U%R%z%I%(%[ %d : %-23,23f %]%) %s
 ")
+#+end_src
+** nnreddit
+#+begin_src emacs-lisp
+(use-package nnreddit
+  :ensure t)
+(add-to-list 'gnus-secondary-select-methods '(nnreddit ""))
 #+end_src
 ** Demon
 Background fetching for gnus. See the manual and [[https://www.emacswiki.org/emacs/GnusDemon][emacswiki]].
