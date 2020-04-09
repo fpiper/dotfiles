@@ -50,7 +50,10 @@ Save sent mails in my imap folder
 (setq gnus-message-archive-method "dummy string")
 (setq gnus-message-archive-group private/imap-sent-folder)
 #+end_src
-
+Disable indenting a topic. I always do it by accident.
+#+begin_src emacs-lisp
+(define-key gnus-topic-mode-map (kbd "<tab>") nil)
+#+end_src
 ** Adaptive scoring
 See [[info:gnus#Adaptive Scoring][info:gnus#Adaptive Scoring]].
 #+begin_src emacs-lisp
