@@ -95,6 +95,12 @@ See [[info:gnus#Window Layout][info:gnus#Window Layout]].
 (setq gnus-summary-line-format "%U%R%z%I%(%[ %d : %-23,23f %]%) %s
 ")
 #+end_src
+** nnreddit
+#+begin_src emacs-lisp
+(use-package nnreddit
+  :ensure t)
+(add-to-list 'gnus-secondary-select-methods '(nnreddit ""))
+#+end_src
 ** Demon
 Background fetching for gnus. See the manual and [[https://www.emacswiki.org/emacs/GnusDemon][emacswiki]].
 #+begin_src emacs-lisp
