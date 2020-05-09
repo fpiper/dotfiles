@@ -320,7 +320,8 @@ The above macro can be used like this.
              :foreground ,bg-white)
     (:family ,sans-mono-font
              :background ,bg-white
-             :foreground ,bg-dark))
+             :foreground ,bg-dark
+             :height 75))
   (variable-pitch
    (:family ,sans-font)
    (:family ,et-font
