@@ -85,6 +85,11 @@ Show buttons for result of signature verification & for multipart mails. To show
 #+begin_src emacs-lisp
 (setq gnus-buttonized-mime-types '("multipart/signed" "multipart/alternative"))
 #+end_src
+Enable =mail-aliases= and create aliases for all mail adresses if an entry has multiple.
+#+begin_src emacs-lisp
+(add-hook 'message-setup-hook 'bbdb-mail-aliases)
+(setq bbdb-mail-alias 'all)
+#+end_src
 ** Adaptive scoring
 See [[info:gnus#Adaptive Scoring][info:gnus#Adaptive Scoring]].
 #+begin_src emacs-lisp
