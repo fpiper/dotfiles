@@ -14,11 +14,19 @@ Load private settings
 #+begin_src emacs-lisp
 ;; (add-to-list 'gnus-secondary-select-methods
 (setq gnus-select-method
-             `(nnimap ,private/imap-name
-                      (nnimap-address ,private/imap-address)
-                      (nnimap-server-port 993)
-                      (nnimap-stream ssl)
-                      (nnir-search-engine imap)))
+      `(nnimap ,private/imap-name
+               (nnimap-address ,private/imap-address)
+               (nnimap-server-port 993)
+               (nnimap-stream ssl)
+               (nnir-search-engine imap)
+               (nnimap-inbox "INBOX")
+               (nnimap-split-methods 'nnimap-split-fancy)
+               (nnimap-split-fancy
+                (| (: nnmail-split-fancy-with-parent)
+                   ,@private/imap-split-fancy
+                    "INBOX"
+                    ))
+               ))
 #+end_src
 Sort by newest first
 #+begin_src emacs-lisp
@@ -35,6 +43,13 @@ Sending mail
       smtpmail-smtp-server "smtp.gmail.com"
       smtpmail-smtp-service 587
       starttls-use-gnutls t)
+#+end_src
+Setup for fancy mail splitting. Also see the parameters in ~gnus-select-method~.
+#+begin_src emacs-lisp
+(setq nnmail-split-methods 'nnimap-split-fancy)
+
+(setq nnmail-cache-accepted-message-ids t)
+(setq nnmail-message-id-cache-length 10000)
 #+end_src
 
 Load only groups with level < 2 for faster startup.
