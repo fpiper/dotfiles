@@ -73,6 +73,10 @@ Disable indenting a topic. I always do it by accident.
 #+begin_src emacs-lisp
 (define-key gnus-topic-mode-map (kbd "<tab>") nil)
 #+end_src
+Enable message delaying (scheduling)
+#+begin_src emacs-lisp
+(gnus-delay-initialize)
+#+end_src
 ** Adaptive scoring
 See [[info:gnus#Adaptive Scoring][info:gnus#Adaptive Scoring]].
 #+begin_src emacs-lisp
