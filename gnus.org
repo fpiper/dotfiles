@@ -164,11 +164,16 @@ Background fetching for gnus. See the manual and [[https://www.emacswiki.org/ema
   (gnus-demon-scan-news-level 2 nil))
 (defun gnus-demon-scan-news-3 ()
   (gnus-demon-scan-news-level 3 t))
+(defun gnus-demon-scan-news-4 ()
+  (gnus-demon-scan-news-level 4 t))
+(defun gnus-demon-scan-news-5 ()
+  (gnus-demon-scan-news-level 5 t))
 
 (setq gnus-demon-timestep 10)
 (gnus-demon-add-handler 'gnus-demon-scan-news-2 3 nil)
-(gnus-demon-add-handler 'gnus-demon-scan-news-3 360 nil)
-(gnus-demon-add-handler 'gnus-demon-scan-news-3 60 1)
+(gnus-demon-add-handler 'gnus-demon-scan-news-3 60 t)
+(gnus-demon-add-handler 'gnus-demon-scan-news-4 130 1)
+(gnus-demon-add-handler 'gnus-demon-scan-news-5 140 1)
 #+end_src
 ** Modeline indicator
 From the [[https://www.emacswiki.org/emacs/GnusNotify][emacswiki Gnus Notify]].
