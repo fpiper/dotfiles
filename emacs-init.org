@@ -1930,6 +1930,22 @@ Use imagemagick and standalone class for latex preview.
 #+begin_src emacs-lisp
 (use-package ol-bbdb)
 #+end_src
+*** prettify symbols
+Set some prettify symbols for org mode.
+#+begin_src emacs-lisp
+(defun fpi/add-org-prettify-symbols ()
+  "Beautify Org Checkbox Symbol"
+  (setq prettify-symbols-alist
+        (append prettify-symbols-alist
+                '(("#+BEGIN_SRC" . ?»)
+                  ("#+END_SRC" . ?«)
+                  ("#+begin_src" . ?»)
+                  ("#+end_src" . ?«)
+                  ("[ ]" .  ?☐)
+                  ("[X]" . ?☑ )
+                  ("[-]" . ?❍ )))))
+(add-hook 'org-mode-hook 'fpi/add-org-prettify-symbols)
+#+end_src
 *** org-roam
 #+begin_src emacs-lisp
 (use-package org-roam
