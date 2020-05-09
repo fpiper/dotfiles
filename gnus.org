@@ -90,6 +90,10 @@ Enable =mail-aliases= and create aliases for all mail adresses if an entry has m
 (add-hook 'message-setup-hook 'bbdb-mail-aliases)
 (setq bbdb-mail-alias 'all)
 #+end_src
+Don't fetch attachments before showing the message text to avoid long load times with big attachments.
+#+begin_src emacs-lisp
+(setq nnimap-fetch-partial-articles "text/")
+#+end_src
 ** Adaptive scoring
 See [[info:gnus#Adaptive Scoring][info:gnus#Adaptive Scoring]].
 #+begin_src emacs-lisp
