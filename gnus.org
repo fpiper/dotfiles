@@ -77,6 +77,14 @@ Enable message delaying (scheduling)
 #+begin_src emacs-lisp
 (gnus-delay-initialize)
 #+end_src
+Verify mail signatures with known protocols.
+#+begin_src emacs-lisp
+(setq mm-verify-option 'known)
+#+end_src
+Show buttons for result of signature verification & for multipart mails. To show the message fully buttonized use =K b= in the summary buffer.
+#+begin_src emacs-lisp
+(setq gnus-buttonized-mime-types '("multipart/signed" "multipart/alternative"))
+#+end_src
 ** Adaptive scoring
 See [[info:gnus#Adaptive Scoring][info:gnus#Adaptive Scoring]].
 #+begin_src emacs-lisp
