@@ -3165,6 +3165,7 @@ For now I use this bad code.
 (bbdb-initialize 'gnus 'message)
 (bbdb-mua-auto-update-init 'gnus 'message)
 
+(setq bbdb-mua-pop-up 'horiz)
 ;; size of the bbdb popup
 (setq bbdb-pop-up-window-size 0.15)
 (setq bbdb-mua-pop-up-window-size 0.15)
