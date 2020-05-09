@@ -1640,7 +1640,9 @@ Hansen's]] configs.
 - Refile Targets :: Use the full outline path so I can distinguish
   headlines with the same name & disable step-wise completion as I
   think from the refile target backwards, not from top-level
-  downwards.
+  downwards. Also include the current file's headings as a refile
+  targets up to a deep level, all agenda files up to a small level and
+  all open org files up to an even smaller level.
 - Drawer for Notes :: Notes go into the =NOTES= drawer. Clocking
   times should stay separate in the =LOGBOOK= drawer.
 - Track state changes :: Notes when an entry is switched to done when
@@ -1696,6 +1698,9 @@ Hansen's]] configs.
      ("omap"      . "http://nominatim.openstreetmap.org/search?q=%s&polygon=1")))
   (org-ellipsis " ")
   (org-refile-use-outline-path 'file)
+  (org-refile-targets '((nil :maxlevel . 8)
+                        (org-agenda-files :maxlevel . 3)
+                        (org-buffer-list :maxlevel . 2)))
   (org-outline-path-complete-in-steps nil)
   (org-log-state-notes-into-drawer "NOTES")
   (org-clock-into-drawer "LOGBOOK")
