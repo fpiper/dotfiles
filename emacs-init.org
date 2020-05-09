@@ -3043,7 +3043,18 @@ I use =msmtp= to send mail.
   (mail-specify-envelope-from t)
   (mail-envelope-from 'header))
 #+end_src
-
+*** MIME
+#+begin_src emacs-lisp
+(use-package mm-decode
+  :config
+  (use-package spice-mode
+    :ensure t)
+  (defun mm-display-spice-inline (handle)
+  "Show an spice mode text from HANDLE inline."
+  (mm-display-inline-fontify handle 'spice-mode))
+  (add-to-list 'mm-inline-media-tests '("application/x-wine-extension-cir" mm-display-spice-inline identity))
+  (add-to-list 'mm-inlined-types "application/x-wine-extension-cir"))
+#+end_src
 *** MUA/Notmuch
 
 After using =mu4e= as my mail user agent for a while I switched to
