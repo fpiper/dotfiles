@@ -28,6 +28,10 @@ Load private settings
                     ))
                ))
 #+end_src
+Add local nntp server
+#+begin_src emacs-lisp
+(add-to-list 'gnus-secondary-select-methods '(nntp "localhost" 4321))
+#+end_src
 Sort by newest first
 #+begin_src emacs-lisp
 (setq gnus-article-sort-functions '((not gnus-thread-sort-by-date))
