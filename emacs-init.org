@@ -1986,6 +1986,14 @@ Set some prettify symbols for org mode.
               :map org-mode-map
               (("C-c n i" . org-roam-insert))))
 #+end_src
+**** org-roam-bibtex
+#+begin_src emacs-lisp :tangle no
+(use-package org-roam-bibtex
+  :ensure t
+  :hook (org-roam-mode . org-roam-bibtex-mode)
+  :bind (:map org-mode-map
+         (("C-c n a" . orb-note-actions))))
+#+end_src
 *** Org-edna
 =Org-edna= is a great tool to manage =TODO= dependencies. I mainly use
 it to mark tasks as =NEXT= after switching another task to =DONE=. The
