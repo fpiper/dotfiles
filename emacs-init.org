@@ -1501,6 +1501,17 @@ over =windmove=, as it does not interfere with org keybindings.
               ("C-c <left>" . winner-hydra/winner-undo)
               ("C-c <right>" . winner-hydra/winner-redo)))
 #+end_src
+** File encryption
+=epa= handles en-/decryption with =gnupg=. Setting ~'loopback~ pinentry mode will ask for the key passphrase in the emacs minibuffer. For this the =pinentry= package is needed, as well as setting =allow-emacs-pinentry= in the =gnupg= configuration.
+
+#+begin_src emacs-lisp
+(use-package epa
+  :custom (epa-pinentry-mode 'loopback))
+(use-package pinentry
+  :ensure t
+  :config (pinentry-start)
+  :after epa)
+#+end_src
 * Applications and utilities
 ** Calendar
 Some basic calendar options for date format und location to provide
