@@ -1022,7 +1022,7 @@ are for now mostly copied from [[https://gitlab.com/protesilaos/dotemacs/][Prote
                                                   (setq-local max-mini-window-height 1))))
 #+END_SRC
 
-#+BEGIN_SRC emacs-lisp
+#+BEGIN_SRC emacs-lisp :tangle no
 (use-package ido-completing-read+
   :ensure t
   :after ido
