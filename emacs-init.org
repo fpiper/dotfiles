@@ -291,6 +291,9 @@ The above macro can be used like this.
   (shade-white        "#efeae9")
   (fg-light           "#655370")
   (dark-cyan          "#008b8b")
+  (light-green        "#4f774f") ;;#3f773f
+  (dark-green         "#1c661c")
+  (dark-green2        "#002000")
   (region-dark        "#2d2e2e")
   (region             "#39393d")
   (slate              "#8FA1B3")
@@ -597,16 +600,16 @@ The above macro can be used like this.
    nil)
   (org-scheduled
    (:foreground ,gray)
-   nil)
+   (:foreground ,light-green))
   (org-upcoming-deadline
    (:foreground ,keyword)
    nil)
   (org-scheduled-today
    (:foreground ,fg-white)
-   nil)
+   (:foreground ,dark-green))
   (org-scheduled-previously
    (:foreground ,slate)
-   nil)
+   (:foreground ,dark-green2))
   (org-agenda-done
    (:inherit nil
              :foreground ,doc)
