@@ -1912,6 +1912,11 @@ Use imagemagick and standalone class for latex preview.
 (use-package org-num
   :delight)
 #+end_src
+*** Column view
+#+begin_src emacs-lisp
+(setq org-columns-default-format
+      "%50ITEM(Task) %5Effort(Effort){:} %5CLOCKSUM %3PRIORITY %20DEADLINE %20SCHEDULED %20TIMESTAMP %TODO %CATEGORY %TAGS")
+#+end_src
 *** org-caldav
 #+begin_src emacs-lisp
 (use-package org-caldav
