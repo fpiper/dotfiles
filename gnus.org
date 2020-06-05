@@ -95,7 +95,7 @@ Don't fetch attachments before showing the message text to avoid long load times
 (setq nnimap-fetch-partial-articles "text/")
 #+end_src
 ** Adaptive scoring
-See [[info:gnus#Adaptive Scoring][info:gnus#Adaptive Scoring]].
+See [[info:gnus#Adaptive Scoring][info:gnus#Adaptive Scoring]] and this [[https://notes.whatthefuck.computer/1417593600.0-note.html][blog post]] by Ryan Rix.
 #+begin_src emacs-lisp
 (setq gnus-use-adaptive-scoring '(word line))
 (setq gnus-adaptive-word-length-limit 5)
@@ -103,16 +103,22 @@ See [[info:gnus#Adaptive Scoring][info:gnus#Adaptive Scoring]].
 (setq gnus-summary-mark-below -300)
 (setq gnus-default-adaptive-score-alist
       '((gnus-unread-mark)
-         (gnus-ticked-mark)
-         (gnus-dormant-mark)
-         (gnus-del-mark (subject -1))
-         (gnus-read-mark (subject 2))
-         (gnus-expirable-mark (subject -1))
-         (gnus-killed-mark (subject -3))
-         (gnus-kill-file-mark)
-         (gnus-ancient-mark)
-         (gnus-low-score-mark)
-         (gnus-catchup-mark (subject -1))))
+        (gnus-ticked-mark)
+        (gnus-dormant-mark)
+        (gnus-del-mark (subject -50))
+        (gnus-read-mark (from 5) (subject 100))
+        (gnus-expirable-mark)
+        (gnus-killed-mark (subject -300))
+        (gnus-kill-file-mark)
+        (gnus-ancient-mark)
+        (gnus-low-score-mark)
+        (gnus-catchup-mark (subject -40))))
+(setq gnus-default-adaptive-word-score-alist
+      `((,gnus-read-mark . 5)
+        (,gnus-catchup-mark . -5)
+        (,gnus-killed-mark . -15)
+        (,gnus-del-mark . -10)))
+(setq gnus-adaptive-word-score-alist gnus-default-adaptive-word-score-alist)
 #+end_src
 Scoring List for Groups with various From Senders:
 #+begin_example
@@ -131,6 +137,13 @@ Scoring List for Groups with various From Senders:
 To ensure filenames compatible with Windows and stuff:
 #+begin_src emacs-lisp
 (setq nnheader-file-name-translation-alist '((?: . ?_) (?[ . ?_) (?] . ?_)))
+#+end_src
+
+Slow scoring decay prevents huge scores from building up. Only run on =.ADAPT= score files and decay each scoring rule by 1 point or 1%, whichever is larger.
+#+begin_src emacs-lisp
+(setq gnus-decay-scores "\\.ADAPT\\'"
+      gnus-score-decay-constant 1
+      gnus-score-decay-scale 0.01)
 #+end_src
 ** Window Layout
 See [[info:gnus#Window Layout][info:gnus#Window Layout]].
