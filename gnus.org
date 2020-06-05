@@ -57,7 +57,35 @@ Sort by newest first
 (setq gnus-article-sort-functions '((not gnus-thread-sort-by-date))
       gnus-thread-sort-functions  '((not gnus-thread-sort-by-date)))
 #+end_src
-
+Gathering loose threads, whose parent is currently not displayed. I find the default ~'adopt~ to be too confusing.
+#+begin_src emacs-lisp
+(setq gnus-summary-make-false-root 'dummy)
+(setq gnus-summary-dummy-line-format "  %(:                                    :%) %S
+")
+(setq gnus-summary-make-false-root-always t)
+#+end_src
+Also try to connect threads by guessing which articles are missing
+#+begin_src emacs-lisp
+(setq gnus-fetch-old-headers nil)
+(setq gnus-build-sparse-threads 'more)
+#+end_src
+Better thread display (from [[https://www.emacswiki.org/emacs/GnusFormatting][emacswiki/GnusFormatting)]].
+#+begin_src emacs-lisp
+(setq
+     gnus-summary-line-format "%U%R%z %(%&user-date;  %-15,15f  %B%s%)\n"
+     gnus-user-date-format-alist '((t . "%Y-%m-%d %H:%M"))
+     gnus-summary-thread-gathering-function 'gnus-gather-threads-by-references
+     gnus-sum-thread-tree-false-root ""
+     gnus-sum-thread-tree-indent " "
+     gnus-sum-thread-tree-leaf-with-other "├► "
+     gnus-sum-thread-tree-root ""
+     gnus-sum-thread-tree-single-leaf "╰► "
+     gnus-sum-thread-tree-vertical "│")
+#+end_src
+Unicode reply symbol
+#+begin_src emacs-lisp
+(setq gnus-summary-to-prefix "→ ")
+#+end_src
 Sending mail
 #+begin_src emacs-lisp :tangle no
 (setq message-send-mail-function 'smtpmail-send-it
@@ -91,7 +119,33 @@ Save sent mails in my imap folder
 #+end_src
 Disable indenting a topic. I always do it by accident.
 #+begin_src emacs-lisp
-(define-key gnus-topic-mode-map (kbd "<tab>") nil)
+(use-package gnus-topic
+  :config
+  (defun fpi/gnus-topic-toggle-topic ()
+    "Toggle display of the topic."
+    (interactive)
+    (when (gnus-group-topic-p)
+      (if (equal 'visible
+                 (nth 1 (cadr (gnus-topic-find-topology (gnus-current-topic)))))
+          (gnus-topic-hide-topic)
+        (gnus-topic-show-topic))))
+  (define-key gnus-topic-mode-map (kbd "<tab>") 'fpi/gnus-topic-toggle-topic)
+  (define-key gnus-topic-mode-map (kbd "TAB") 'fpi/gnus-topic-toggle-topic))
+#+end_src
+Function to toggle display of group levels in the group buffer.
+#+begin_src emacs-lisp
+(defvar gnus-group-line-format-wo-levels nil)
+(defun fpi/gnus-group-toggle-levels ()
+  (interactive)
+  (if gnus-group-line-format-wo-levels
+      (setq gnus-group-line-format gnus-group-line-format-wo-levels
+            gnus-group-line-format-wo-levels nil)
+    (setq gnus-group-line-format-wo-levels gnus-group-line-format
+          gnus-group-line-format (concat "[%L] " gnus-group-line-format)))
+  ;; Hack to update display
+  (gnus-group-get-new-news 0))
+(define-key gnus-topic-mode-map (kbd "T L") 'fpi/gnus-group-toggle-levels)
+#+end_src
 #+end_src
 Enable message delaying (scheduling)
 #+begin_src emacs-lisp
