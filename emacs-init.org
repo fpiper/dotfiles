@@ -1309,8 +1309,9 @@ Found it in this [[https://www.manueluberti.eu/emacs/2020/03/30/lockdown-beam-gi
   :custom
   (git-identity-verify t)
   (git-identity-list private/git-identity-list)
-  :config (git-identity-magit-mode 1)
   :bind (:map magit-status-mode-map ("I" . git-identity-info)))
+(use-package git-identity-magit
+  :config (git-identity-magit-mode 1))
 #+end_src
 *** diff-hl
 Indicates changed lines in the left fringe. The Hydra can be used to
