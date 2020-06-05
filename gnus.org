@@ -175,7 +175,11 @@ Enable =mail-aliases= and create aliases for all mail adresses if an entry has m
 #+end_src
 Don't fetch attachments before showing the message text to avoid long load times with big attachments.
 #+begin_src emacs-lisp
-(setq nnimap-fetch-partial-articles "text/")
+(setq nnimap-fetch-partial-articles "\\(text/\\|signature\\)")
+#+end_src
+Workaround for bug with ~gnus-cloud-method~ and ~custom-variable-recalc-variable~ upon reloading the =spacemacs-*= theme.
+#+begin_src emacs-lisp
+(setq server "nnimap:imsmail")
 #+end_src
 ** Adaptive scoring
 See [[info:gnus#Adaptive Scoring][info:gnus#Adaptive Scoring]] and this [[https://notes.whatthefuck.computer/1417593600.0-note.html][blog post]] by Ryan Rix.
@@ -235,8 +239,8 @@ See [[info:gnus#Window Layout][info:gnus#Window Layout]].
 #+end_src
 ** Format Summary buffer lines
 #+begin_src emacs-lisp
-(setq gnus-summary-line-format "%U%R%z%I%(%[ %d : %-23,23f %]%) %s
-")
+;; (setq gnus-summary-line-format "%U%R%z%I%(%[ %d : %-23,23f %]%) %s
+;; ")
 #+end_src
 ** nnreddit
 #+begin_src emacs-lisp
