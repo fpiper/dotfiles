@@ -11,22 +11,42 @@ Load private settings
 (load secret-file)
 #+end_src
 * Config
-#+begin_src emacs-lisp
-;; (add-to-list 'gnus-secondary-select-methods
+I use =imap= as my primary server. Setup some generic options:
+#+begin_src emacs-lisp :noweb-ref imap :tangle no
+nnimap ,private/imap-name
+(nnimap-address ,private/imap-address)
+(nnimap-server-port 993)
+(nnimap-stream ssl)
+(nnir-search-engine imap)
+#+end_src
+Only fetch partial articles. This saves time on opening messages with
+large attachments. Load any text based parts and also load any
+signature if the message is signed. Unfortunately to correctly verify
+the signature the full message needs to be loaded, which is why I
+disabled partial fetching for now.
+#+begin_src emacs-lisp :noweb-ref imap :tangle no
+;; (nnimap-fetch-partial-articles "\\(text/\\|signature\\)")
+#+end_src
+Set my default inbox folder. This is the folder mail is split out of.
+#+begin_src emacs-lisp :noweb-ref imap :tangle no
+(nnimap-inbox "INBOX")
+#+end_src
+Use fancy splitting and setup splitting rules. See [[info:gnus#Fancy Mail Splitting][info:gnus#Fancy Mail Splitting]] for details.
+#+begin_src emacs-lisp :noweb-ref imap :tangle no
+(nnimap-split-methods nnimap-split-fancy)
+(nnimap-split-fancy
+ (| (: nnmail-split-fancy-with-parent)
+    ,@private/imap-split-fancy
+    "INBOX"
+    ))
+#+end_src
+
+Noweb the primary server settings together.
+#+begin_src emacs-lisp :noweb yes
 (setq gnus-select-method
-      `(nnimap ,private/imap-name
-               (nnimap-address ,private/imap-address)
-               (nnimap-server-port 993)
-               (nnimap-stream ssl)
-               (nnir-search-engine imap)
-               (nnimap-inbox "INBOX")
-               (nnimap-split-methods 'nnimap-split-fancy)
-               (nnimap-split-fancy
-                (| (: nnmail-split-fancy-with-parent)
-                   ,@private/imap-split-fancy
-                    "INBOX"
-                    ))
-               ))
+      `(
+        <<imap>>
+        ))
 #+end_src
 Add local nntp server
 #+begin_src emacs-lisp
