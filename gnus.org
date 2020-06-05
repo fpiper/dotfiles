@@ -146,6 +146,15 @@ Function to toggle display of group levels in the group buffer.
   (gnus-group-get-new-news 0))
 (define-key gnus-topic-mode-map (kbd "T L") 'fpi/gnus-group-toggle-levels)
 #+end_src
+Enable responding to meeting invites.
+#+begin_src emacs-lisp
+(use-package gnus-icalendar
+  :config
+  (gnus-icalendar-setup)
+  (setq gnus-icalendar-org-capture-file "~/win/Documents/sync/appointments.org")
+  (setq gnus-icalendar-org-capture-headline '("Calendar")) ;;make sure to create Calendar heading first
+  (gnus-icalendar-org-setup)
+  )
 #+end_src
 Enable message delaying (scheduling)
 #+begin_src emacs-lisp
