@@ -1803,8 +1803,9 @@ Switch projects and subprojects from NEXT back to TODO"
   :custom
   (org-export-with-broken-links 'match)
   (org-export-backends '(ascii beamer html icalendar latex man md odt org groff koma-letter)))
-(use-package org-pdfview
-:ensure t)
+(use-package org-pdftools
+  :ensure t
+  :hook (org-load . org-pdftools-setup-link))
 (use-package org-id
   :custom (org-id-link-to-org-use-id 'create-if-interactive-and-no-custom-id))
 (use-package org-clock
