@@ -1821,11 +1821,13 @@ Switch projects and subprojects from NEXT back to TODO"
   (org-src-window-setup 'current-window)
   (org-src-fontify-natively t)
   (org-src-tab-acts-natively t)
-  (org-edit-src-content-indentation 0)
-)
+  (org-edit-src-content-indentation 0))
+(defun fpi/collect-org-directories-recursively (dir)
+  "Return list of all directories which contain .org files of DIR and its subdirectories"
+  (delete-dups (mapcar 'file-name-directory (directory-files-recursively dir "\.org$"))))
 (use-package org-agenda
   :custom
-  (org-agenda-files (quote ("~/s/s.org" "~/sync" "~/.emacs.d/gcal.org" "~/.emacs.d/tr.org" "~/n.org")))
+  (org-agenda-files (fpi/collect-org-directories-recursively "~/sync"))
   (org-deadline-warning-days 14)
   (org-agenda-start-on-weekday nil)
   (org-agenda-span 14)
@@ -1847,7 +1849,7 @@ Switch projects and subprojects from NEXT back to TODO"
   ;; See emacs.christianbaeuerlein.com/my-org-config.html
   (org-agenda-block-separator 9472)
   (org-agenda-custom-commands
-      '(("n" "Agenda and all TODOs"
+      `(("n" "Agenda and all TODOs"
          ((todo "INPROGRESS"
                 ((org-agenda-overriding-header "Inprogress Tasks")))
           (agenda)
@@ -1874,7 +1876,15 @@ Switch projects and subprojects from NEXT back to TODO"
                            ((org-agenda-overriding-header "Things to Watch")
                             (org-agenda-skip-function 'bh/skip-project-tasks)
                             (org-agenda-sorting-strategy
-                             '(todo-state-down effort-up))))))))
+                             '(todo-state-down effort-up))))))
+        ("z" "Todos in org-roam-dir"
+         ((alltodo ""
+                   ((org-agenda-files (fpi/collect-org-directories-recursively org-roam-directory))))))
+        ("c" "Agenda and all todos in current directory"
+         ((agenda ""
+                  ((org-agenda-files (fpi/collect-org-directories-recursively default-directory))))
+          (alltodo ""
+                   ((org-agenda-files (fpi/collect-org-directories-recursively default-directory))))))))
   )
 (use-package ob-core
   :custom
