@@ -11,21 +11,81 @@ Load private settings
 (load secret-file)
 #+end_src
 * Config
-#+begin_src emacs-lisp
-;; (add-to-list 'gnus-secondary-select-methods
+I use =imap= as my primary server. Setup some generic options:
+#+begin_src emacs-lisp :noweb-ref imap :tangle no
+nnimap ,private/imap-name
+(nnimap-address ,private/imap-address)
+(nnimap-server-port 993)
+(nnimap-stream ssl)
+(nnir-search-engine imap)
+#+end_src
+Only fetch partial articles. This saves time on opening messages with
+large attachments. Load any text based parts and also load any
+signature if the message is signed. Unfortunately to correctly verify
+the signature the full message needs to be loaded, which is why I
+disabled partial fetching for now.
+#+begin_src emacs-lisp :noweb-ref imap :tangle no
+;; (nnimap-fetch-partial-articles "\\(text/\\|signature\\)")
+#+end_src
+Set my default inbox folder. This is the folder mail is split out of.
+#+begin_src emacs-lisp :noweb-ref imap :tangle no
+(nnimap-inbox "INBOX")
+#+end_src
+Use fancy splitting and setup splitting rules. See [[info:gnus#Fancy Mail Splitting][info:gnus#Fancy Mail Splitting]] for details.
+#+begin_src emacs-lisp :noweb-ref imap :tangle no
+(nnimap-split-methods nnimap-split-fancy)
+(nnimap-split-fancy
+ (| (: nnmail-split-fancy-with-parent)
+    ,@private/imap-split-fancy
+    "INBOX"
+    ))
+#+end_src
+
+Noweb the primary server settings together.
+#+begin_src emacs-lisp :noweb yes
 (setq gnus-select-method
-             `(nnimap ,private/imap-name
-                      (nnimap-address ,private/imap-address)
-                      (nnimap-server-port 993)
-                      (nnimap-stream ssl)
-                      (nnir-search-engine imap)))
+      `(
+        <<imap>>
+        ))
+#+end_src
+Add local nntp server
+#+begin_src emacs-lisp
+(add-to-list 'gnus-secondary-select-methods '(nntp "localhost" 4321))
 #+end_src
 Sort by newest first
 #+begin_src emacs-lisp
 (setq gnus-article-sort-functions '((not gnus-thread-sort-by-date))
       gnus-thread-sort-functions  '((not gnus-thread-sort-by-date)))
 #+end_src
-
+Gathering loose threads, whose parent is currently not displayed. I find the default ~'adopt~ to be too confusing.
+#+begin_src emacs-lisp
+(setq gnus-summary-make-false-root 'dummy)
+(setq gnus-summary-dummy-line-format "  %(:                                    :%) %S
+")
+(setq gnus-summary-make-false-root-always t)
+#+end_src
+Also try to connect threads by guessing which articles are missing
+#+begin_src emacs-lisp
+(setq gnus-fetch-old-headers nil)
+(setq gnus-build-sparse-threads 'more)
+#+end_src
+Better thread display (from [[https://www.emacswiki.org/emacs/GnusFormatting][emacswiki/GnusFormatting)]].
+#+begin_src emacs-lisp
+(setq
+     gnus-summary-line-format "%U%R%z %(%&user-date;  %-15,15f  %B%s%)\n"
+     gnus-user-date-format-alist '((t . "%Y-%m-%d %H:%M"))
+     gnus-summary-thread-gathering-function 'gnus-gather-threads-by-references
+     gnus-sum-thread-tree-false-root ""
+     gnus-sum-thread-tree-indent " "
+     gnus-sum-thread-tree-leaf-with-other "├► "
+     gnus-sum-thread-tree-root ""
+     gnus-sum-thread-tree-single-leaf "╰► "
+     gnus-sum-thread-tree-vertical "│")
+#+end_src
+Unicode reply symbol
+#+begin_src emacs-lisp
+(setq gnus-summary-to-prefix "→ ")
+#+end_src
 Sending mail
 #+begin_src emacs-lisp :tangle no
 (setq message-send-mail-function 'smtpmail-send-it
@@ -35,6 +95,13 @@ Sending mail
       smtpmail-smtp-server "smtp.gmail.com"
       smtpmail-smtp-service 587
       starttls-use-gnutls t)
+#+end_src
+Setup for fancy mail splitting. Also see the parameters in ~gnus-select-method~.
+#+begin_src emacs-lisp
+(setq nnmail-split-methods 'nnimap-split-fancy)
+
+(setq nnmail-cache-accepted-message-ids t)
+(setq nnmail-message-id-cache-length 10000)
 #+end_src
 
 Load only groups with level < 2 for faster startup.
@@ -52,10 +119,70 @@ Save sent mails in my imap folder
 #+end_src
 Disable indenting a topic. I always do it by accident.
 #+begin_src emacs-lisp
-(define-key gnus-topic-mode-map (kbd "<tab>") nil)
+(use-package gnus-topic
+  :config
+  (defun fpi/gnus-topic-toggle-topic ()
+    "Toggle display of the topic."
+    (interactive)
+    (when (gnus-group-topic-p)
+      (if (equal 'visible
+                 (nth 1 (cadr (gnus-topic-find-topology (gnus-current-topic)))))
+          (gnus-topic-hide-topic)
+        (gnus-topic-show-topic))))
+  (define-key gnus-topic-mode-map (kbd "<tab>") 'fpi/gnus-topic-toggle-topic)
+  (define-key gnus-topic-mode-map (kbd "TAB") 'fpi/gnus-topic-toggle-topic))
+#+end_src
+Function to toggle display of group levels in the group buffer.
+#+begin_src emacs-lisp
+(defvar gnus-group-line-format-wo-levels nil)
+(defun fpi/gnus-group-toggle-levels ()
+  (interactive)
+  (if gnus-group-line-format-wo-levels
+      (setq gnus-group-line-format gnus-group-line-format-wo-levels
+            gnus-group-line-format-wo-levels nil)
+    (setq gnus-group-line-format-wo-levels gnus-group-line-format
+          gnus-group-line-format (concat "[%L] " gnus-group-line-format)))
+  ;; Hack to update display
+  (gnus-group-get-new-news 0))
+(define-key gnus-topic-mode-map (kbd "T L") 'fpi/gnus-group-toggle-levels)
+#+end_src
+Enable responding to meeting invites.
+#+begin_src emacs-lisp
+(use-package gnus-icalendar
+  :config
+  (gnus-icalendar-setup)
+  (setq gnus-icalendar-org-capture-file "~/win/Documents/sync/appointments.org")
+  (setq gnus-icalendar-org-capture-headline '("Calendar")) ;;make sure to create Calendar heading first
+  (gnus-icalendar-org-setup)
+  )
+#+end_src
+Enable message delaying (scheduling)
+#+begin_src emacs-lisp
+(gnus-delay-initialize)
+#+end_src
+Verify mail signatures with known protocols.
+#+begin_src emacs-lisp
+(setq mm-verify-option 'known)
+#+end_src
+Show buttons for result of signature verification & for multipart mails. To show the message fully buttonized use =K b= in the summary buffer.
+#+begin_src emacs-lisp
+(setq gnus-buttonized-mime-types '("multipart/signed" "multipart/alternative"))
+#+end_src
+Enable =mail-aliases= and create aliases for all mail adresses if an entry has multiple.
+#+begin_src emacs-lisp
+(add-hook 'message-setup-hook 'bbdb-mail-aliases)
+(setq bbdb-mail-alias 'all)
+#+end_src
+Don't fetch attachments before showing the message text to avoid long load times with big attachments.
+#+begin_src emacs-lisp
+(setq nnimap-fetch-partial-articles "\\(text/\\|signature\\)")
+#+end_src
+Workaround for bug with ~gnus-cloud-method~ and ~custom-variable-recalc-variable~ upon reloading the =spacemacs-*= theme.
+#+begin_src emacs-lisp
+(setq server "nnimap:imsmail")
 #+end_src
 ** Adaptive scoring
-See [[info:gnus#Adaptive Scoring][info:gnus#Adaptive Scoring]].
+See [[info:gnus#Adaptive Scoring][info:gnus#Adaptive Scoring]] and this [[https://notes.whatthefuck.computer/1417593600.0-note.html][blog post]] by Ryan Rix.
 #+begin_src emacs-lisp
 (setq gnus-use-adaptive-scoring '(word line))
 (setq gnus-adaptive-word-length-limit 5)
@@ -63,16 +190,22 @@ See [[info:gnus#Adaptive Scoring][info:gnus#Adaptive Scoring]].
 (setq gnus-summary-mark-below -300)
 (setq gnus-default-adaptive-score-alist
       '((gnus-unread-mark)
-         (gnus-ticked-mark)
-         (gnus-dormant-mark)
-         (gnus-del-mark (subject -1))
-         (gnus-read-mark (subject 2))
-         (gnus-expirable-mark (subject -1))
-         (gnus-killed-mark (subject -3))
-         (gnus-kill-file-mark)
-         (gnus-ancient-mark)
-         (gnus-low-score-mark)
-         (gnus-catchup-mark (subject -1))))
+        (gnus-ticked-mark)
+        (gnus-dormant-mark)
+        (gnus-del-mark (subject -50))
+        (gnus-read-mark (from 5) (subject 100))
+        (gnus-expirable-mark)
+        (gnus-killed-mark (subject -300))
+        (gnus-kill-file-mark)
+        (gnus-ancient-mark)
+        (gnus-low-score-mark)
+        (gnus-catchup-mark (subject -40))))
+(setq gnus-default-adaptive-word-score-alist
+      `((,gnus-read-mark . 5)
+        (,gnus-catchup-mark . -5)
+        (,gnus-killed-mark . -15)
+        (,gnus-del-mark . -10)))
+(setq gnus-adaptive-word-score-alist gnus-default-adaptive-word-score-alist)
 #+end_src
 Scoring List for Groups with various From Senders:
 #+begin_example
@@ -88,6 +221,17 @@ Scoring List for Groups with various From Senders:
    (gnus-low-score-mark)
    (gnus-catchup-mark (from -1) (subject -1)))
 #+end_example
+To ensure filenames compatible with Windows and stuff:
+#+begin_src emacs-lisp
+(setq nnheader-file-name-translation-alist '((?: . ?_) (?[ . ?_) (?] . ?_)))
+#+end_src
+
+Slow scoring decay prevents huge scores from building up. Only run on =.ADAPT= score files and decay each scoring rule by 1 point or 1%, whichever is larger.
+#+begin_src emacs-lisp
+(setq gnus-decay-scores "\\.ADAPT\\'"
+      gnus-score-decay-constant 1
+      gnus-score-decay-scale 0.01)
+#+end_src
 ** Window Layout
 See [[info:gnus#Window Layout][info:gnus#Window Layout]].
 #+begin_src emacs-lisp
@@ -95,8 +239,8 @@ See [[info:gnus#Window Layout][info:gnus#Window Layout]].
 #+end_src
 ** Format Summary buffer lines
 #+begin_src emacs-lisp
-(setq gnus-summary-line-format "%U%R%z%I%(%[ %d : %-23,23f %]%) %s
-")
+;; (setq gnus-summary-line-format "%U%R%z%I%(%[ %d : %-23,23f %]%) %s
+;; ")
 #+end_src
 ** nnreddit
 #+begin_src emacs-lisp
@@ -124,11 +268,16 @@ Background fetching for gnus. See the manual and [[https://www.emacswiki.org/ema
   (gnus-demon-scan-news-level 2 nil))
 (defun gnus-demon-scan-news-3 ()
   (gnus-demon-scan-news-level 3 t))
+(defun gnus-demon-scan-news-4 ()
+  (gnus-demon-scan-news-level 4 t))
+(defun gnus-demon-scan-news-5 ()
+  (gnus-demon-scan-news-level 5 t))
 
 (setq gnus-demon-timestep 10)
 (gnus-demon-add-handler 'gnus-demon-scan-news-2 3 nil)
-(gnus-demon-add-handler 'gnus-demon-scan-news-3 360 nil)
-(gnus-demon-add-handler 'gnus-demon-scan-news-3 60 1)
+(gnus-demon-add-handler 'gnus-demon-scan-news-3 60 t)
+(gnus-demon-add-handler 'gnus-demon-scan-news-4 130 1)
+(gnus-demon-add-handler 'gnus-demon-scan-news-5 140 1)
 #+end_src
 ** Modeline indicator
 From the [[https://www.emacswiki.org/emacs/GnusNotify][emacswiki Gnus Notify]].
