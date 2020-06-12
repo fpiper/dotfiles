@@ -36,6 +36,7 @@ disable ~buffer-auto-save-file-name~ for the files.
 
 I use =.org= configuration files also for my other dotfiles. To ensure
 they are tangled upon save I use this function.
+#+NAME: tangle-hook
 #+BEGIN_SRC emacs-lisp
 (defun fpi/tangle-dotfiles ()
   "If the current file is in '~/.dotfiles' tangle all code blocks."
@@ -52,6 +53,7 @@ saved again. The latter part is not directly supported by =org=.
 ~org-babel-post-tangle-hook~ is executed in the created tangled files
 and not inside the source =.org= file. Instead I add an advice to
 ~org-babel-tangle~.
+#+NAME: org-crypt-tangle-setup
 #+BEGIN_SRC emacs-lisp
 (defun save-without-hook ()
   (let ((before-save-hook nil))
