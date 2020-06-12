@@ -1850,7 +1850,7 @@ Switch projects and subprojects from NEXT back to TODO"
   (org-agenda-files (fpi/collect-org-directories-recursively "~/sync"))
   (org-deadline-warning-days 14)
   (org-agenda-start-on-weekday nil)
-  (org-agenda-span 14)
+  (org-agenda-span 'day)
   (org-agenda-start-day "+0d")
   (org-agenda-include-diary nil)
   (org-agenda-sticky t)
