@@ -1963,7 +1963,37 @@ Use imagemagick and standalone class for latex preview.
   (org-caldav-exclude-tags '(nocal))
 )
 #+end_src
-*** org-clock-convenience
+*** Clocking
+**** Combine adjacent clock lines
+#+begin_src emacs-lisp
+(defun fpi/org-clock-join-last-clock ()
+  "Join current clock with last one if start/end point match."
+  (save-mark-and-excursion
+    (beginning-of-line)
+    (let* ((eol (save-excursion (end-of-line) (point)))
+	   (boi (progn (re-search-forward "\\[" eol t) (backward-char) (point)))
+	   (eoi (progn (re-search-forward "\\]" eol t) (point)))
+	   (i (buffer-substring-no-properties boi eoi)) ;; last clock-in-time
+	   (boc (progn (re-search-forward "\\[" eol t) (backward-char) (point)))
+	   (eoc (progn (re-search-forward "\\]" eol t) (point)))
+	   (c (buffer-substring-no-properties boc eoc))) ;; last clock-out-time (equals org-clock-out-time if last clock)
+      (next-line)
+      (end-of-line)
+      (let* ((bol (save-excursion (beginning-of-line) (point)))
+	     (eoo (progn (re-search-backward "\\]" bol t) (forward-char) (point)))
+	     (boo (progn (re-search-backward "\\[" bol t) (point)))
+	     (o (buffer-substring-no-properties boo eoo))) ;; last-last clock-out-time
+	(when (equal i o)
+	  (delete-region boo eoo)
+	  ;; (insert (format-time-string (org-time-stamp-format t t) org-clock-out-time))
+	  (insert c)
+	  (org-evaluate-time-range)
+	  (previous-line)
+	  (delete-region (save-excursion (beginning-of-line) (backward-char) (point)) eol)
+	  (message (format "Joined nearby clocks at %s" i)))))))
+(add-hook 'org-clock-out-hook 'fpi/org-clock-join-last-clock)
+#+end_src
+**** org-clock-convenience
 #+begin_src emacs-lisp
 (use-package org-clock-convenience
   :ensure t
