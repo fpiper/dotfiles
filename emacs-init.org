@@ -2199,6 +2199,26 @@ Templates
                entry
                (id "efc97963-b714-4020-94b6-c23ad2a286ee")
                (function fpi/add-org-from-doi))
+              ("r" "Reply"
+               entry
+               (file "~/sync/refile.org")
+               "* REPLY: %:from: %:subject
+:PROPERTIES:
+:CREATED: %U
+:SOURCE: %a
+:END:
+%?
+"
+               )
+              ("c" "Checkout")
+              ("cr" ".. & read"
+               entry
+               (file "~/sync/refile.org")
+               "* TODO %a  :READLIST:
+:PROPERTIES:
+:CREATED: %U
+:END:
+%?")
   ;;             ("a" "Appointment" entry (file "~/sync/a.org")
   ;;              "* %i%?%(and (org-id-get-create) nil)\n:PROPERTIES:\n:CREATED: %U%(when %a \"\n:SOURCE: %a\")\n:END:\n%^t")
   ;;             ("t" "Soonish task" entry (file "~/sync/refile.org")
@@ -2242,7 +2262,10 @@ Templates
   ;;              :empty-lines 1
   ;;              :immediate-finish t)
               )
-            )))
+            )
+           (org-capture-templates-contexts
+            '(("r" ((in-mode . "gnus-summary-mode")
+                    (in-mode . "gnus-article-mode")))))))
 #+END_SRC
 Setup for floating capture window. For reference see [[https://www.windley.com/archives/2010/12/capture_mode_and_emacs.shtml][here]].
 #+begin_src emacs-lisp
