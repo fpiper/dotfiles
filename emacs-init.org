@@ -3300,6 +3300,16 @@ For now I use this bad code.
  (lambda ()
     (define-key gnus-summary-mode-map (kbd ";") 'bbdb-mua-edit-field)))
 #+end_src
+** Spellcheck
+#+begin_src emacs-lisp
+(use-package ispell
+  :config
+  (setq ispell-program-name "/usr/bin/hunspell")
+  (setq ispell-dictionary "en_US,de_DE")
+  (ispell-set-spellchecker-params)
+  (ispell-hunspell-add-multi-dic "en_US,de_DE")
+  )
+#+end_src
 ** Compile
 Fix ansi colors in compile buffers. From [[https://endlessparentheses.com/ansi-colors-in-the-compilation-buffer-output.html][endlessparentheses]].
 #+begin_src emacs-lisp
