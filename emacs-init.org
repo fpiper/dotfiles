@@ -830,6 +830,24 @@ Finally load the theme.
 #+begin_src emacs-lisp
 (load-theme 'spacemacs-light t)
 #+end_src
+*** Scaling the height of the =default= face.
+When switching between monitors with different resolution, scaling the
+=default= face can be used to in-/decreases the size of text and UI elements
+(modeline, …) to a more readable size.
+#+begin_src emacs-lisp
+(defun fpi/scale-default-face (&optional arg)
+  "Increase height of face default."
+  (interactive "P")
+  (let* ((height (face-attribute 'default :height))
+        (scale (if arg -10 10))
+        (new (+ height scale)))
+    (set-face-attribute 'default nil :height new)
+    (message "Default height: %s" new)))
+#+end_src
+#+begin_src emacs-lisp :tangle no :noweb-ref fpi-bindings
+(define-key 'fpi-map (kbd "+") 'fpi/scale-default-face)
+(define-key 'fpi-map (kbd "-") (lambda () (interactive) (fpi/scale-default-face t)))
+#+end_src
 ** User info
 Set ~user-full-name~ and ~user-mail-address~. These are set in
 [[file:emacs-private.el.gpg::1][emacs-private.el.gpg]].
@@ -930,7 +948,7 @@ This was inspired from [[http://endlessparentheses.com/the-toggle-map-and-wizard
 (define-key fpi/toggle-map "W" #'whitespace-toggle-options)
 #+END_SRC
 *** fpi-map
-#+BEGIN_SRC emacs-lisp
+#+BEGIN_SRC emacs-lisp :noweb yes
 (define-prefix-command 'fpi-map)
 (unbind-key (kbd "C-z"))
 (global-set-key (kbd "C-z") 'fpi-map)
@@ -946,6 +964,8 @@ This was inspired from [[http://endlessparentheses.com/the-toggle-map-and-wizard
 (define-key fpi-map (kbd "t") fpi/toggle-map)
 (define-key fpi-map (kbd "n") 'sauron-toggle-hide-show)
 (define-key fpi-map (kbd "j") (lambda () (interactive) (find-file org-journal-file)))
+
+<<fpi-bindings>>
 #+END_SRC
 ** Base commands (simple.el)
 #+begin_src emacs-lisp
