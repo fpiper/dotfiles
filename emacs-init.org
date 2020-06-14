@@ -153,6 +153,50 @@ with other package definition and customization.
       (eval-print-last-sexp)))
   (load bootstrap-file nil 'nomessage))
 #+end_src
+**** straight.el documentation excerpts
+:PROPERTIES:
+:header-args:emacs-lisp: :tangle no
+:END:
+***** General usage
+#+begin_quote
+- To restore each package to its canonical state (a clean working
+  directory with the main branch checked out, and the remotes set
+  correctly), run ~M-x straight-normalize-package~ or ~M-x
+  straight-normalize-all~.
+- To fetch from each package's configured remote, run ~M-x
+  straight-fetch-package-and-deps~ or ~M-x straight-fetch-all~; to
+  also fetch from the upstream for forked packages, supply a prefix
+  argument.
+- To merge changes from each package's configured remote, run ~M-x
+  straight-merge-package-and-deps~ or ~M-x straight-merge-all~; to
+  also merge from the upstream for forked packages, supply a prefix
+  argument.
+- To push all local changes to each package's configured remote, run
+  ~M-x straight-push-package~ or ~M-x straight-push-all~.
+#+end_quote
+***** Freezing package versions
+#+begin_quote
+To save the currently checked out revisions of all of your packages,
+run ~M-x straight-freeze-versions~. The resulting file
+(~~/.emacs.d/straight/versions/default.el~), together with your
+init-file, perfectly define your package configuration. Keep your
+version lockfile checked into version control; when you install your
+Emacs configuration on another machine, the versions of packages
+specified in your lockfile will automatically be checked out after the
+packages are installed. You can manually revert all packages to the
+revisions specified in the lockfile by running ~M-x
+straight-thaw-versions~.
+#+end_quote
+***** =use-package= integration
+#+begin_src emacs-lisp
+(use-package el-patch
+  :straight (:host github :repo "raxod502/el-patch"
+                   :branch "develop"))
+(use-package tex-site
+  :straight (auctex :host github
+                    :repo "emacsmirror/auctex"
+                    :files (:defaults (:exclude "*.el.in"))))
+#+end_src
 *** Use-package
 #+begin_src emacs-lisp
 (straight-use-package 'use-package)
