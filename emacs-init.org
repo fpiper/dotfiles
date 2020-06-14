@@ -1367,7 +1367,6 @@ navigate and revert hunks directly from the buffer. Use =g= to open
 #+begin_src emacs-lisp
 (use-package diff-hl
   :straight t
-  :defer t
   :bind (:map fpi-map ("g" . hydra-diff-hl/body))
   :init (global-diff-hl-mode 1)
   :config (defhydra hydra-diff-hl (:body-pre (diff-hl-mode 1)
@@ -1719,9 +1718,9 @@ Hansen's]] configs.
 
 #+begin_src emacs-lisp
 (use-package org
-  :ensure org-plus-contrib
+  ;; :ensure org-plus-contrib
+  :straight t
   :delight (org-cdlatex-mode)
-  :defer t
   :bind
   (("C-c c" . org-capture)
    ("C-c a" . org-agenda)
@@ -2094,7 +2093,6 @@ explanations checkout his config.
 (use-package org-edna
   :straight t
   :after org
-  :defer t
   :config
   (org-edna-load)
   (defun org-edna-finder/link-ids (&rest ids)
