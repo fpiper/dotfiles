@@ -1,4 +1,4 @@
-#+PROPERTY: header-args:emacs-lisp :tangle tangle/emacs-init.el :results silent
+#+PROPERTY: header-args:emacs-lisp :tangle tangle/emacs-init.el :results silent :noweb yes
 * Overview
 ** About this document
 This files contains all the elisp code normally placed in the .emacs
@@ -88,8 +88,10 @@ load this file here.
 This is the content of =init.el=. Notice the ~:tangle tangle/init.el~
 header argument in the source code.
 #+begin_src emacs-lisp :tangle tangle/init.el
-(require 'package)
-(package-initialize)
+<<straight.el>>
+
+;; package.el to enable use of list-packages
+<<package.el>>
 ;; (setq safe-local-variable-values (list (cons 'buffer-auto-save-file-name nil)
                                        ;; (cons 'header-line-format " ")))
 (setq vc-follow-symlinks t)
@@ -116,22 +118,44 @@ Notable configs:
 - [[http://doc.norang.ca/org-mode.html][Bernt Hansen]]
 
 * Base settings
-** Setup some paths
+** Setup load path
+Folder for additional lisp files I may want to load.
 #+BEGIN_SRC emacs-lisp
 (add-to-list 'load-path "~/.emacs.d/lisp")
-(add-to-list 'package-archives '("melpa" . "https://melpa.org/packages/") t)
-(add-to-list 'package-archives '("org" . "http://orgmode.org/elpa/") nil)
 #+END_SRC
 ** Meta packages
 Packages that don't do anything by themselves, but can be used to help
 with other package definition and customization.
+*** package.el
+=package.el= setup. While I switched to [[id:eef88cd4-f2f5-4e4b-b7bb-75faac36dcb8][straight.el]], I keep =package.el= loaded for now to be able to browse ELPA/MELPA with ~M-x list-packages~.
+#+BEGIN_SRC emacs-lisp :noweb-ref package.el :tangle no
+(require 'package)
+;; (package-initialize)
+(add-to-list 'package-archives '("melpa" . "https://melpa.org/packages/") t)
+(add-to-list 'package-archives '("org" . "http://orgmode.org/elpa/") nil)
+#+END_SRC
+*** straight.el
+:PROPERTIES:
+:ID:       eef88cd4-f2f5-4e4b-b7bb-75faac36dcb8
+:END:
+[[https://github.com/raxod502/straight.el][straight.el]] is a package manager for emacs, which in contrast to =package.el= keeps track of the current package versions and supports local development on packages. See the [[https://github.com/raxod502/straight.el#comparison-to-other-package-managers][github page]] for a detailed comparison with other package managers.
+#+begin_src emacs-lisp :noweb-ref straight.el :tangle no
+(defvar bootstrap-version)
+(let ((bootstrap-file
+       (expand-file-name "straight/repos/straight.el/bootstrap.el" user-emacs-directory))
+      (bootstrap-version 5))
+  (unless (file-exists-p bootstrap-file)
+    (with-current-buffer
+        (url-retrieve-synchronously
+         "https://raw.githubusercontent.com/raxod502/straight.el/develop/install.el"
+         'silent 'inhibit-cookies)
+      (goto-char (point-max))
+      (eval-print-last-sexp)))
+  (load bootstrap-file nil 'nomessage))
+#+end_src
 *** Use-package
 #+begin_src emacs-lisp
-(unless (package-installed-p 'use-package)
-  (package-refresh-contents)
-  (package-install 'use-package))
-(eval-when-compile
-  (require 'use-package))
+(straight-use-package 'use-package)
 #+end_src
 *** Hydra
 #+begin_src emacs-lisp
