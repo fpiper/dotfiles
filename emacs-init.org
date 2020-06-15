@@ -26,18 +26,18 @@ file, [[elisp:(find-library "org-crypt")][org-crypt]] is a possible solution. Ma
 private information with the tag =:crypt:= and adding the following to
 =init.el= works as a basic setup for =org-crypt=. Also make sure to
 disable ~buffer-auto-save-file-name~ for the files.
-#+BEGIN_SRC emacs-lisp
-(require 'org)
-(require 'org-crypt)
-(org-crypt-use-before-save-magic)
-(setq org-tags-exclude-from-inheritance (quote ("crypt")))
-(setq org-crypt-key "F1EF502F9E81D81381B1679AF973BBEA6994521B")
+#+BEGIN_SRC emacs-lisp :noweb-ref org-crypt :tangle no
+(use-package org-crypt
+  :config (org-crypt-use-before-save-magic)
+  :custom
+  (org-tags-exclude-from-inheritance (quote ("crypt")))
+  (org-crypt-key "F1EF502F9E81D81381B1679AF973BBEA6994521B"))
 #+END_SRC
 
 I use =.org= configuration files also for my other dotfiles. To ensure
 they are tangled upon save I use this function.
 #+NAME: tangle-hook
-#+BEGIN_SRC emacs-lisp
+#+BEGIN_SRC emacs-lisp :tangle no
 (defun fpi/tangle-dotfiles ()
   "If the current file is in '~/.dotfiles' tangle all code blocks."
   (when (equal (file-name-directory (directory-file-name buffer-file-name))
@@ -54,7 +54,7 @@ saved again. The latter part is not directly supported by =org=.
 and not inside the source =.org= file. Instead I add an advice to
 ~org-babel-tangle~.
 #+NAME: org-crypt-tangle-setup
-#+BEGIN_SRC emacs-lisp
+#+BEGIN_SRC emacs-lisp :tangle no
 (defun save-without-hook ()
   (let ((before-save-hook nil))
     (save-buffer)))
@@ -153,6 +153,10 @@ with other package definition and customization.
       (eval-print-last-sexp)))
   (load bootstrap-file nil 'nomessage))
 #+end_src
+
+#+BEGIN_SRC emacs-lisp
+(setq straight-profiles `((nil . ,(expand-file-name "package-versions.el" "~/git/projects/dotfiles"))))
+#+END_SRC
 **** straight.el documentation excerpts
 :PROPERTIES:
 :header-args:emacs-lisp: :tangle no
@@ -301,7 +305,12 @@ appreciate light themes more. [[https://gitlab.com/protesilaos/modus-themes][mod
 theme promising high color contrast. I ended up using the
 =spacemacs-light= and =spacemacs-dark= themes.
 #+begin_src emacs-lisp
-(package-install 'spacemacs-theme)
+(use-package spacemacs-light-theme
+  :no-require t
+  :straight (spacemacs-theme))
+(use-package spacemacs-dark-theme
+  :no-require t
+  :straight (spacemacs-theme))
 #+end_src
 
 =Face-remap= is a library for basic face remapping. =Buffer-face-mode=
@@ -891,13 +900,13 @@ The above macro can be used like this.
 #+end_src
 Advice =load-theme= to also update the colors for
 =pdf-view-midnight-mode=.
-#+begin_src emacs-lisp
+#+begin_src emacs-lisp :tangle no :noweb-ref load-theme
 (defadvice load-theme (after update-pdf-view-midnight-color activate)
   (setq pdf-view-midnight-colors `(,(face-attribute 'default :foreground) . ,(face-attribute 'default :background))))
 #+end_src
 
-Finally load the theme.
-#+begin_src emacs-lisp
+Finally load the theme. The code is here, but only executed at the end of the initialization after ~pdf-view-midnight-colors~, etc. are defined.
+#+begin_src emacs-lisp :tangle no :noweb-ref load-theme
 (load-theme 'spacemacs-light t)
 #+end_src
 *** Scaling the height of the =default= face.
@@ -1538,37 +1547,37 @@ better performance.
 =fit-window-to-buffer= automatically shrinks the current buffer based
 on the amount of displayed text.
 #+begin_src emacs-lisp
-(use-package window
-  :custom
-  (fit-window-to-buffer-horizontally t)
-  :bind (:map fpi-map ("s" . fit-window-to-buffer)))
+  (use-package window
+    :init
+    <<window>>
+    :custom
+    (fit-window-to-buffer-horizontally t)
+    :bind (:map fpi-map ("s" . fit-window-to-buffer))
+    )
 #+end_src
 *** Window rules
-#+begin_src emacs-lisp
-(use-package window
-  :init
-  (setq display-buffer-alist
-        '(
-          ("\\*\\(Backtrace\\|Warnings\\|Compile-Log\\|Messages\\)\\*"
-           (display-buffer-in-side-window)
-           (window-height . 0.16)
-           (side . top)
-           (slot . 0)
-           (window-parameters . ((no-other-window t))))
-          (".*\\*Completions.*"
-           (display-buffer-in-side-window)
-           (window-height . 0.16)
-           (side . bottom)
-           (slot . 0))
-          ("\\*Help.*"
-           (display-buffer-in-side-window)
-           (window-width . 0.2)
-           (side . left)
-           (slot . 0)
-           (window-parameters . ((no-other-window . t)
-                                 (mode-line-format . (" "
-                                                      mode-line-buffer-identification)))))
-          )))
+#+begin_src emacs-lisp :noweb-ref window
+(setq display-buffer-alist
+      '(("\\*\\(Backtrace\\|Warnings\\|Compile-Log\\|Messages\\)\\*"
+         (display-buffer-in-side-window)
+         (window-height . 0.16)
+         (side . top)
+         (slot . 0)
+         (window-parameters . ((no-other-window t))))
+        (".*\\*Completions.*"
+         (display-buffer-in-side-window)
+         (window-height . 0.16)
+         (side . bottom)
+         (slot . 0))
+        ("\\*Help.*"
+         (display-buffer-in-side-window)
+         (window-width . 0.2)
+         (side . left)
+         (slot . 0)
+         (window-parameters . ((no-other-window . t)
+                               (mode-line-format . (" "
+                                                    mode-line-buffer-identification)))))
+        ))
 #+end_src
 *** window-numbering
 This is a nice package for easy window focus switching. I prefer it
@@ -1688,6 +1697,7 @@ would be better to unbind them only when in ~pdf-view-mode~.
 ** Latex
 #+begin_src emacs-lisp
 (use-package auctex
+  :no-require t
   :straight t)
 #+end_src
 
@@ -1762,8 +1772,7 @@ Hansen's]] configs.
 
 #+begin_src emacs-lisp
 (use-package org
-  ;; :ensure org-plus-contrib
-  :straight t
+  :straight (org-plus-contrib)
   :delight (org-cdlatex-mode)
   :bind
   (("C-c c" . org-capture)
@@ -1846,6 +1855,10 @@ Switch projects and subprojects from NEXT back to TODO"
        ((and (member (org-get-todo-state) (list "NEXT"))
              (bh/is-project-p))
         "INPROGRESS")))))
+
+<<org-crypt>>
+<<tangle-hook>>
+<<org-crypt-tangle-setup>>
 #+end_src
 #+begin_src emacs-lisp
 (use-package org-indent
@@ -3686,4 +3699,10 @@ temporary buffer is created.
   (electric-indent-mode 1)
   (electric-pair-mode 1)
   (electric-quote-mode -1))
+#+end_src
+* Wrapping up
+
+Some stuff that is run after everything else.
+#+begin_src emacs-lisp
+<<load-theme>>
 #+end_src
