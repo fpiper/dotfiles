@@ -245,7 +245,7 @@ See [[info:gnus#Window Layout][info:gnus#Window Layout]].
 ** nnreddit
 #+begin_src emacs-lisp
 (use-package nnreddit
-  :ensure t)
+  :straight t)
 (add-to-list 'gnus-secondary-select-methods '(nnreddit ""))
 #+end_src
 ** Demon
