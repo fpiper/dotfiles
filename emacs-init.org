@@ -304,7 +304,7 @@ Instead of the above code I set the font directly using
 appreciate light themes more. [[https://gitlab.com/protesilaos/modus-themes][modus-operandi]] is an interesting light
 theme promising high color contrast. I ended up using the
 =spacemacs-light= and =spacemacs-dark= themes.
-#+begin_src emacs-lisp
+#+begin_src emacs-lisp :tangle no
 (use-package spacemacs-light-theme
   :no-require t
   :straight (spacemacs-theme))
@@ -313,13 +313,26 @@ theme promising high color contrast. I ended up using the
   :straight (spacemacs-theme))
 #+end_src
 
-=Face-remap= is a library for basic face remapping. =Buffer-face-mode=
-is enabled when using =variable-pitch-mode= to show the face defined
-in =variable-pitch= instead of =default=.
 #+begin_src emacs-lisp
-(use-package face-remap
-  :delight (buffer-face-mode))
+(defcustom fpi/light-theme 'modus-operandi
+  "My standard light theme.")
+(defcustom fpi/dark-theme 'modus-vivendi
+  "My standard dark theme.")
+
+(use-package modus-operandi-theme
+  :straight t)
+(use-package modus-vivendi-theme
+  :straight t)
 #+end_src
+Load the theme. The code is here, but only executed at the end of the
+initialization after ~pdf-view-midnight-colors~, etc. are defined.
+#+begin_src emacs-lisp :tangle no :noweb-ref load-theme
+(load-theme fpi/light-theme t)
+#+end_src
+*** Theme customization
+:PROPERTIES:
+:header-args:emacs-lisp: :tangle no
+:END:
 To do some custom adjustments to it I use the following macro which
 adds an advice to ~load-theme~.
 #+begin_src emacs-lisp
@@ -898,16 +911,13 @@ The above macro can be used like this.
    (:background nil
                 :inherit nil))))
 #+end_src
-Advice =load-theme= to also update the colors for
-=pdf-view-midnight-mode=.
-#+begin_src emacs-lisp :tangle no :noweb-ref load-theme
-(defadvice load-theme (after update-pdf-view-midnight-color activate)
-  (setq pdf-view-midnight-colors `(,(face-attribute 'default :foreground) . ,(face-attribute 'default :background))))
-#+end_src
-
-Finally load the theme. The code is here, but only executed at the end of the initialization after ~pdf-view-midnight-colors~, etc. are defined.
-#+begin_src emacs-lisp :tangle no :noweb-ref load-theme
-(load-theme 'spacemacs-light t)
+*** Diminish buffer-face-mode
+=Face-remap= is a library for basic face remapping. =Buffer-face-mode=
+is enabled when using =variable-pitch-mode= to show the face defined
+in =variable-pitch= instead of =default=.
+#+begin_src emacs-lisp
+(use-package face-remap
+  :delight (buffer-face-mode))
 #+end_src
 *** Scaling the height of the =default= face.
 When switching between monitors with different resolution, scaling the
@@ -1075,6 +1085,274 @@ Goes backward if ARG is negative; error if CHAR not found."
 Having used ido, ivy, icicles and helm in the past, I'm trying to
 settle for something simple and go back to ido. The settings below
 are for now mostly copied from [[https://gitlab.com/protesilaos/dotemacs/][Protesilaos Stavrou]].
+*** Minibuffer settings
+#+begin_src emacs-lisp
+(use-package minibuffer
+  :config
+
+  ;; Super-powerful completion style for out-of-order groups of matches
+  ;; using a comprehensive set of matching styles.
+  (use-package orderless
+    :straight t
+    :config
+    (setq orderless-regexp-separator "[/\s_-]+")
+    (setq orderless-matching-styles
+          '(orderless-flex
+            orderless-strict-leading-initialism
+            orderless-regexp
+            orderless-prefixes
+            orderless-literal))
+
+    (defun prot/orderless-literal-dispatcher (pattern _index _total)
+      (when (string-suffix-p "=" pattern)
+        `(orderless-literal . ,(substring pattern 0 -1))))
+
+    (defun prot/orderless-initialism-dispatcher (pattern _index _total)
+      (when (string-suffix-p "," pattern)
+        `(orderless-strict-leading-initialism . ,(substring pattern 0 -1))))
+
+    (setq orderless-style-dispatchers '(prot/orderless-literal-dispatcher
+                                        prot/orderless-initialism-dispatcher))
+    :bind (:map minibuffer-local-completion-map
+                ("SPC" . nil)         ; space should never complete
+                ("?" . nil)))         ; valid regexp character
+
+  (setq completion-styles
+        '(orderless partial-completion))
+  (setq completion-category-defaults nil)
+  (setq completion-cycle-threshold 3)
+  (setq completion-flex-nospace nil)
+  (setq completion-pcm-complete-word-inserts-delimiters t)
+  (setq completion-pcm-word-delimiters "-_./:| ")
+  (setq completion-show-help t)
+  (setq completion-ignore-case t)
+  (setq read-buffer-completion-ignore-case t)
+  (setq read-file-name-completion-ignore-case t)
+  (setq completions-format 'vertical)   ; *Completions* buffer
+  (setq enable-recursive-minibuffers t)
+  (setq read-answer-short t)
+  (setq resize-mini-windows t)
+
+  (file-name-shadow-mode 1)
+  (minibuffer-depth-indicate-mode 1)
+  (minibuffer-electric-default-mode 1)
+
+  (defun prot/focus-minibuffer ()
+    "Focus the active minibuffer.
+
+Bind this to `completion-list-mode-map' to M-v to easily jump
+between the list of candidates present in the \\*Completions\\*
+buffer and the minibuffer (because by default M-v switches to the
+completions if invoked from inside the minibuffer."
+    (interactive)
+    (let ((mini (active-minibuffer-window)))
+      (when mini
+        (select-window mini))))
+
+  (defun prot/focus-minibuffer-or-completions ()
+    "Focus the active minibuffer or the \\*Completions\\*.
+
+If both the minibuffer and the Completions are present, this
+command will first move per invocation to the former, then the
+latter, and then continue to switch between the two.
+
+The continuous switch is essentially the same as running
+`prot/focus-minibuffer' and `switch-to-completions' in
+succession."
+    (interactive)
+    (let* ((mini (active-minibuffer-window))
+           ;; This could be hardened a bit, but I am okay with it.
+           (completions (or (get-buffer-window "*Completions*")
+                            (get-buffer-window "*Embark Live Occur*"))))
+      (cond ((and mini
+                  (not (minibufferp)))
+             (select-window mini nil))
+            ((and completions
+                  (not (eq (selected-window)
+                           completions)))
+             (select-window completions nil)))))
+
+  ;; Technically, this is not specific to the minibuffer, but I define
+  ;; it here so that you can see how it is also used from inside the
+  ;; "Completions" buffer
+  (defun prot/describe-symbol-at-point (&optional arg)
+    "Get help (documentation) for the symbol at point.
+
+With a prefix argument, switch to the *Help* window.  If that is
+already focused, switch to the most recently used window
+instead."
+    (interactive "P")
+    (let ((symbol (symbol-at-point)))
+      (when symbol
+        (describe-symbol symbol)))
+    (when arg
+      (let ((help (get-buffer-window "*Help*")))
+        (when help
+          (if (not (eq (selected-window) help))
+              (select-window help)
+            (select-window (get-mru-window)))))))
+
+  ;; This will be deprecated in favour of the `embark' package
+  (defun prot/completions-kill-save-symbol ()
+    "Add symbol-at-point to the kill ring.
+
+Intended for use in the \\*Completions\\* buffer.  Bind this to a
+key in `completion-list-mode-map'."
+    (interactive)
+    (kill-new (thing-at-point 'symbol)))
+
+
+;;;; DEPRECATED in favour of the `embark' package (see further below),
+;;;; which implements the same functionality in a more efficient way.
+;;  (defun prot/complete-kill-or-insert-candidate (&optional arg)
+;;     "Place the matching candidate to the top of the `kill-ring'.
+;; This will keep the minibuffer session active.
+;;
+;; With \\[universal-argument] insert the candidate in the most
+;; recently used buffer, while keeping focus on the minibuffer.
+;;
+;; With \\[universal-argument] \\[universal-argument] insert the
+;; candidate and immediately exit all recursive editing levels and
+;; active minibuffers.
+;;
+;; Bind this function in `icomplete-minibuffer-map'."
+;;     (interactive "*P")
+;;     (let ((candidate (car completion-all-sorted-completions)))
+;;       (when (and (minibufferp)
+;;                  (or (bound-and-true-p icomplete-mode)
+;;                      (bound-and-true-p live-completions-mode))) ; see next section
+;;         (cond ((eq arg nil)
+;;                (kill-new candidate))
+;;               ((= (prefix-numeric-value arg) 4)
+;;                (with-minibuffer-selected-window (insert candidate)))
+;;               ((= (prefix-numeric-value arg) 16)
+;;                (with-minibuffer-selected-window (insert candidate))
+;;                (top-level))))))
+
+  ;; Defines, among others, aliases for common actions to Super-KEY.
+  ;; Normally these should go in individual package declarations, but
+  ;; their grouping here makes things easier to understand.
+  :bind (("s-f" . find-file)
+         ("s-F" . find-file-other-window)
+         ("s-d" . dired)
+         ("s-D" . dired-other-window)
+         ("s-b" . switch-to-buffer)
+         ("s-B" . switch-to-buffer-other-window)
+         ("s-h" . prot/describe-symbol-at-point)
+         ("s-H" . (lambda ()
+                    (interactive)
+                    (prot/describe-symbol-at-point '(4))))
+         ("s-v" . prot/focus-minibuffer-or-completions)
+         :map minibuffer-local-completion-map
+         ("<return>" . minibuffer-force-complete-and-exit)
+         ("C-j" . exit-minibuffer)
+         ;;;; DEPRECATED in favour of the `embark' package
+         ;; ("M-o w" . prot/complete-kill-or-insert-candidate)
+         ;; ("M-o i" . (lambda ()
+         ;;              (interactive)
+         ;;              (prot/complete-kill-or-insert-candidate '(4))))
+         ;; ("M-o j" . (lambda ()
+         ;;              (interactive)
+         ;;              (prot/complete-kill-or-insert-candidate '(16))))
+         :map completion-list-mode-map
+         ("h" . prot/describe-symbol-at-point)
+         ("w" . prot/completions-kill-save-symbol)
+         ("n" . next-line)
+         ("p" . previous-line)
+         ("f" . next-completion)
+         ("b" . previous-completion)
+         ("M-v" . prot/focus-minibuffer)))
+#+end_src
+*** Icomplete
+#+begin_src emacs-lisp
+(use-package icomplete
+  :demand
+  :after minibuffer                     ; Read that section as well
+  :config
+  (setq icomplete-delay-completions-threshold 100)
+  (setq icomplete-max-delay-chars 2)
+  (setq icomplete-compute-delay 0.2)
+  (setq icomplete-show-matches-on-no-input t)
+  (setq icomplete-hide-common-prefix nil)
+  (setq icomplete-prospects-height 1)
+  ;; (setq icomplete-separator " · ")
+  ;; (setq icomplete-separator " │ ")
+  ;; (setq icomplete-separator " ┆ ")
+  ;; (setq icomplete-separator " ¦ ")
+  (setq icomplete-separator (propertize " ┆ " 'face 'shadow))
+  (setq icomplete-with-completion-tables t)
+  (setq icomplete-in-buffer t)
+  (setq icomplete-tidy-shadowed-file-names nil)
+
+  (fido-mode -1)                        ; Emacs 27.1
+  (icomplete-mode 1)
+
+  (defun prot/icomplete-minibuffer-truncate ()
+    "Truncate minibuffer lines in `icomplete-mode'.
+  This should only affect the horizontal layout and is meant to
+  enforce `icomplete-prospects-height' being set to 1.
+
+  Hook it to `icomplete-minibuffer-setup-hook'."
+    (when (and (minibufferp)
+               (bound-and-true-p icomplete-mode))
+      (setq truncate-lines t)))
+
+  ;; Note that the the syntax for `use-package' hooks is controlled by
+  ;; the `use-package-hook-name-suffix' variable.  The "-hook" suffix is
+  ;; not an error of mine.
+  :hook (icomplete-minibuffer-setup-hook . prot/icomplete-minibuffer-truncate)
+  :bind (:map icomplete-minibuffer-map
+              ("<tab>" . icomplete-force-complete)
+              ("<return>" . icomplete-force-complete-and-exit) ; exit with completion
+              ("C-j" . exit-minibuffer) ; force input unconditionally
+              ("C-n" . icomplete-forward-completions)
+              ("<right>" . icomplete-forward-completions)
+              ("<down>" . icomplete-forward-completions)
+              ("C-p" . icomplete-backward-completions)
+              ("<left>" . icomplete-backward-completions)
+              ("<up>" . icomplete-backward-completions)
+              ;; The following command is from Emacs 27.1
+              ("<C-backspace>" . icomplete-fido-backward-updir)))
+#+end_src
+*** Icomplete-vertical
+#+begin_src emacs-lisp
+(use-package icomplete-vertical
+  :straight t
+  :demand
+  :after (minibuffer icomplete) ; do not forget to check those as well
+  :config
+  (setq icomplete-vertical-prospects-height (/ (frame-height) 6))
+  (icomplete-vertical-mode -1)
+
+  (defun prot/kill-ring-yank-complete ()
+    "Insert the selected `kill-ring' item directly at point.
+When region is active, `delete-region'.
+
+Sorting of the `kill-ring' is disabled.  Items appear as they
+normally would when calling `yank' followed by `yank-pop'."
+    (interactive)
+    (let ((kills                    ; do not sort items
+           (lambda (string pred action)
+             (if (eq action 'metadata)
+                 '(metadata (display-sort-function . identity)
+                            (cycle-sort-function . identity))
+               (complete-with-action
+                action kill-ring string pred)))))
+      (icomplete-vertical-do
+          (:separator 'dotted-line :height (/ (frame-height) 4))
+        (when (use-region-p)
+          (delete-region (region-beginning) (region-end)))
+        (insert
+         (completing-read "Yank from kill ring: " kills nil t)))))
+
+  :bind (("s-y" . prot/kill-ring-yank-complete)
+         :map icomplete-minibuffer-map
+         ("C-v" . icomplete-vertical-toggle)))
+#+end_src
+*** Ido
+:PROPERTIES:
+:header-args:emacs-lisp: :tangle no
+:END:
 #+BEGIN_SRC emacs-lisp
 (use-package ido
   :init
@@ -1694,6 +1972,13 @@ would be better to unbind them only when in ~pdf-view-mode~.
   :init (setq pdf-annot-minor-mode-map-prefix "a")
   :bind (:map pdf-annot-minor-mode-map ("a d" . pdf-annot-delete)))
 #+END_SRC
+
+Advice =load-theme= to update the colors for =pdf-view-midnight-mode=
+after the theme changes.
+#+begin_src emacs-lisp :tangle no :noweb-ref pre-load-theme
+(defadvice load-theme (after update-pdf-view-midnight-color activate)
+  (setq pdf-view-midnight-colors `(,(face-attribute 'default :foreground) . ,(face-attribute 'default :background))))
+#+end_src
 ** Latex
 #+begin_src emacs-lisp
 (use-package auctex
@@ -3709,5 +3994,6 @@ temporary buffer is created.
 
 Some stuff that is run after everything else.
 #+begin_src emacs-lisp
+<<pre-load-theme>>
 <<load-theme>>
 #+end_src
