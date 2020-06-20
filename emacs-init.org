@@ -3627,6 +3627,11 @@ End sentences with single spaces.
   (put 'dired-find-alternate-file 'disabled nil)
   (put 'narrow-to-region 'disabled nil))
 #+end_src
+** Rainbow mode
+#+begin_src emacs-lisp
+(use-package rainbow-mode
+  :straight t)
+#+end_src
 ** Parentheses
 #+begin_src emacs-lisp
 (use-package paren
