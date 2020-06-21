@@ -2236,7 +2236,10 @@ Switch projects and subprojects from NEXT back to TODO"
   ;; See emacs.christianbaeuerlein.com/my-org-config.html
   (org-agenda-block-separator 9472)
   (org-agenda-custom-commands
-      `(("n" "Agenda and all TODOs"
+      `(("d" "Day agenda"
+         ((agenda "" ((org-agenda-span 'day)))
+          (org-time-budgets-in-agenda-maybe)))
+        ("n" "Agenda and all TODOs"
          ((todo "INPROGRESS"
                 ((org-agenda-overriding-header "Inprogress Tasks")))
           (agenda)
@@ -2310,6 +2313,15 @@ Use imagemagick and standalone class for latex preview.
 #+begin_src emacs-lisp
 (use-package org-num
   :delight)
+#+end_src
+*** Time budgets
+Gives an overview of time spent on defined budgets this week. Great to track if you've worked enough hours. To use it add ~(org-time-budgets-in-agenda-maybe)~ after ~(agenda)~ in a custom agenda command.
+#+begin_src emacs-lisp
+(use-package org-time-budgets
+  :straight (:host github :repo "fpiper/org-time-budgets"
+                   :branch "develop")
+  :custom
+  (org-time-budgets '((:title "Work" :match "+work-nowork" :budget "40:00" :block workweek))))
 #+end_src
 *** Column view
 #+begin_src emacs-lisp
