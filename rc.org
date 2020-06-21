@@ -814,7 +814,7 @@ end)
 
    #+BEGIN_SRC lua
       globalkeys = gears.table.join(globalkeys,
-	  awful.key({ modkey }, "p", function() awful.spawn("rofi -show run -theme "..theme.."rofi_theme.rasi") end,
+	  awful.key({ modkey }, "p", function() awful.spawn.with_shell("PATH=~/.local/bin:$PATH rofi -show run -theme "..theme.."rofi_theme.rasi") end,
 	     {description = "run rofi", group = "launcher"})
       )
    #+END_SRC
