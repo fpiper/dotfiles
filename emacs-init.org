@@ -2041,12 +2041,6 @@ Hansen's]] configs.
 - Babel languages :: Enable more languages to use in org-babel blocks.
 - Youtube links :: See [[http://endlessparentheses.com/embedding-youtube-videos-with-org-mode-links.html][this blog post]] for more info.
 - Ellipsis :: I currently use =" "= and previously used ="⚡⚡⚡"=.
-- Refile Targets :: Use the full outline path so I can distinguish
-  headlines with the same name & disable step-wise completion as I
-  think from the refile target backwards, not from top-level
-  downwards. Also include the current file's headings as a refile
-  targets up to a deep level, all agenda files up to a small level and
-  all open org files up to an even smaller level.
 - Drawer for Notes :: Notes go into the =NOTES= drawer. Clocking
   times should stay separate in the =LOGBOOK= drawer.
 - Track state changes :: Notes when an entry is switched to done when
@@ -2100,10 +2094,6 @@ Hansen's]] configs.
      ("gmap"      . "http://maps.google.com/maps?q=%s")
      ("omap"      . "http://nominatim.openstreetmap.org/search?q=%s&polygon=1")))
   (org-ellipsis " ")
-  (org-refile-use-outline-path 'file)
-  (org-refile-targets '((nil :maxlevel . 8)
-                        (org-agenda-files :maxlevel . 3)
-                        (org-buffer-list :maxlevel . 2)))
   (org-outline-path-complete-in-steps nil)
   (org-log-state-notes-into-drawer "NOTES")
   (org-clock-into-drawer "LOGBOOK")
@@ -2129,6 +2119,7 @@ Hansen's]] configs.
   (org-clock-in-switch-to-state 'bh/clock-in-to-inprogress)
   (org-tags-column 0)
   (org-image-actual-width '(400))
+  <<org-custom>>
   :config
   (add-hook 'org-mode-hook 'turn-on-org-cdlatex)
   (add-to-list 'org-structure-template-alist (cons "f" "figure"))
@@ -2318,6 +2309,22 @@ Use imagemagick and standalone class for latex preview.
 #+begin_src emacs-lisp
 (use-package org-num
   :delight)
+#+end_src
+*** Refile
+Use the full outline path so I can distinguish headlines with the same name & disable step-wise completion as I think from the refile target backwards, not from top-level downwards. Also include the current file's headings as a refile targets up to a deep level, all agenda files up to a small level and all open org files up to an even smaller level.
+
+As refile only works on file-visiting buffers, we need to filter all other org buffers from ~(org-buffer-list)~.
+#+begin_src emacs-lisp
+(defun fpi/org-file-buffer-list ()
+  "Return a list of org buffers which visit files."
+  (seq-filter 'buffer-file-name (org-buffer-list)))
+#+end_src
+
+#+begin_src emacs-lisp :noweb-ref org-custom :tangle no
+(org-refile-use-outline-path 'file)
+(org-refile-targets '((buffer-file-name :maxlevel . 8)
+                      (org-agenda-files :maxlevel . 3)
+                      (fpi/org-file-buffer-list :maxlevel . 2)))
 #+end_src
 *** Time budgets
 Gives an overview of time spent on defined budgets this week. Great to track if you've worked enough hours. To use it add ~(org-time-budgets-in-agenda-maybe)~ after ~(agenda)~ in a custom agenda command.
