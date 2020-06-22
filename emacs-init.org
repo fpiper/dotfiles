@@ -3692,6 +3692,8 @@ For now I use this bad code.
 Fix ansi colors in compile buffers. From [[https://endlessparentheses.com/ansi-colors-in-the-compilation-buffer-output.html][endlessparentheses]].
 #+begin_src emacs-lisp
 (use-package compile
+  :custom
+  (compilation-scroll-output t)
   :config
   (require 'ansi-color)
   (defun endless/colorize-compilation ()
