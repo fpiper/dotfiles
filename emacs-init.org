@@ -2051,8 +2051,6 @@ Hansen's]] configs.
   NEXT to INPROGRESS
 - Align tags left :: Fixes problems with line breaking on small
   window width.
-- Inline image width :: Resize images to 400px but respect width
-  specifications in attribute lines.
 
 #+begin_src emacs-lisp
 (use-package org
@@ -2118,7 +2116,6 @@ Hansen's]] configs.
      ("IDLE" :foreground "magenta" :weight bold)))
   (org-clock-in-switch-to-state 'bh/clock-in-to-inprogress)
   (org-tags-column 0)
-  (org-image-actual-width '(400))
   <<org-custom>>
   :config
   (add-hook 'org-mode-hook 'turn-on-org-cdlatex)
@@ -2171,7 +2168,7 @@ Switch projects and subprojects from NEXT back to TODO"
               (plantuml . t)
               ;; (hvm . t)
               (ledger . t)))
-  :hook (org-babel-after-execute . org-display-inline-images))
+  :hook <<ob-hooks>>)
 #+end_src
 #+BEGIN_SRC emacs-lisp
 (use-package org-noter
@@ -2309,6 +2306,20 @@ Use imagemagick and standalone class for latex preview.
 #+begin_src emacs-lisp
 (use-package org-num
   :delight)
+#+end_src
+*** Inline images
+
+Resize inline images to 400px but respect width specifications in attribute lines.
+#+begin_src emacs-lisp :noweb-ref org-custom :tangle no
+(org-image-actual-width '(400))
+#+end_src
+Also display remote images by downloading them.
+#+begin_src emacs-lisp :noweb-ref org-custom :tangle no
+(org-display-remote-inline-images 'download)
+#+end_src
+
+#+begin_src emacs-lisp :noweb-ref ob-hooks :tangle no
+(org-babel-after-execute . org-display-inline-images)
 #+end_src
 *** Refile
 Use the full outline path so I can distinguish headlines with the same name & disable step-wise completion as I think from the refile target backwards, not from top-level downwards. Also include the current file's headings as a refile targets up to a deep level, all agenda files up to a small level and all open org files up to an even smaller level.
