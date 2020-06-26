@@ -304,7 +304,36 @@ Instead of the above code I set the font directly using
 appreciate light themes more. [[https://gitlab.com/protesilaos/modus-themes][modus-operandi]] is an interesting light
 theme promising high color contrast. I ended up using the
 =spacemacs-light= and =spacemacs-dark= themes.
-#+begin_src emacs-lisp :tangle no
+#+begin_src emacs-lisp
+(defcustom fpi/light-theme-list '(spacemacs-light spacemacs-light-customizations)
+  "List of themes to activate when using a light theme.")
+(defcustom fpi/dark-theme-list '(spacemacs-dark spacemacs-dark-customizations)
+  "List of themes to activate when using a dark theme.")
+(defcustom fpi/current-theme 'light
+  "Currently activated theme variation.")
+#+end_src
+
+Function to load themes based on the ~fpi/current-theme~ setting.
+#+begin_src emacs-lisp
+(defun fpi/load-themes (&optional theme-variation)
+  "Load themes based on the value of `fpi/current-theme'.
+
+Optionally provide THEME-VARIATION to override
+`fpi/current-theme'. Loaded themes are based on the value
+of `(format \"fpi/%s-theme-list\" fpi/current-theme)'"
+  (interactive)
+  (mapc 'disable-theme custom-enabled-themes);; disable all themes
+  (let* ((theme-variation (or theme-variation fpi/current-theme))
+         (themes (eval (intern (format "fpi/%s-theme-list" theme-variation)))))
+    (mapc (lambda (theme) (load-theme theme t)) themes)
+    ))
+#+end_src
+Load the themes. This is written here for clarity, but only executed at the end of the initialization after ~pdf-view-midnight-colors~, etc. are defined.
+#+begin_src emacs-lisp :tangle no :noweb-ref load-theme
+(fpi/load-themes)
+#+end_src
+*** Getting themes
+#+begin_src emacs-lisp
 (use-package spacemacs-light-theme
   :no-require t
   :straight (spacemacs-theme))
@@ -313,605 +342,942 @@ theme promising high color contrast. I ended up using the
   :straight (spacemacs-theme))
 #+end_src
 
-#+begin_src emacs-lisp
-(defcustom fpi/light-theme 'modus-operandi
-  "My standard light theme.")
-(defcustom fpi/dark-theme 'modus-vivendi
-  "My standard dark theme.")
-
+#+begin_src emacs-lisp :tangle no
 (use-package modus-operandi-theme
   :straight t)
 (use-package modus-vivendi-theme
   :straight t)
 #+end_src
-Load the theme. The code is here, but only executed at the end of the
-initialization after ~pdf-view-midnight-colors~, etc. are defined.
-#+begin_src emacs-lisp :tangle no :noweb-ref load-theme
-(load-theme fpi/light-theme t)
-#+end_src
 *** Theme customization
-:PROPERTIES:
-:header-args:emacs-lisp: :tangle no
-:END:
-To do some custom adjustments to it I use the following macro which
-adds an advice to ~load-theme~.
+In this section is code to produce a custom theme out of a list of predefined colors and custom face specs.
+
+First a function to replace colors in the face specs.
 #+begin_src emacs-lisp
-(defmacro set-pair-faces (themes consts faces-alist)
-  "Macro for pair setting of custom faces.
-THEMES name the pair (theme-one theme-two). CONSTS sets the variables like
-  ((sans-font \"Some Sans Font\") ...). FACES-ALIST has the actual faces
-like:
-  ((face1 theme-one-attr theme-two-atrr)
-   (face2 theme-one-attr nil           )
-   (face3 nil            theme-two-attr)
-   ...)"
+(defun prep-custom-theme-set-faces (colors faces-alist)
   (defmacro get-proper-faces ()
-    `(let* (,@consts)
+    `(let* (,@colors)
        (backquote ,faces-alist)))
-  `(progn
-     ,@(mapcar
-        (lambda (theme)
-          `(defadvice load-theme
-               (after ,(gensym theme) last (loaded-theme &rest args) activate)
-             (when (equal loaded-theme (quote ,theme))
-               (custom-theme-set-faces
-                (quote ,theme) ;; maybe instead use =user= theme?
-                ,@(cl-remove-if
-                   (lambda (x) (equal x "NA"))
-                   (mapcar
-                    (lambda (face)
-                      (let ((face-name (car face))
-                            (face-attrs (nth (cl-position theme themes) (cdr face))))
-                        (if face-attrs
-                            `(quote (,face-name ((t ,face-attrs))))
-                          "NA"))) (get-proper-faces)))
-                ))))
-          themes)))
+  (get-proper-faces))
 #+end_src
 
-The above macro can be used like this.
-#+begin_src emacs-lisp
-(set-pair-faces
- ;; Themes to cycle in
- (spacemacs-dark spacemacs-light)
- ;; Variables
- ((bg-white           "#fbf8ef")
-  (bg-light           "#222425")
-  (bg-dark            "#1c1e1f")
-  (bg-darker          "#1c1c1c")
-  (fg-white           "#ffffff")
-  (shade-white        "#efeae9")
-  (fg-light           "#655370")
-  (dark-cyan          "#008b8b")
-  (light-green        "#4f774f") ;;#3f773f
-  (dark-green         "#1c661c")
-  (dark-green2        "#002000")
-  (region-dark        "#2d2e2e")
-  (region             "#39393d")
-  (slate              "#8FA1B3")
-  (keyword            "#f92672")
-  (comment            "#525254")
-  (builtin            "#fd971f")
-  (purple             "#9c91e4")
-  (doc                "#727280")
-  (type               "#66d9ef")
-  (string             "#b6e63e")
-  (gray-dark          "#999")
-  (gray               "#bbb")
-  (sans-font          "Source Sans Pro")
-  (serif-font         "Merriweather")
-  (et-font            "EtBookOt")
-  (sans-mono-font     "Hack")
-  ;; (serif-mono-font    "Verily Serif Mono")
-  (serif-mono-font    "cmu typewriter text")
-  )
-
- ;; (set-face-attribute 'default nil :font "Hack-11")
-;; (set-face-attribute 'variable-pitch nil :font "EtBookOt-11")
- ;; Settings
- ((default
-    (:family ,sans-mono-font
-             :background ,bg-dark
-             :foreground ,bg-white)
-    (:family ,sans-mono-font
-             :background ,bg-white
-             :foreground ,bg-dark
-             :height 75))
-  (variable-pitch
-   (:family ,sans-font)
-   (:family ,et-font
-            :background nil
-            :foreground ,bg-dark
-            :height 1.2))
-  (header-line
-   (:background nil :inherit nil)
-   (:background nil :inherit nil))
-  ;; (company-tooltip
-  ;;  (:background ,bg-darker
-  ;;               :foreground ,gray)
-  ;;  nil)
-  ;; (company-scrollbar-fg
-  ;;  (:background ,comment)
-  ;;  nil)
-  ;; (company-scrollbar-bg
-  ;;  (:background ,bg-darker)
-  ;;  nil)
-  ;; (company-tooltip-common
-  ;;  (:foreground ,keyword)
-  ;;  nil)
-  ;; (company-tootip-annotation
-  ;;  (:foreground ,type)
-  ;;  nil)
-  ;; (company-tooltip-selection
-  ;;  (:background ,region)
-  ;;  nil)
-  (show-paren-match
-   (:background ,keyword
-                :foreground ,bg-dark)
-   nil)
-  (magit-section-heading
-   (:foreground ,keyword)
-   nil)
-  (magit-header-line
-   (:background nil
-                :foreground ,bg-dark
-                :box nil)
-   (:background nil
-                :foreground ,bg-white
-                :box nil))
-  (magit-diff-hunk-heading
-   (:background ,comment
-                :foreground ,gray)
-   nil)
-  (magit-diff-hunk-heading-highlight
-   (:background ,comment
-                :foreground ,fg-white)
-   nil)
-  (tooltip
-   (:foreground ,gray
-                :background ,bg-darker)
-   nil)
-  (mode-line
-   (:background ,bg-darker)
-   (:background ,bg-white
-                :box nil))
-  (mode-line-inactive
-   nil
-   (:box nil))
-  (powerline-active1
-   nil
-   (:background ,bg-white))
-  (powerline-active2
-   nil
-   (:background ,bg-white))
-  (powerline-inactive1
-   nil
-   (:background ,bg-white))
-  (powerline-inactive2
-   nil
-   (:background ,bg-white))
-  (highlight
-   (:background ,region
-                :foreground ,fg-white)
-   (:background ,shade-white))
-  (hl-line
-   (:background ,region-dark)
-   nil)
-  (org-document-title
-   (:inherit variable-pitch
-             :height 1.3
-             :weight normal
-             :foreground ,gray)
-   (:inherit nil
-             :family ,et-font
-             :height 1.8
-             :foreground ,bg-dark
-             :underline nil))
-  (org-document-info
-   (:foreground ,gray
-                :slant italic)
-   (:height 1.2
-            :slant italic))
-  (org-archived
-   nil
-   (:inherit shadow
-             :height 0.6))
-  (org-level-1
-   (:inherit variable-pitch
-             :height 1.3
-             :weight bold
-             :foreground ,keyword
-             :background ,bg-dark)
-   (:inherit nil
-             :family ,et-font
-             :height 1.6
-             :weight normal
-             :slant normal
-             :foreground ,bg-dark))
-  (org-level-2
-   (:inherit variable-pitch
-             :weight bold
-             :height 1.2
-             :foreground ,gray
-             :background ,bg-dark)
-   (:inherit nil
-             :family ,et-font
-             :weight normal
-             :height 1.3
-             :slant italic
-             :foreground ,bg-dark))
-  (org-level-3
-   (:inherit variable-pitch
-             :weight bold
-             :height 1.1
-             :foreground ,slate
-             :background ,bg-dark)
-   (:inherit nil
-             :family ,et-font
-             :weight normal
-             :slant italic
-             :height 1.2
-             :foreground ,bg-dark))
-  (org-level-4
-   (:inherit variable-pitch
-             :weight bold
-             :height 1.1
-             :foreground ,slate
-             :background ,bg-dark)
-   (:inherit nil
-             :family ,et-font
-             :weight normal
-             :slant italic
-             :height 1.1
-             :foreground ,bg-dark))
-  (org-level-5
-   (:inherit variable-pitch
-             :weight bold
-             :height 1.1
-             :foreground ,slate
-             :background ,bg-dark)
-   nil)
-  (org-level-6
-   (:inherit variable-pitch
-             :weight bold
-             :height 1.1
-             :foreground ,slate
-             :background ,bg-dark)
-   nil)
-  (org-level-7
-   (:inherit variable-pitch
-             :weight bold
-             :height 1.1
-             :foreground ,slate
-             :background ,bg-dark)
-   nil)
-  (org-level-8
-   (:inherit variable-pitch
-             :weight bold
-             :height 1.1
-             :foreground ,slate
-             :background ,bg-dark)
-   nil)
-  (org-headline-done
-   (nil)
-   (:family ,et-font))
-  (org-quote
-   (:background ,bg-dark
-                :family ,sans-mono-font)
-   nil)
-  (org-block
-   (:background ,bg-dark
-                :family ,sans-mono-font)
-   (:background nil
-                :height 0.9
-                :foreground ,bg-dark
-                :family ,sans-mono-font))
-  (org-block-begin-line
-   (:background ,bg-dark)
-   (:background nil
-                :height 0.8
-                :family ,sans-mono-font
-                :foreground ,slate))
-  (org-block-end-line
-   (:background ,bg-dark)
-   (:background nil
-                :height 0.8
-                :family ,sans-mono-font
-                :foreground ,slate))
-  (org-meta-line
-   (:foreground ,comment)
-   (:height 0.8
-            :foreground ,gray))
-  (org-document-info-keyword
-   (:foreground ,comment)
-   (:height 0.8
-            :foreground ,gray))
-  (org-link
-   (:underline nil
-               :weight normal
-               :foreground ,slate)
-   (:foreground ,builtin))
-  (org-special-keyword
-   (:height 0.9
-            :foreground ,comment)
-   (:family ,sans-mono-font
-            :height 0.8))
-  (org-property-value
-   (:height 0.9
-            :foreground ,comment)
-   (:family ,sans-mono-font
-            :height 0.8))
-  (org-drawer
-   (:height 0.9
-            :foreground ,comment)
-   (:family ,sans-mono-font
-            :height 0.8))
-  (org-todo
-   (:foreground ,builtin
-                :background ,bg-dark)
-   nil)
-  (org-done
-   (:inherit variable-pitch
-             :foreground ,dark-cyan
-             :background ,bg-dark)
-   nil)
-  (org-agenda-current-time
-   (:foreground ,slate)
-   nil)
-  (org-hide
-   nil
-   (:foreground ,bg-white))
-  (org-indent
-   (:inherit org-hide)
-   (:inherit (org-hide fixed-pitch)))
-  (org-time-grid
-   (:foreground ,comment)
-   nil)
-  (org-warning
-   (:foreground ,builtin)
-   nil)
-  (org-date
-   nil
-   (:family ,sans-mono-font
-            :height 0.8))
-  (org-agenda-structure
-   (:height 1.3
-            :foreground ,doc
-            :weight normal
-            :inherit variable-pitch)
-   nil)
-  (org-agenda-date
-   (:foreground ,doc)
-   (:foreground ,doc))
-  (org-agenda-date-today
-   (:height 1.5
-            :foreground ,keyword)
-   (:height 1.2))
-  (org-agenda-date-weekend
-   (:inherit org-agenda-date)
-   nil)
-  (org-scheduled
-   (:foreground ,gray)
-   (:foreground ,light-green))
-  (org-upcoming-deadline
-   (:foreground ,keyword)
-   nil)
-  (org-scheduled-today
-   (:foreground ,fg-white)
-   (:foreground ,dark-green))
-  (org-scheduled-previously
-   (:foreground ,slate)
-   (:foreground ,dark-green2))
-  (org-agenda-done
-   (:inherit nil
-             :foreground ,doc)
-   (:foreground ,doc))
-  (org-ellipsis
-   (:underline nil
-               :foreground ,comment)
-   (:underline nil
-               :foreground ,comment))
-  (org-tag
-   (:foreground ,doc)
-   (:foreground ,doc))
-  (org-table
-   (:background nil
-                :family ,sans-mono-font)
-   (:family ,serif-mono-font
-            :height 0.9
-            :background ,bg-white))
-  (org-code
-   (:inherit font-lock-builtin-face)
-   (:inherit nil
-             :family ,serif-mono-font
-             :foreground ,comment
-             :height 0.9))
-  (font-latex-sectioning-0-face
-   (:foreground ,type
-                :height 1.2)
-   nil)
-  (font-latex-sectioning-1-face
-   (:foreground ,type
-                :height 1.1)
-   nil)
-  (font-latex-sectioning-2-face
-   (:foreground ,type
-                :height 1.1)
-   nil)
-  (font-latex-sectioning-3-face
-   (:foreground ,type
-                :height 1.0)
-   nil)
-  (font-latex-sectioning-4-face
-   (:foreground ,type
-                :height 1.0)
-   nil)
-  (font-latex-sectioning-5-face
-   (:foreground ,type
-                :height 1.0)
-   nil)
-  (font-latex-verbatim-face
-   (:foreground ,builtin)
-   nil)
-  (spacemacs-normal-face
-   (:background ,bg-dark
-                :foreground ,fg-white)
-   nil)
-  (spacemacs-evilified-face
-   (:background ,bg-dark
-                :foreground ,fg-white)
-   nil)
-  (spacemacs-lisp-face
-   (:background ,bg-dark
-                :foreground ,fg-white)
-   nil)
-  (spacemacs-emacs-face
-   (:background ,bg-dark
-                :foreground ,fg-white)
-   nil)
-  (spacemacs-motion-face
-   (:background ,bg-dark
-                :foreground ,fg-white)
-   nil)
-  (spacemacs-visual-face
-   (:background ,bg-dark
-                :foreground ,fg-white)
-   nil)
-  (spacemacs-hybrid-face
-   (:background ,bg-dark
-                :foreground ,fg-white)
-   nil)
-  (bm-persistent-face
-   (:background ,dark-cyan
-                :foreground ,fg-white)
-   nil)
-  (helm-selection
-   (:background ,region)
-   nil)
-  (helm-match
-   (:foreground ,keyword)
-   nil)
-  (cfw:face-title
-   (:height 2.0
-            :inherit variable-pitch
-            :weight bold
-            :foreground ,doc)
-   nil)
-  (cfw:face-holiday
-   (:foreground ,builtin)
-   nil)
-  (cfw:face-saturday
-   (:foreground ,doc
-                :weight bold)
-   nil)
-  (cfw:face-sunday
-   (:foreground ,doc)
-   nil)
-  (cfw:face-periods
-   (:foreground ,dark-cyan)
-   nil)
-  (cfw:face-annotation
-   (:foreground ,doc)
-   nil)
-  (cfw:face-select
-   (:background ,region)
-   nil)
-  (cfw:face-toolbar-button-off
-   (:foreground ,doc)
-   nil)
-  (cfw:face-toolbar-button-on
-   (:foreground ,type
-                :weight bold)
-   nil)
-  (cfw:face-day-title
-   (:foreground ,doc)
-   nil)
-  (cfw:face-default-content
-   (:foreground ,dark-cyan)
-   nil)
-  (cfw:face-disable
-   (:foreground ,doc)
-   nil)
-  (cfw:face-today
-   (:background ,region
-                :weight bold)
-   nil)
-  (cfw:face-toolbar
-   (:inherit default)
-   nil)
-  (cfw:face-today-title
-   (:background ,keyword
-                :foreground ,fg-white)
-   nil)
-  (cfw:face-grid
-   (:foreground ,comment)
-   nil)
-  (cfw:face-header
-   (:foreground ,keyword
-                :weight bold)
-   nil)
-  (cfw:face-default-day
-   (:foreground ,fg-white)
-   nil)
-  (dired-subtree-depth-1-face
-   (:background nil)
-   (:background nil))
-  (dired-subtree-depth-2-face
-   (:background nil)
-   (:background nil))
-  (dired-subtree-depth-3-face
-   (:background nil)
-   (:background nil))
-  (dired-subtree-depth-4-face
-   (:background nil)
-   (:background nil))
-  (dired-subtree-depth-5-face
-   (:background nil)
-   (:background nil))
-  (dired-subtree-depth-6-face
-   (:background nil)
-   (:background nil))
-  (nlinum-current-line
-   (:foreground ,builtin)
-   (:foreground ,bg-dark))
-  (vertical-border
-   (:background ,region
-                :foreground ,region)
-   nil)
-  (which-key-command-description-face
-   (:foreground ,type)
-   nil)
-  (flycheck-error
-   (:background nil)
-   nil)
-  (flycheck-warning
-   (:background nil)
-   nil)
-  (font-lock-string-face
-   (:foreground ,string)
-   nil)
-  (font-lock-comment-face
-   (:foreground ,doc
-                :slant italic)
-   (:background nil
-                :foreground ,doc
-                :slant italic))
-  (elfeed-search-unread-title-face
-   (:weight bold)
-   (:weight bold))
-  (helm-ff-symlink
-   (:foreground ,slate)
-   nil)
-  (region
-   (:background ,region)
-   nil)
-  (header-line
-   (:background nil
-                :inherit nil)
-   (:background nil
-                :inherit nil))))
+This call now creates a custom theme based on the settings in the sections
+[[id:82021d54-89d6-4712-8e5a-df2fc6177c96][Colors]] and [[id:a3b74d3b-675e-426d-b675-e70dcfd3d2b6][Faces]]. These are my customizations to the spacemacs theme. Make sure to manually run these customization blocks after changing a face, as only the result blocks are tangled!
+#+begin_src emacs-lisp :tangle no :results code replace  :wrap "src emacs-lisp :tangle tangle/spacemacs-dark-customizations-theme.el"
+`(progn
+   (deftheme spacemacs-dark-customizations
+     "My customizations to spacemacs-dark (Created 2020-06-27)")
+   (custom-theme-set-faces
+    'spacemacs-dark-customizations
+    ,@(prep-custom-theme-set-faces
+       (quote
+        <<colors>>)
+       <<faces-spacemacs-dark>>))
+    (provide-theme 'spacemacs-dark-customizations))
 #+end_src
-*** Diminish buffer-face-mode
+
+#+RESULTS:
+#+begin_src emacs-lisp :tangle tangle/spacemacs-dark-customizations-theme.el
+(progn
+  (deftheme spacemacs-dark-customizations "My customizations to spacemacs-dark (Created 2020-06-27)")
+  (custom-theme-set-faces 'spacemacs-dark-customizations
+                          '(default
+                             ((t
+                               (:family "Hack" :background "#1c1e1f" :foreground "#fbf8ef"))))
+                          '(variable-pitch
+                            ((t
+                              (:family "Source Sans Pro"))))
+                          '(header-line
+                            ((t
+                              (:background nil :inherit nil))))
+                          '(show-paren-match
+                            ((t
+                              (:background "#f92672" :foreground "#1c1e1f"))))
+                          '(magit-section-heading
+                            ((t
+                              (:foreground "#f92672"))))
+                          '(magit-header-line
+                            ((t
+                              (:background nil :foreground "#1c1e1f" :box nil))))
+                          '(magit-diff-hunk-heading
+                            ((t
+                              (:background "#525254" :foreground "#bbb"))))
+                          '(magit-diff-hunk-heading-highlight
+                            ((t
+                              (:background "#525254" :foreground "#ffffff"))))
+                          '(tooltip
+                            ((t
+                              (:foreground "#bbb" :background "#1c1c1c"))))
+                          '(mode-line
+                            ((t
+                              (:background "#1c1c1c"))))
+                          '(mode-line-inactive
+                            ((t nil)))
+                          '(powerline-active1
+                            ((t nil)))
+                          '(powerline-active2
+                            ((t nil)))
+                          '(powerline-inactive1
+                            ((t nil)))
+                          '(powerline-inactive2
+                            ((t nil)))
+                          '(highlight
+                            ((t
+                              (:background "#39393d" :foreground "#ffffff"))))
+                          '(hl-line
+                            ((t
+                              (:background "#2d2e2e"))))
+                          '(org-document-title
+                            ((t
+                              (:inherit variable-pitch :height 1.3 :weight normal :foreground "#bbb"))))
+                          '(org-document-info
+                            ((t
+                              (:foreground "#bbb" :slant italic))))
+                          '(org-archived
+                            ((t nil)))
+                          '(org-level-1
+                            ((t
+                              (:inherit variable-pitch :height 1.3 :weight bold :foreground "#f92672" :background "#1c1e1f"))))
+                          '(org-level-2
+                            ((t
+                              (:inherit variable-pitch :weight bold :height 1.2 :foreground "#bbb" :background "#1c1e1f"))))
+                          '(org-level-3
+                            ((t
+                              (:inherit variable-pitch :weight bold :height 1.1 :foreground "#8FA1B3" :background "#1c1e1f"))))
+                          '(org-level-4
+                            ((t
+                              (:inherit variable-pitch :weight bold :height 1.1 :foreground "#8FA1B3" :background "#1c1e1f"))))
+                          '(org-level-5
+                            ((t
+                              (:inherit variable-pitch :weight bold :height 1.1 :foreground "#8FA1B3" :background "#1c1e1f"))))
+                          '(org-level-6
+                            ((t
+                              (:inherit variable-pitch :weight bold :height 1.1 :foreground "#8FA1B3" :background "#1c1e1f"))))
+                          '(org-level-7
+                            ((t
+                              (:inherit variable-pitch :weight bold :height 1.1 :foreground "#8FA1B3" :background "#1c1e1f"))))
+                          '(org-level-8
+                            ((t
+                              (:inherit variable-pitch :weight bold :height 1.1 :foreground "#8FA1B3" :background "#1c1e1f"))))
+                          '(org-headline-done
+                            (nil))
+                          '(org-quote
+                            ((t
+                              (:background "#1c1e1f" :family "Hack"))))
+                          '(org-block
+                            ((t
+                              (:background "#1c1e1f" :family "Hack"))))
+                          '(org-block-begin-line
+                            ((t
+                              (:background "#1c1e1f"))))
+                          '(org-block-end-line
+                            ((t
+                              (:background "#1c1e1f"))))
+                          '(org-meta-line
+                            ((t
+                              (:foreground "#525254"))))
+                          '(org-document-info-keyword
+                            ((t
+                              (:foreground "#525254"))))
+                          '(org-link
+                            ((t
+                              (:underline nil :weight normal :foreground "#8FA1B3"))))
+                          '(org-special-keyword
+                            ((t
+                              (:height 0.9 :foreground "#525254"))))
+                          '(org-property-value
+                            ((t
+                              (:height 0.9 :foreground "#525254"))))
+                          '(org-drawer
+                            ((t
+                              (:height 0.9 :foreground "#525254"))))
+                          '(org-todo
+                            ((t
+                              (:foreground "#fd971f" :background "#1c1e1f"))))
+                          '(org-done
+                            ((t
+                              (:inherit variable-pitch :foreground "#008b8b" :background "#1c1e1f"))))
+                          '(org-agenda-current-time
+                            ((t
+                              (:foreground "#8FA1B3"))))
+                          '(org-hide
+                            ((t nil)))
+                          '(org-indent
+                            ((t
+                              (:inherit org-hide))))
+                          '(org-time-grid
+                            ((t
+                              (:foreground "#525254"))))
+                          '(org-warning
+                            ((t
+                              (:foreground "#fd971f"))))
+                          '(org-date
+                            ((t nil)))
+                          '(org-agenda-structure
+                            ((t
+                              (:height 1.3 :foreground "#727280" :weight normal :inherit variable-pitch))))
+                          '(org-agenda-date
+                            ((t
+                              (:foreground "#727280"))))
+                          '(org-agenda-date-today
+                            ((t
+                              (:height 1.5 :foreground "#f92672"))))
+                          '(org-agenda-date-weekend
+                            ((t
+                              (:inherit org-agenda-date))))
+                          '(org-scheduled
+                            ((t
+                              (:foreground "#bbb"))))
+                          '(org-upcoming-deadline
+                            ((t
+                              (:foreground "#f92672"))))
+                          '(org-scheduled-today
+                            ((t
+                              (:foreground "#ffffff"))))
+                          '(org-scheduled-previously
+                            ((t
+                              (:foreground "#8FA1B3"))))
+                          '(org-agenda-done
+                            ((t
+                              (:inherit nil :foreground "#727280"))))
+                          '(org-ellipsis
+                            ((t
+                              (:underline nil :foreground "#525254"))))
+                          '(org-tag
+                            ((t
+                              (:foreground "#727280"))))
+                          '(org-table
+                            ((t
+                              (:background nil :family "Hack"))))
+                          '(org-code
+                            ((t
+                              (:inherit font-lock-builtin-face))))
+                          '(font-latex-sectioning-0-face
+                            ((t
+                              (:foreground "#66d9ef" :height 1.2))))
+                          '(font-latex-sectioning-1-face
+                            ((t
+                              (:foreground "#66d9ef" :height 1.1))))
+                          '(font-latex-sectioning-2-face
+                            ((t
+                              (:foreground "#66d9ef" :height 1.1))))
+                          '(font-latex-sectioning-3-face
+                            ((t
+                              (:foreground "#66d9ef" :height 1.0))))
+                          '(font-latex-sectioning-4-face
+                            ((t
+                              (:foreground "#66d9ef" :height 1.0))))
+                          '(font-latex-sectioning-5-face
+                            ((t
+                              (:foreground "#66d9ef" :height 1.0))))
+                          '(font-latex-verbatim-face
+                            ((t
+                              (:foreground "#fd971f"))))
+                          '(spacemacs-normal-face
+                            ((t
+                              (:background "#1c1e1f" :foreground "#ffffff"))))
+                          '(spacemacs-evilified-face
+                            ((t
+                              (:background "#1c1e1f" :foreground "#ffffff"))))
+                          '(spacemacs-lisp-face
+                            ((t
+                              (:background "#1c1e1f" :foreground "#ffffff"))))
+                          '(spacemacs-emacs-face
+                            ((t
+                              (:background "#1c1e1f" :foreground "#ffffff"))))
+                          '(spacemacs-motion-face
+                            ((t
+                              (:background "#1c1e1f" :foreground "#ffffff"))))
+                          '(spacemacs-visual-face
+                            ((t
+                              (:background "#1c1e1f" :foreground "#ffffff"))))
+                          '(spacemacs-hybrid-face
+                            ((t
+                              (:background "#1c1e1f" :foreground "#ffffff"))))
+                          '(bm-persistent-face
+                            ((t
+                              (:background "#008b8b" :foreground "#ffffff"))))
+                          '(helm-selection
+                            ((t
+                              (:background "#39393d"))))
+                          '(helm-match
+                            ((t
+                              (:foreground "#f92672"))))
+                          '(cfw:face-title
+                            ((t
+                              (:height 2.0 :inherit variable-pitch :weight bold :foreground "#727280"))))
+                          '(cfw:face-holiday
+                            ((t
+                              (:foreground "#fd971f"))))
+                          '(cfw:face-saturday
+                            ((t
+                              (:foreground "#727280" :weight bold))))
+                          '(cfw:face-sunday
+                            ((t
+                              (:foreground "#727280"))))
+                          '(cfw:face-periods
+                            ((t
+                              (:foreground "#008b8b"))))
+                          '(cfw:face-annotation
+                            ((t
+                              (:foreground "#727280"))))
+                          '(cfw:face-select
+                            ((t
+                              (:background "#39393d"))))
+                          '(cfw:face-toolbar-button-off
+                            ((t
+                              (:foreground "#727280"))))
+                          '(cfw:face-toolbar-button-on
+                            ((t
+                              (:foreground "#66d9ef" :weight bold))))
+                          '(cfw:face-day-title
+                            ((t
+                              (:foreground "#727280"))))
+                          '(cfw:face-default-content
+                            ((t
+                              (:foreground "#008b8b"))))
+                          '(cfw:face-disable
+                            ((t
+                              (:foreground "#727280"))))
+                          '(cfw:face-today
+                            ((t
+                              (:background "#39393d" :weight bold))))
+                          '(cfw:face-toolbar
+                            ((t
+                              (:inherit default))))
+                          '(cfw:face-today-title
+                            ((t
+                              (:background "#f92672" :foreground "#ffffff"))))
+                          '(cfw:face-grid
+                            ((t
+                              (:foreground "#525254"))))
+                          '(cfw:face-header
+                            ((t
+                              (:foreground "#f92672" :weight bold))))
+                          '(cfw:face-default-day
+                            ((t
+                              (:foreground "#ffffff"))))
+                          '(dired-subtree-depth-1-face
+                            ((t
+                              (:background nil))))
+                          '(dired-subtree-depth-2-face
+                            ((t
+                              (:background nil))))
+                          '(dired-subtree-depth-3-face
+                            ((t
+                              (:background nil))))
+                          '(dired-subtree-depth-4-face
+                            ((t
+                              (:background nil))))
+                          '(dired-subtree-depth-5-face
+                            ((t
+                              (:background nil))))
+                          '(dired-subtree-depth-6-face
+                            ((t
+                              (:background nil))))
+                          '(nlinum-current-line
+                            ((t
+                              (:foreground "#fd971f"))))
+                          '(vertical-border
+                            ((t
+                              (:background "#39393d" :foreground "#39393d"))))
+                          '(which-key-command-description-face
+                            ((t
+                              (:foreground "#66d9ef"))))
+                          '(flycheck-error
+                            ((t
+                              (:background nil))))
+                          '(flycheck-warning
+                            ((t
+                              (:background nil))))
+                          '(font-lock-string-face
+                            ((t
+                              (:foreground "#b6e63e"))))
+                          '(font-lock-comment-face
+                            ((t
+                              (:foreground "#727280" :slant italic))))
+                          '(elfeed-search-unread-title-face
+                            ((t
+                              (:weight bold))))
+                          '(helm-ff-symlink
+                            ((t
+                              (:foreground "#8FA1B3"))))
+                          '(region
+                            ((t
+                              (:background "#39393d")))))
+  (provide-theme 'spacemacs-dark-customizations))
+#+end_src
+
+#+begin_src emacs-lisp :tangle no :results code replace  :wrap "src emacs-lisp :tangle tangle/spacemacs-light-customizations-theme.el"
+`(progn
+   (deftheme spacemacs-light-customizations
+     "My customizations to spacemacs-light (Created 2020-06-27)")
+   (custom-theme-set-faces
+    'spacemacs-light-customizations
+    ,@(prep-custom-theme-set-faces
+       (quote
+        <<colors>>)
+       <<faces-spacemacs-light>>))
+    (provide-theme 'spacemacs-light-customizations))
+#+end_src
+
+#+RESULTS:
+#+begin_src emacs-lisp :tangle tangle/spacemacs-light-customizations-theme.el
+(progn
+  (deftheme spacemacs-light-customizations "My customizations to spacemacs-light (Created 2020-06-27)")
+  (custom-theme-set-faces 'spacemacs-light-customizations
+                          '(default
+                             ((t
+                               (:family "Hack" :background "#fbf8ef" :foreground "#1c1e1f"))))
+                          '(variable-pitch
+                            ((t
+                              (:family "EtBookOt" :background nil :foreground "#1c1e1f" :height 1.2))))
+                          '(header-line
+                            ((t
+                              (:background nil :inherit nil))))
+                          '(show-paren-match
+                            ((t nil)))
+                          '(magit-section-heading
+                            ((t nil)))
+                          '(magit-header-line
+                            ((t
+                              (:background nil :foreground "#fbf8ef" :box nil))))
+                          '(magit-diff-hunk-heading
+                            ((t nil)))
+                          '(magit-diff-hunk-heading-highlight
+                            ((t nil)))
+                          '(tooltip
+                            ((t nil)))
+                          '(mode-line
+                            ((t
+                              (:background "#fbf8ef" :box nil))))
+                          '(mode-line-inactive
+                            ((t
+                              (:box nil))))
+                          '(powerline-active1
+                            ((t
+                              (:background "#fbf8ef"))))
+                          '(powerline-active2
+                            ((t
+                              (:background "#fbf8ef"))))
+                          '(powerline-inactive1
+                            ((t
+                              (:background "#fbf8ef"))))
+                          '(powerline-inactive2
+                            ((t
+                              (:background "#fbf8ef"))))
+                          '(highlight
+                            ((t
+                              (:background "#efeae9"))))
+                          '(hl-line
+                            ((t nil)))
+                          '(org-document-title
+                            ((t
+                              (:inherit nil :family "EtBookOt" :height 1.8 :foreground "#1c1e1f" :underline nil))))
+                          '(org-document-info
+                            ((t
+                              (:height 1.2 :slant italic))))
+                          '(org-archived
+                            ((t
+                              (:inherit shadow :height 0.6))))
+                          '(org-level-1
+                            ((t
+                              (:inherit nil :family "EtBookOt" :height 1.6 :weight normal :slant normal :foreground "#1c1e1f"))))
+                          '(org-level-2
+                            ((t
+                              (:inherit nil :family "EtBookOt" :weight normal :height 1.3 :slant italic :foreground "#1c1e1f"))))
+                          '(org-level-3
+                            ((t
+                              (:inherit nil :family "EtBookOt" :weight normal :slant italic :height 1.2 :foreground "#1c1e1f"))))
+                          '(org-level-4
+                            ((t
+                              (:inherit nil :family "EtBookOt" :weight normal :slant italic :height 1.1 :foreground "#1c1e1f"))))
+                          '(org-level-5
+                            ((t nil)))
+                          '(org-level-6
+                            ((t nil)))
+                          '(org-level-7
+                            ((t nil)))
+                          '(org-level-8
+                            ((t nil)))
+                          '(org-headline-done
+                            ((t
+                              (:family "EtBookOt"))))
+                          '(org-quote
+                            ((t nil)))
+                          '(org-block
+                            ((t
+                              (:background nil :height 0.9 :foreground "#1c1e1f" :family "Hack"))))
+                          '(org-block-begin-line
+                            ((t
+                              (:background nil :height 0.8 :family "Hack" :foreground "#8FA1B3"))))
+                          '(org-block-end-line
+                            ((t
+                              (:background nil :height 0.8 :family "Hack" :foreground "#8FA1B3"))))
+                          '(org-meta-line
+                            ((t
+                              (:height 0.8 :foreground "#bbb"))))
+                          '(org-document-info-keyword
+                            ((t
+                              (:height 0.8 :foreground "#bbb"))))
+                          '(org-link
+                            ((t
+                              (:foreground "#fd971f"))))
+                          '(org-special-keyword
+                            ((t
+                              (:family "Hack" :height 0.8))))
+                          '(org-property-value
+                            ((t
+                              (:family "Hack" :height 0.8))))
+                          '(org-drawer
+                            ((t
+                              (:family "Hack" :height 0.8))))
+                          '(org-todo
+                            ((t nil)))
+                          '(org-done
+                            ((t nil)))
+                          '(org-agenda-current-time
+                            ((t nil)))
+                          '(org-hide
+                            ((t
+                              (:foreground "#fbf8ef"))))
+                          '(org-indent
+                            ((t
+                              (:inherit
+                               (org-hide fixed-pitch)))))
+                          '(org-time-grid
+                            ((t nil)))
+                          '(org-warning
+                            ((t nil)))
+                          '(org-date
+                            ((t
+                              (:family "Hack" :height 0.8))))
+                          '(org-agenda-structure
+                            ((t nil)))
+                          '(org-agenda-date
+                            ((t
+                              (:foreground "#727280"))))
+                          '(org-agenda-date-today
+                            ((t
+                              (:height 1.2))))
+                          '(org-agenda-date-weekend
+                            ((t nil)))
+                          '(org-scheduled
+                            ((t
+                              (:foreground "#4f774f"))))
+                          '(org-upcoming-deadline
+                            ((t nil)))
+                          '(org-scheduled-today
+                            ((t
+                              (:foreground "#1c661c"))))
+                          '(org-scheduled-previously
+                            ((t
+                              (:foreground "#002000"))))
+                          '(org-agenda-done
+                            ((t
+                              (:foreground "#727280"))))
+                          '(org-ellipsis
+                            ((t
+                              (:underline nil :foreground "#525254"))))
+                          '(org-tag
+                            ((t
+                              (:foreground "#727280"))))
+                          '(org-table
+                            ((t
+                              (:family "cmu typewriter text" :height 0.9 :background "#fbf8ef"))))
+                          '(org-code
+                            ((t
+                              (:inherit nil :family "cmu typewriter text" :foreground "#525254" :height 0.9))))
+                          '(font-latex-sectioning-0-face
+                            ((t nil)))
+                          '(font-latex-sectioning-1-face
+                            ((t nil)))
+                          '(font-latex-sectioning-2-face
+                            ((t nil)))
+                          '(font-latex-sectioning-3-face
+                            ((t nil)))
+                          '(font-latex-sectioning-4-face
+                            ((t nil)))
+                          '(font-latex-sectioning-5-face
+                            ((t nil)))
+                          '(font-latex-verbatim-face
+                            ((t nil)))
+                          '(spacemacs-normal-face
+                            ((t nil)))
+                          '(spacemacs-evilified-face
+                            ((t nil)))
+                          '(spacemacs-lisp-face
+                            ((t nil)))
+                          '(spacemacs-emacs-face
+                            ((t nil)))
+                          '(spacemacs-motion-face
+                            ((t nil)))
+                          '(spacemacs-visual-face
+                            ((t nil)))
+                          '(spacemacs-hybrid-face
+                            ((t nil)))
+                          '(bm-persistent-face
+                            ((t nil)))
+                          '(helm-selection
+                            ((t nil)))
+                          '(helm-match
+                            ((t nil)))
+                          '(cfw:face-title
+                            ((t nil)))
+                          '(cfw:face-holiday
+                            ((t nil)))
+                          '(cfw:face-saturday
+                            ((t nil)))
+                          '(cfw:face-sunday
+                            ((t nil)))
+                          '(cfw:face-periods
+                            ((t nil)))
+                          '(cfw:face-annotation
+                            ((t nil)))
+                          '(cfw:face-select
+                            ((t nil)))
+                          '(cfw:face-toolbar-button-off
+                            ((t nil)))
+                          '(cfw:face-toolbar-button-on
+                            ((t nil)))
+                          '(cfw:face-day-title
+                            ((t nil)))
+                          '(cfw:face-default-content
+                            ((t nil)))
+                          '(cfw:face-disable
+                            ((t nil)))
+                          '(cfw:face-today
+                            ((t nil)))
+                          '(cfw:face-toolbar
+                            ((t nil)))
+                          '(cfw:face-today-title
+                            ((t nil)))
+                          '(cfw:face-grid
+                            ((t nil)))
+                          '(cfw:face-header
+                            ((t nil)))
+                          '(cfw:face-default-day
+                            ((t nil)))
+                          '(dired-subtree-depth-1-face
+                            ((t
+                              (:background nil))))
+                          '(dired-subtree-depth-2-face
+                            ((t
+                              (:background nil))))
+                          '(dired-subtree-depth-3-face
+                            ((t
+                              (:background nil))))
+                          '(dired-subtree-depth-4-face
+                            ((t
+                              (:background nil))))
+                          '(dired-subtree-depth-5-face
+                            ((t
+                              (:background nil))))
+                          '(dired-subtree-depth-6-face
+                            ((t
+                              (:background nil))))
+                          '(nlinum-current-line
+                            ((t
+                              (:foreground "#1c1e1f"))))
+                          '(vertical-border
+                            ((t nil)))
+                          '(which-key-command-description-face
+                            ((t nil)))
+                          '(flycheck-error
+                            ((t nil)))
+                          '(flycheck-warning
+                            ((t nil)))
+                          '(font-lock-string-face
+                            ((t nil)))
+                          '(font-lock-comment-face
+                            ((t
+                              (:background nil :foreground "#727280" :slant italic))))
+                          '(elfeed-search-unread-title-face
+                            ((t
+                              (:weight bold))))
+                          '(helm-ff-symlink
+                            ((t nil)))
+                          '(region
+                            ((t nil))))
+  (provide-theme 'spacemacs-light-customizations))
+#+end_src
+
+Now we just have to link the tangled themes to the ~load-path~
+#+BEGIN_SRC shell :results silent :tangle tangle/symlink.sh :shebang "#!/bin/bash"
+ln -siv $(pwd)/tangle/spacemacs-dark-customizations-theme.el ~/.emacs.d/
+ln -siv $(pwd)/tangle/spacemacs-light-customizations-theme.el ~/.emacs.d/
+#+END_SRC
+**** Colors
+:PROPERTIES:
+:ID:       82021d54-89d6-4712-8e5a-df2fc6177c96
+:END:
+#+begin_src emacs-lisp :noweb-ref colors :tangle no
+((bg-white           "#fbf8ef")
+ (bg-light           "#222425")
+ (bg-dark            "#1c1e1f")
+ (bg-darker          "#1c1c1c")
+ (fg-white           "#ffffff")
+ (shade-white        "#efeae9")
+ (fg-light           "#655370")
+ (dark-cyan          "#008b8b")
+ (light-green        "#4f774f") ;;#3f773f
+ (dark-green         "#1c661c")
+ (dark-green2        "#002000")
+ (region-dark        "#2d2e2e")
+ (region             "#39393d")
+ (slate              "#8FA1B3")
+ (keyword            "#f92672")
+ (comment            "#525254")
+ (builtin            "#fd971f")
+ (purple             "#9c91e4")
+ (doc                "#727280")
+ (type               "#66d9ef")
+ (string             "#b6e63e")
+ (gray-dark          "#999")
+ (gray               "#bbb")
+ (sans-font          "Source Sans Pro")
+ (serif-font         "Merriweather")
+ (et-font            "EtBookOt")
+ (sans-mono-font     "Hack")
+ ;; (serif-mono-font    "Verily Serif Mono")
+ (serif-mono-font    "cmu typewriter text")
+ )
+#+end_src
+**** Faces
+:PROPERTIES:
+:ID:       a3b74d3b-675e-426d-b675-e70dcfd3d2b6
+:END:
+#+begin_src emacs-lisp :noweb-ref faces-spacemacs-light :tangle no
+;; light
+'('(default ((t (:family ,sans-mono-font :background ,bg-white :foreground ,bg-dark
+                         ;; :height 75
+                         ))))
+  '(variable-pitch ((t (:family ,et-font :background nil :foreground ,bg-dark :height 1.2))))
+  '(header-line ((t (:background nil :inherit nil))))
+  '(show-paren-match ((t nil)))
+  '(magit-section-heading ((t nil)))
+  '(magit-header-line ((t (:background nil :foreground ,bg-white :box nil))))
+  '(magit-diff-hunk-heading ((t nil)))
+  '(magit-diff-hunk-heading-highlight ((t nil)))
+  '(tooltip ((t nil)))
+  '(mode-line ((t (:background ,bg-white :box nil))))
+  '(mode-line-inactive ((t (:box nil))))
+  '(powerline-active1 ((t (:background ,bg-white))))
+  '(powerline-active2 ((t (:background ,bg-white))))
+  '(powerline-inactive1 ((t (:background ,bg-white))))
+  '(powerline-inactive2 ((t (:background ,bg-white))))
+  '(highlight ((t (:background ,shade-white))))
+  '(hl-line ((t nil)))
+  '(org-document-title ((t (:inherit nil :family ,et-font :height 1.8 :foreground ,bg-dark :underline nil))))
+  '(org-document-info ((t (:height 1.2 :slant italic))))
+  '(org-archived ((t (:inherit shadow :height 0.6))))
+  '(org-level-1 ((t (:inherit nil :family ,et-font :height 1.6 :weight normal :slant normal :foreground ,bg-dark))))
+  '(org-level-2 ((t (:inherit nil :family ,et-font :weight normal :height 1.3 :slant italic :foreground ,bg-dark))))
+  '(org-level-3 ((t (:inherit nil :family ,et-font :weight normal :slant italic :height 1.2 :foreground ,bg-dark))))
+  '(org-level-4 ((t (:inherit nil :family ,et-font :weight normal :slant italic :height 1.1 :foreground ,bg-dark))))
+  '(org-level-5 ((t nil)))
+  '(org-level-6 ((t nil)))
+  '(org-level-7 ((t nil)))
+  '(org-level-8 ((t nil)))
+  '(org-headline-done ((t (:family ,et-font))))
+  '(org-quote ((t nil)))
+  '(org-block ((t (:background nil :height 0.9 :foreground ,bg-dark :family ,sans-mono-font))))
+  '(org-block-begin-line ((t (:background nil :height 0.8 :family ,sans-mono-font :foreground ,slate))))
+  '(org-block-end-line ((t (:background nil :height 0.8 :family ,sans-mono-font :foreground ,slate))))
+  '(org-meta-line ((t (:height 0.8 :foreground ,gray))))
+  '(org-document-info-keyword ((t (:height 0.8 :foreground ,gray))))
+  '(org-link ((t (:foreground ,builtin))))
+  '(org-special-keyword ((t (:family ,sans-mono-font :height 0.8))))
+  '(org-property-value ((t (:family ,sans-mono-font :height 0.8))))
+  '(org-drawer ((t (:family ,sans-mono-font :height 0.8))))
+  '(org-todo ((t nil)))
+  '(org-done ((t nil)))
+  '(org-agenda-current-time ((t nil)))
+  '(org-hide ((t (:foreground ,bg-white))))
+  '(org-indent ((t (:inherit (org-hide fixed-pitch)))))
+  '(org-time-grid ((t nil)))
+  '(org-warning ((t nil)))
+  '(org-date ((t (:family ,sans-mono-font :height 0.8))))
+  '(org-agenda-structure ((t nil)))
+  '(org-agenda-date ((t (:foreground ,doc))))
+  '(org-agenda-date-today ((t (:height 1.2))))
+  '(org-agenda-date-weekend ((t nil)))
+  '(org-scheduled ((t (:foreground ,light-green))))
+  '(org-upcoming-deadline ((t nil)))
+  '(org-scheduled-today ((t (:foreground ,dark-green))))
+  '(org-scheduled-previously ((t (:foreground ,dark-green2))))
+  '(org-agenda-done ((t (:foreground ,doc))))
+  '(org-ellipsis ((t (:underline nil :foreground ,comment))))
+  '(org-tag ((t (:foreground ,doc))))
+  '(org-table ((t (:family ,serif-mono-font :height 0.9 :background ,bg-white))))
+  '(org-code ((t (:inherit nil :family ,serif-mono-font :foreground ,comment :height 0.9))))
+  '(font-latex-sectioning-0-face ((t nil)))
+  '(font-latex-sectioning-1-face ((t nil)))
+  '(font-latex-sectioning-2-face ((t nil)))
+  '(font-latex-sectioning-3-face ((t nil)))
+  '(font-latex-sectioning-4-face ((t nil)))
+  '(font-latex-sectioning-5-face ((t nil)))
+  '(font-latex-verbatim-face ((t nil)))
+  '(spacemacs-normal-face ((t nil)))
+  '(spacemacs-evilified-face ((t nil)))
+  '(spacemacs-lisp-face ((t nil)))
+  '(spacemacs-emacs-face ((t nil)))
+  '(spacemacs-motion-face ((t nil)))
+  '(spacemacs-visual-face ((t nil)))
+  '(spacemacs-hybrid-face ((t nil)))
+  '(bm-persistent-face ((t nil)))
+  '(helm-selection ((t nil)))
+  '(helm-match ((t nil)))
+  '(cfw:face-title ((t nil)))
+  '(cfw:face-holiday ((t nil)))
+  '(cfw:face-saturday ((t nil)))
+  '(cfw:face-sunday ((t nil)))
+  '(cfw:face-periods ((t nil)))
+  '(cfw:face-annotation ((t nil)))
+  '(cfw:face-select ((t nil)))
+  '(cfw:face-toolbar-button-off ((t nil)))
+  '(cfw:face-toolbar-button-on ((t nil)))
+  '(cfw:face-day-title ((t nil)))
+  '(cfw:face-default-content ((t nil)))
+  '(cfw:face-disable ((t nil)))
+  '(cfw:face-today ((t nil)))
+  '(cfw:face-toolbar ((t nil)))
+  '(cfw:face-today-title ((t nil)))
+  '(cfw:face-grid ((t nil)))
+  '(cfw:face-header ((t nil)))
+  '(cfw:face-default-day ((t nil)))
+  '(dired-subtree-depth-1-face ((t (:background nil))))
+  '(dired-subtree-depth-2-face ((t (:background nil))))
+  '(dired-subtree-depth-3-face ((t (:background nil))))
+  '(dired-subtree-depth-4-face ((t (:background nil))))
+  '(dired-subtree-depth-5-face ((t (:background nil))))
+  '(dired-subtree-depth-6-face ((t (:background nil))))
+  '(nlinum-current-line ((t (:foreground ,bg-dark))))
+  '(vertical-border ((t nil)))
+  '(which-key-command-description-face ((t nil)))
+  '(flycheck-error ((t nil)))
+  '(flycheck-warning ((t nil)))
+  '(font-lock-string-face ((t nil)))
+  '(font-lock-comment-face ((t (:background nil :foreground ,doc :slant italic))))
+  '(elfeed-search-unread-title-face ((t (:weight bold))))
+  '(helm-ff-symlink ((t nil)))
+  '(region ((t nil))))
+#+end_src
+#+begin_src emacs-lisp :noweb-ref faces-spacemacs-dark :tangle no
+;; dark
+'('(default ((t (:family ,sans-mono-font :background ,bg-dark :foreground ,bg-white))))
+  '(variable-pitch ((t (:family ,sans-font))))
+  '(header-line ((t (:background nil :inherit nil))))
+  '(show-paren-match ((t (:background ,keyword :foreground ,bg-dark))))
+  '(magit-section-heading ((t (:foreground ,keyword))))
+  '(magit-header-line ((t (:background nil :foreground ,bg-dark :box nil))))
+  '(magit-diff-hunk-heading ((t (:background ,comment :foreground ,gray))))
+  '(magit-diff-hunk-heading-highlight ((t (:background ,comment :foreground ,fg-white))))
+  '(tooltip ((t (:foreground ,gray :background ,bg-darker))))
+  '(mode-line ((t (:background ,bg-darker))))
+  '(mode-line-inactive ((t nil)))
+  '(powerline-active1 ((t nil)))
+  '(powerline-active2 ((t nil)))
+  '(powerline-inactive1 ((t nil)))
+  '(powerline-inactive2 ((t nil)))
+  '(highlight ((t (:background ,region :foreground ,fg-white))))
+  '(hl-line ((t (:background ,region-dark))))
+  '(org-document-title ((t (:inherit variable-pitch :height 1.3 :weight normal :foreground ,gray))))
+  '(org-document-info ((t (:foreground ,gray :slant italic))))
+  '(org-archived ((t nil)))
+  '(org-level-1 ((t (:inherit variable-pitch :height 1.3 :weight bold :foreground ,keyword :background ,bg-dark))))
+  '(org-level-2 ((t (:inherit variable-pitch :weight bold :height 1.2 :foreground ,gray :background ,bg-dark))))
+  '(org-level-3 ((t (:inherit variable-pitch :weight bold :height 1.1 :foreground ,slate :background ,bg-dark))))
+  '(org-level-4 ((t (:inherit variable-pitch :weight bold :height 1.1 :foreground ,slate :background ,bg-dark))))
+  '(org-level-5 ((t (:inherit variable-pitch :weight bold :height 1.1 :foreground ,slate :background ,bg-dark))))
+  '(org-level-6 ((t (:inherit variable-pitch :weight bold :height 1.1 :foreground ,slate :background ,bg-dark))))
+  '(org-level-7 ((t (:inherit variable-pitch :weight bold :height 1.1 :foreground ,slate :background ,bg-dark))))
+  '(org-level-8 ((t (:inherit variable-pitch :weight bold :height 1.1 :foreground ,slate :background ,bg-dark))))
+  '(org-headline-done (nil))
+  '(org-quote ((t (:background ,bg-dark :family ,sans-mono-font))))
+  '(org-block ((t (:background ,bg-dark :family ,sans-mono-font))))
+  '(org-block-begin-line ((t (:background ,bg-dark))))
+  '(org-block-end-line ((t (:background ,bg-dark))))
+  '(org-meta-line ((t (:foreground ,comment))))
+  '(org-document-info-keyword ((t (:foreground ,comment))))
+  '(org-link ((t (:underline nil :weight normal :foreground ,slate))))
+  '(org-special-keyword ((t (:height 0.9 :foreground ,comment))))
+  '(org-property-value ((t (:height 0.9 :foreground ,comment))))
+  '(org-drawer ((t (:height 0.9 :foreground ,comment))))
+  '(org-todo ((t (:foreground ,builtin :background ,bg-dark))))
+  '(org-done ((t (:inherit variable-pitch :foreground ,dark-cyan :background ,bg-dark))))
+  '(org-agenda-current-time ((t (:foreground ,slate))))
+  '(org-hide ((t nil)))
+  '(org-indent ((t (:inherit org-hide))))
+  '(org-time-grid ((t (:foreground ,comment))))
+  '(org-warning ((t (:foreground ,builtin))))
+  '(org-date ((t nil)))
+  '(org-agenda-structure ((t (:height 1.3 :foreground ,doc :weight normal :inherit variable-pitch))))
+  '(org-agenda-date ((t (:foreground ,doc))))
+  '(org-agenda-date-today ((t (:height 1.5 :foreground ,keyword))))
+  '(org-agenda-date-weekend ((t (:inherit org-agenda-date))))
+  '(org-scheduled ((t (:foreground ,gray))))
+  '(org-upcoming-deadline ((t (:foreground ,keyword))))
+  '(org-scheduled-today ((t (:foreground ,fg-white))))
+  '(org-scheduled-previously ((t (:foreground ,slate))))
+  '(org-agenda-done ((t (:inherit nil :foreground ,doc))))
+  '(org-ellipsis ((t (:underline nil :foreground ,comment))))
+  '(org-tag ((t (:foreground ,doc))))
+  '(org-table ((t (:background nil :family ,sans-mono-font))))
+  '(org-code ((t (:inherit font-lock-builtin-face))))
+  '(font-latex-sectioning-0-face ((t (:foreground ,type :height 1.2))))
+  '(font-latex-sectioning-1-face ((t (:foreground ,type :height 1.1))))
+  '(font-latex-sectioning-2-face ((t (:foreground ,type :height 1.1))))
+  '(font-latex-sectioning-3-face ((t (:foreground ,type :height 1.0))))
+  '(font-latex-sectioning-4-face ((t (:foreground ,type :height 1.0))))
+  '(font-latex-sectioning-5-face ((t (:foreground ,type :height 1.0))))
+  '(font-latex-verbatim-face ((t (:foreground ,builtin))))
+  '(spacemacs-normal-face ((t (:background ,bg-dark :foreground ,fg-white))))
+  '(spacemacs-evilified-face ((t (:background ,bg-dark :foreground ,fg-white))))
+  '(spacemacs-lisp-face ((t (:background ,bg-dark :foreground ,fg-white))))
+  '(spacemacs-emacs-face ((t (:background ,bg-dark :foreground ,fg-white))))
+  '(spacemacs-motion-face ((t (:background ,bg-dark :foreground ,fg-white))))
+  '(spacemacs-visual-face ((t (:background ,bg-dark :foreground ,fg-white))))
+  '(spacemacs-hybrid-face ((t (:background ,bg-dark :foreground ,fg-white))))
+  '(bm-persistent-face ((t (:background ,dark-cyan :foreground ,fg-white))))
+  '(helm-selection ((t (:background ,region))))
+  '(helm-match ((t (:foreground ,keyword))))
+  '(cfw:face-title ((t (:height 2.0 :inherit variable-pitch :weight bold :foreground ,doc))))
+  '(cfw:face-holiday ((t (:foreground ,builtin))))
+  '(cfw:face-saturday ((t (:foreground ,doc :weight bold))))
+  '(cfw:face-sunday ((t (:foreground ,doc))))
+  '(cfw:face-periods ((t (:foreground ,dark-cyan))))
+  '(cfw:face-annotation ((t (:foreground ,doc))))
+  '(cfw:face-select ((t (:background ,region))))
+  '(cfw:face-toolbar-button-off ((t (:foreground ,doc))))
+  '(cfw:face-toolbar-button-on ((t (:foreground ,type :weight bold))))
+  '(cfw:face-day-title ((t (:foreground ,doc))))
+  '(cfw:face-default-content ((t (:foreground ,dark-cyan))))
+  '(cfw:face-disable ((t (:foreground ,doc))))
+  '(cfw:face-today ((t (:background ,region :weight bold))))
+  '(cfw:face-toolbar ((t (:inherit default))))
+  '(cfw:face-today-title ((t (:background ,keyword :foreground ,fg-white))))
+  '(cfw:face-grid ((t (:foreground ,comment))))
+  '(cfw:face-header ((t (:foreground ,keyword :weight bold))))
+  '(cfw:face-default-day ((t (:foreground ,fg-white))))
+  '(dired-subtree-depth-1-face ((t (:background nil))))
+  '(dired-subtree-depth-2-face ((t (:background nil))))
+  '(dired-subtree-depth-3-face ((t (:background nil))))
+  '(dired-subtree-depth-4-face ((t (:background nil))))
+  '(dired-subtree-depth-5-face ((t (:background nil))))
+  '(dired-subtree-depth-6-face ((t (:background nil))))
+  '(nlinum-current-line ((t (:foreground ,builtin))))
+  '(vertical-border ((t (:background ,region :foreground ,region))))
+  '(which-key-command-description-face ((t (:foreground ,type))))
+  '(flycheck-error ((t (:background nil))))
+  '(flycheck-warning ((t (:background nil))))
+  '(font-lock-string-face ((t (:foreground ,string))))
+  '(font-lock-comment-face ((t (:foreground ,doc :slant italic))))
+  '(elfeed-search-unread-title-face ((t (:weight bold))))
+  '(helm-ff-symlink ((t (:foreground ,slate))))
+  '(region ((t (:background ,region)))))
+#+end_src
+*** Misc
+**** Diminish buffer-face-mode
 =Face-remap= is a library for basic face remapping. =Buffer-face-mode=
 is enabled when using =variable-pitch-mode= to show the face defined
 in =variable-pitch= instead of =default=.
@@ -919,7 +1285,7 @@ in =variable-pitch= instead of =default=.
 (use-package face-remap
   :delight (buffer-face-mode))
 #+end_src
-*** Scaling the height of the =default= face.
+**** Scaling the height of the =default= face.
 When switching between monitors with different resolution, scaling the
 =default= face can be used to in-/decreases the size of text and UI elements
 (modeline, …) to a more readable size.
