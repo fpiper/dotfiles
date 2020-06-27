@@ -1,15 +1,15 @@
-#+PROPERTY: header-args:emacs-lisp :tangle tangle/emacs-init.el :results silent
+#+PROPERTY: header-args:emacs-lisp :tangle tangle/emacs-init.el :results silent :noweb yes
 * Overview
 ** About this document
 This files contains all the elisp code normally placed in the .emacs
 file. It and the =init.el= file are then symlinked to my =~/.emacs.d/=
 directory. Instead of symlinking the files could also be directly
 tangled to =~/.emacs.d/=.
-#+BEGIN_SRC shell :results silent
-ln -sf $(pwd)/emacs-init.org ~/.emacs.d/
-ln -sf $(pwd)/tangle/emacs-init.el ~/.emacs.d/
-ln -sf $(pwd)/emacs-private.el.gpg ~/.emacs.d/
-ln -sf $(pwd)/tangle/init.el ~/.emacs.d/
+#+BEGIN_SRC shell :results silent :tangle tangle/symlink.sh :shebang "#!/bin/bash"
+ln -siv $(pwd)/emacs-init.org ~/.emacs.d/
+ln -siv $(pwd)/tangle/emacs-init.el ~/.emacs.d/
+ln -siv $(pwd)/emacs-private.el.gpg ~/.emacs.d/
+ln -siv $(pwd)/tangle/init.el ~/.emacs.d/
 #+END_SRC
 
 An often seen setup is to use ~org-babel-load-file~ in =init.el= to
@@ -26,17 +26,18 @@ file, [[elisp:(find-library "org-crypt")][org-crypt]] is a possible solution. Ma
 private information with the tag =:crypt:= and adding the following to
 =init.el= works as a basic setup for =org-crypt=. Also make sure to
 disable ~buffer-auto-save-file-name~ for the files.
-#+BEGIN_SRC emacs-lisp
-(require 'org)
-(require 'org-crypt)
-(org-crypt-use-before-save-magic)
-(setq org-tags-exclude-from-inheritance (quote ("crypt")))
-(setq org-crypt-key "F1EF502F9E81D81381B1679AF973BBEA6994521B")
+#+BEGIN_SRC emacs-lisp :noweb-ref org-crypt :tangle no
+(use-package org-crypt
+  :config (org-crypt-use-before-save-magic)
+  :custom
+  (org-tags-exclude-from-inheritance (quote ("crypt")))
+  (org-crypt-key "F1EF502F9E81D81381B1679AF973BBEA6994521B"))
 #+END_SRC
 
 I use =.org= configuration files also for my other dotfiles. To ensure
 they are tangled upon save I use this function.
-#+BEGIN_SRC emacs-lisp
+#+NAME: tangle-hook
+#+BEGIN_SRC emacs-lisp :tangle no
 (defun fpi/tangle-dotfiles ()
   "If the current file is in '~/.dotfiles' tangle all code blocks."
   (when (equal (file-name-directory (directory-file-name buffer-file-name))
@@ -52,7 +53,8 @@ saved again. The latter part is not directly supported by =org=.
 ~org-babel-post-tangle-hook~ is executed in the created tangled files
 and not inside the source =.org= file. Instead I add an advice to
 ~org-babel-tangle~.
-#+BEGIN_SRC emacs-lisp
+#+NAME: org-crypt-tangle-setup
+#+BEGIN_SRC emacs-lisp :tangle no
 (defun save-without-hook ()
   (let ((before-save-hook nil))
     (save-buffer)))
@@ -86,8 +88,10 @@ load this file here.
 This is the content of =init.el=. Notice the ~:tangle tangle/init.el~
 header argument in the source code.
 #+begin_src emacs-lisp :tangle tangle/init.el
-(require 'package)
-(package-initialize)
+<<straight.el>>
+
+;; package.el to enable use of list-packages
+<<package.el>>
 ;; (setq safe-local-variable-values (list (cons 'buffer-auto-save-file-name nil)
                                        ;; (cons 'header-line-format " ")))
 (setq vc-follow-symlinks t)
@@ -114,32 +118,102 @@ Notable configs:
 - [[http://doc.norang.ca/org-mode.html][Bernt Hansen]]
 
 * Base settings
-** Setup some paths
+** Setup load path
+Folder for additional lisp files I may want to load.
 #+BEGIN_SRC emacs-lisp
 (add-to-list 'load-path "~/.emacs.d/lisp")
-(add-to-list 'package-archives '("melpa" . "https://melpa.org/packages/") t)
-(add-to-list 'package-archives '("org" . "http://orgmode.org/elpa/") nil)
 #+END_SRC
 ** Meta packages
 Packages that don't do anything by themselves, but can be used to help
 with other package definition and customization.
+*** package.el
+=package.el= setup. While I switched to [[id:eef88cd4-f2f5-4e4b-b7bb-75faac36dcb8][straight.el]], I keep =package.el= loaded for now to be able to browse ELPA/MELPA with ~M-x list-packages~.
+#+BEGIN_SRC emacs-lisp :noweb-ref package.el :tangle no
+(require 'package)
+;; (package-initialize)
+(add-to-list 'package-archives '("melpa" . "https://melpa.org/packages/") t)
+(add-to-list 'package-archives '("org" . "http://orgmode.org/elpa/") nil)
+#+END_SRC
+*** straight.el
+:PROPERTIES:
+:ID:       eef88cd4-f2f5-4e4b-b7bb-75faac36dcb8
+:END:
+[[https://github.com/raxod502/straight.el][straight.el]] is a package manager for emacs, which in contrast to =package.el= keeps track of the current package versions and supports local development on packages. See the [[https://github.com/raxod502/straight.el#comparison-to-other-package-managers][github page]] for a detailed comparison with other package managers.
+#+begin_src emacs-lisp :noweb-ref straight.el :tangle no
+(defvar bootstrap-version)
+(let ((bootstrap-file
+       (expand-file-name "straight/repos/straight.el/bootstrap.el" user-emacs-directory))
+      (bootstrap-version 5))
+  (unless (file-exists-p bootstrap-file)
+    (with-current-buffer
+        (url-retrieve-synchronously
+         "https://raw.githubusercontent.com/raxod502/straight.el/develop/install.el"
+         'silent 'inhibit-cookies)
+      (goto-char (point-max))
+      (eval-print-last-sexp)))
+  (load bootstrap-file nil 'nomessage))
+#+end_src
+
+#+BEGIN_SRC emacs-lisp
+(setq straight-profiles `((nil . ,(expand-file-name "package-versions.el" "~/git/projects/dotfiles"))))
+#+END_SRC
+**** straight.el documentation excerpts
+:PROPERTIES:
+:header-args:emacs-lisp: :tangle no
+:END:
+***** General usage
+#+begin_quote
+- To restore each package to its canonical state (a clean working
+  directory with the main branch checked out, and the remotes set
+  correctly), run ~M-x straight-normalize-package~ or ~M-x
+  straight-normalize-all~.
+- To fetch from each package's configured remote, run ~M-x
+  straight-fetch-package-and-deps~ or ~M-x straight-fetch-all~; to
+  also fetch from the upstream for forked packages, supply a prefix
+  argument.
+- To merge changes from each package's configured remote, run ~M-x
+  straight-merge-package-and-deps~ or ~M-x straight-merge-all~; to
+  also merge from the upstream for forked packages, supply a prefix
+  argument.
+- To push all local changes to each package's configured remote, run
+  ~M-x straight-push-package~ or ~M-x straight-push-all~.
+#+end_quote
+***** Freezing package versions
+#+begin_quote
+To save the currently checked out revisions of all of your packages,
+run ~M-x straight-freeze-versions~. The resulting file
+(~~/.emacs.d/straight/versions/default.el~), together with your
+init-file, perfectly define your package configuration. Keep your
+version lockfile checked into version control; when you install your
+Emacs configuration on another machine, the versions of packages
+specified in your lockfile will automatically be checked out after the
+packages are installed. You can manually revert all packages to the
+revisions specified in the lockfile by running ~M-x
+straight-thaw-versions~.
+#+end_quote
+***** =use-package= integration
+#+begin_src emacs-lisp
+(use-package el-patch
+  :straight (:host github :repo "raxod502/el-patch"
+                   :branch "develop"))
+(use-package tex-site
+  :straight (auctex :host github
+                    :repo "emacsmirror/auctex"
+                    :files (:defaults (:exclude "*.el.in"))))
+#+end_src
 *** Use-package
 #+begin_src emacs-lisp
-(unless (package-installed-p 'use-package)
-  (package-refresh-contents)
-  (package-install 'use-package))
-(eval-when-compile
-  (require 'use-package))
+(straight-use-package 'use-package)
 #+end_src
 *** Hydra
 #+begin_src emacs-lisp
 (use-package hydra
-  :ensure t)
+  :straight t)
 #+end_src
 This package allows hydra definitions in use-package.
 #+begin_src emacs-lisp
 (use-package use-package-hydra
-  :ensure t)
+  :straight t)
 #+end_src
 *** which-key
 In Emacs you can press =?= or =C-h= after starting a key combination
@@ -148,7 +222,7 @@ small popup, which I think is more handy.
 #+begin_src emacs-lisp
 (use-package which-key
   :delight
-  :ensure t
+  :straight t
   :custom (which-key-idle-delay 0.4)
   :config (which-key-mode 1))
 #+end_src
@@ -159,7 +233,7 @@ remove it. =Try= installs packages temporarily for this emacs session
 only.
 #+begin_src emacs-lisp
 (use-package try
-  :ensure t)
+  :straight t)
 #+end_src
 ** GUI Interface
 Disable most of the user interface.
@@ -181,7 +255,7 @@ leaves a gap at the bottom. This removes it.
 *** Remove mode line clutter
 #+begin_src emacs-lisp
 (use-package delight
-  :ensure t
+  :straight t
   :after use-package)
 #+end_src
 If removing mode symbols with =delight= is not enough, the mode line
@@ -192,7 +266,7 @@ mode-line not being redisplayed, when turning the mode off even though
 it calls ~force-mode-line-update~.
 #+begin_src emacs-lisp
 (use-package hide-mode-line
-  :ensure t
+  :straight t
   :hook
   (hide-mode-line-mode . redraw-display)
   (help-mode . hide-mode-line-mode))
@@ -230,17 +304,35 @@ Instead of the above code I set the font directly using
 appreciate light themes more. [[https://gitlab.com/protesilaos/modus-themes][modus-operandi]] is an interesting light
 theme promising high color contrast. I ended up using the
 =spacemacs-light= and =spacemacs-dark= themes.
-#+begin_src emacs-lisp
-(package-install 'spacemacs-theme)
+#+begin_src emacs-lisp :tangle no
+(use-package spacemacs-light-theme
+  :no-require t
+  :straight (spacemacs-theme))
+(use-package spacemacs-dark-theme
+  :no-require t
+  :straight (spacemacs-theme))
 #+end_src
 
-=Face-remap= is a library for basic face remapping. =Buffer-face-mode=
-is enabled when using =variable-pitch-mode= to show the face defined
-in =variable-pitch= instead of =default=.
 #+begin_src emacs-lisp
-(use-package face-remap
-  :delight (buffer-face-mode))
+(defcustom fpi/light-theme 'modus-operandi
+  "My standard light theme.")
+(defcustom fpi/dark-theme 'modus-vivendi
+  "My standard dark theme.")
+
+(use-package modus-operandi-theme
+  :straight t)
+(use-package modus-vivendi-theme
+  :straight t)
 #+end_src
+Load the theme. The code is here, but only executed at the end of the
+initialization after ~pdf-view-midnight-colors~, etc. are defined.
+#+begin_src emacs-lisp :tangle no :noweb-ref load-theme
+(load-theme fpi/light-theme t)
+#+end_src
+*** Theme customization
+:PROPERTIES:
+:header-args:emacs-lisp: :tangle no
+:END:
 To do some custom adjustments to it I use the following macro which
 adds an advice to ~load-theme~.
 #+begin_src emacs-lisp
@@ -291,6 +383,9 @@ The above macro can be used like this.
   (shade-white        "#efeae9")
   (fg-light           "#655370")
   (dark-cyan          "#008b8b")
+  (light-green        "#4f774f") ;;#3f773f
+  (dark-green         "#1c661c")
+  (dark-green2        "#002000")
   (region-dark        "#2d2e2e")
   (region             "#39393d")
   (slate              "#8FA1B3")
@@ -320,7 +415,8 @@ The above macro can be used like this.
              :foreground ,bg-white)
     (:family ,sans-mono-font
              :background ,bg-white
-             :foreground ,bg-dark))
+             :foreground ,bg-dark
+             :height 75))
   (variable-pitch
    (:family ,sans-font)
    (:family ,et-font
@@ -596,16 +692,16 @@ The above macro can be used like this.
    nil)
   (org-scheduled
    (:foreground ,gray)
-   nil)
+   (:foreground ,light-green))
   (org-upcoming-deadline
    (:foreground ,keyword)
    nil)
   (org-scheduled-today
    (:foreground ,fg-white)
-   nil)
+   (:foreground ,dark-green))
   (org-scheduled-previously
    (:foreground ,slate)
-   nil)
+   (:foreground ,dark-green2))
   (org-agenda-done
    (:inherit nil
              :foreground ,doc)
@@ -815,16 +911,31 @@ The above macro can be used like this.
    (:background nil
                 :inherit nil))))
 #+end_src
-Advice =load-theme= to also update the colors for
-=pdf-view-midnight-mode=.
+*** Diminish buffer-face-mode
+=Face-remap= is a library for basic face remapping. =Buffer-face-mode=
+is enabled when using =variable-pitch-mode= to show the face defined
+in =variable-pitch= instead of =default=.
 #+begin_src emacs-lisp
-(defadvice load-theme (after update-pdf-view-midnight-color activate)
-  (setq pdf-view-midnight-colors `(,(face-attribute 'default :foreground) . ,(face-attribute 'default :background))))
+(use-package face-remap
+  :delight (buffer-face-mode))
 #+end_src
-
-Finally load the theme.
+*** Scaling the height of the =default= face.
+When switching between monitors with different resolution, scaling the
+=default= face can be used to in-/decreases the size of text and UI elements
+(modeline, …) to a more readable size.
 #+begin_src emacs-lisp
-(load-theme 'spacemacs-light t)
+(defun fpi/scale-default-face (&optional arg)
+  "Increase height of face default."
+  (interactive "P")
+  (let* ((height (face-attribute 'default :height))
+        (scale (if arg -10 10))
+        (new (+ height scale)))
+    (set-face-attribute 'default nil :height new)
+    (message "Default height: %s" new)))
+#+end_src
+#+begin_src emacs-lisp :tangle no :noweb-ref fpi-bindings
+(define-key 'fpi-map (kbd "+") 'fpi/scale-default-face)
+(define-key 'fpi-map (kbd "-") (lambda () (interactive) (fpi/scale-default-face t)))
 #+end_src
 ** User info
 Set ~user-full-name~ and ~user-mail-address~. These are set in
@@ -926,7 +1037,7 @@ This was inspired from [[http://endlessparentheses.com/the-toggle-map-and-wizard
 (define-key fpi/toggle-map "W" #'whitespace-toggle-options)
 #+END_SRC
 *** fpi-map
-#+BEGIN_SRC emacs-lisp
+#+BEGIN_SRC emacs-lisp :noweb yes
 (define-prefix-command 'fpi-map)
 (unbind-key (kbd "C-z"))
 (global-set-key (kbd "C-z") 'fpi-map)
@@ -942,6 +1053,8 @@ This was inspired from [[http://endlessparentheses.com/the-toggle-map-and-wizard
 (define-key fpi-map (kbd "t") fpi/toggle-map)
 (define-key fpi-map (kbd "n") 'sauron-toggle-hide-show)
 (define-key fpi-map (kbd "j") (lambda () (interactive) (find-file org-journal-file)))
+
+<<fpi-bindings>>
 #+END_SRC
 ** Base commands (simple.el)
 #+begin_src emacs-lisp
@@ -972,6 +1085,274 @@ Goes backward if ARG is negative; error if CHAR not found."
 Having used ido, ivy, icicles and helm in the past, I'm trying to
 settle for something simple and go back to ido. The settings below
 are for now mostly copied from [[https://gitlab.com/protesilaos/dotemacs/][Protesilaos Stavrou]].
+*** Minibuffer settings
+#+begin_src emacs-lisp
+(use-package minibuffer
+  :config
+
+  ;; Super-powerful completion style for out-of-order groups of matches
+  ;; using a comprehensive set of matching styles.
+  (use-package orderless
+    :straight t
+    :config
+    (setq orderless-regexp-separator "[/\s_-]+")
+    (setq orderless-matching-styles
+          '(orderless-flex
+            orderless-strict-leading-initialism
+            orderless-regexp
+            orderless-prefixes
+            orderless-literal))
+
+    (defun prot/orderless-literal-dispatcher (pattern _index _total)
+      (when (string-suffix-p "=" pattern)
+        `(orderless-literal . ,(substring pattern 0 -1))))
+
+    (defun prot/orderless-initialism-dispatcher (pattern _index _total)
+      (when (string-suffix-p "," pattern)
+        `(orderless-strict-leading-initialism . ,(substring pattern 0 -1))))
+
+    (setq orderless-style-dispatchers '(prot/orderless-literal-dispatcher
+                                        prot/orderless-initialism-dispatcher))
+    :bind (:map minibuffer-local-completion-map
+                ("SPC" . nil)         ; space should never complete
+                ("?" . nil)))         ; valid regexp character
+
+  (setq completion-styles
+        '(orderless partial-completion))
+  (setq completion-category-defaults nil)
+  (setq completion-cycle-threshold 3)
+  (setq completion-flex-nospace nil)
+  (setq completion-pcm-complete-word-inserts-delimiters t)
+  (setq completion-pcm-word-delimiters "-_./:| ")
+  (setq completion-show-help t)
+  (setq completion-ignore-case t)
+  (setq read-buffer-completion-ignore-case t)
+  (setq read-file-name-completion-ignore-case t)
+  (setq completions-format 'vertical)   ; *Completions* buffer
+  (setq enable-recursive-minibuffers t)
+  (setq read-answer-short t)
+  (setq resize-mini-windows t)
+
+  (file-name-shadow-mode 1)
+  (minibuffer-depth-indicate-mode 1)
+  (minibuffer-electric-default-mode 1)
+
+  (defun prot/focus-minibuffer ()
+    "Focus the active minibuffer.
+
+Bind this to `completion-list-mode-map' to M-v to easily jump
+between the list of candidates present in the \\*Completions\\*
+buffer and the minibuffer (because by default M-v switches to the
+completions if invoked from inside the minibuffer."
+    (interactive)
+    (let ((mini (active-minibuffer-window)))
+      (when mini
+        (select-window mini))))
+
+  (defun prot/focus-minibuffer-or-completions ()
+    "Focus the active minibuffer or the \\*Completions\\*.
+
+If both the minibuffer and the Completions are present, this
+command will first move per invocation to the former, then the
+latter, and then continue to switch between the two.
+
+The continuous switch is essentially the same as running
+`prot/focus-minibuffer' and `switch-to-completions' in
+succession."
+    (interactive)
+    (let* ((mini (active-minibuffer-window))
+           ;; This could be hardened a bit, but I am okay with it.
+           (completions (or (get-buffer-window "*Completions*")
+                            (get-buffer-window "*Embark Live Occur*"))))
+      (cond ((and mini
+                  (not (minibufferp)))
+             (select-window mini nil))
+            ((and completions
+                  (not (eq (selected-window)
+                           completions)))
+             (select-window completions nil)))))
+
+  ;; Technically, this is not specific to the minibuffer, but I define
+  ;; it here so that you can see how it is also used from inside the
+  ;; "Completions" buffer
+  (defun prot/describe-symbol-at-point (&optional arg)
+    "Get help (documentation) for the symbol at point.
+
+With a prefix argument, switch to the *Help* window.  If that is
+already focused, switch to the most recently used window
+instead."
+    (interactive "P")
+    (let ((symbol (symbol-at-point)))
+      (when symbol
+        (describe-symbol symbol)))
+    (when arg
+      (let ((help (get-buffer-window "*Help*")))
+        (when help
+          (if (not (eq (selected-window) help))
+              (select-window help)
+            (select-window (get-mru-window)))))))
+
+  ;; This will be deprecated in favour of the `embark' package
+  (defun prot/completions-kill-save-symbol ()
+    "Add symbol-at-point to the kill ring.
+
+Intended for use in the \\*Completions\\* buffer.  Bind this to a
+key in `completion-list-mode-map'."
+    (interactive)
+    (kill-new (thing-at-point 'symbol)))
+
+
+;;;; DEPRECATED in favour of the `embark' package (see further below),
+;;;; which implements the same functionality in a more efficient way.
+;;  (defun prot/complete-kill-or-insert-candidate (&optional arg)
+;;     "Place the matching candidate to the top of the `kill-ring'.
+;; This will keep the minibuffer session active.
+;;
+;; With \\[universal-argument] insert the candidate in the most
+;; recently used buffer, while keeping focus on the minibuffer.
+;;
+;; With \\[universal-argument] \\[universal-argument] insert the
+;; candidate and immediately exit all recursive editing levels and
+;; active minibuffers.
+;;
+;; Bind this function in `icomplete-minibuffer-map'."
+;;     (interactive "*P")
+;;     (let ((candidate (car completion-all-sorted-completions)))
+;;       (when (and (minibufferp)
+;;                  (or (bound-and-true-p icomplete-mode)
+;;                      (bound-and-true-p live-completions-mode))) ; see next section
+;;         (cond ((eq arg nil)
+;;                (kill-new candidate))
+;;               ((= (prefix-numeric-value arg) 4)
+;;                (with-minibuffer-selected-window (insert candidate)))
+;;               ((= (prefix-numeric-value arg) 16)
+;;                (with-minibuffer-selected-window (insert candidate))
+;;                (top-level))))))
+
+  ;; Defines, among others, aliases for common actions to Super-KEY.
+  ;; Normally these should go in individual package declarations, but
+  ;; their grouping here makes things easier to understand.
+  :bind (("s-f" . find-file)
+         ("s-F" . find-file-other-window)
+         ("s-d" . dired)
+         ("s-D" . dired-other-window)
+         ("s-b" . switch-to-buffer)
+         ("s-B" . switch-to-buffer-other-window)
+         ("s-h" . prot/describe-symbol-at-point)
+         ("s-H" . (lambda ()
+                    (interactive)
+                    (prot/describe-symbol-at-point '(4))))
+         ("s-v" . prot/focus-minibuffer-or-completions)
+         :map minibuffer-local-completion-map
+         ("<return>" . minibuffer-force-complete-and-exit)
+         ("C-j" . exit-minibuffer)
+         ;;;; DEPRECATED in favour of the `embark' package
+         ;; ("M-o w" . prot/complete-kill-or-insert-candidate)
+         ;; ("M-o i" . (lambda ()
+         ;;              (interactive)
+         ;;              (prot/complete-kill-or-insert-candidate '(4))))
+         ;; ("M-o j" . (lambda ()
+         ;;              (interactive)
+         ;;              (prot/complete-kill-or-insert-candidate '(16))))
+         :map completion-list-mode-map
+         ("h" . prot/describe-symbol-at-point)
+         ("w" . prot/completions-kill-save-symbol)
+         ("n" . next-line)
+         ("p" . previous-line)
+         ("f" . next-completion)
+         ("b" . previous-completion)
+         ("M-v" . prot/focus-minibuffer)))
+#+end_src
+*** Icomplete
+#+begin_src emacs-lisp
+(use-package icomplete
+  :demand
+  :after minibuffer                     ; Read that section as well
+  :config
+  (setq icomplete-delay-completions-threshold 100)
+  (setq icomplete-max-delay-chars 2)
+  (setq icomplete-compute-delay 0.2)
+  (setq icomplete-show-matches-on-no-input t)
+  (setq icomplete-hide-common-prefix nil)
+  (setq icomplete-prospects-height 1)
+  ;; (setq icomplete-separator " · ")
+  ;; (setq icomplete-separator " │ ")
+  ;; (setq icomplete-separator " ┆ ")
+  ;; (setq icomplete-separator " ¦ ")
+  (setq icomplete-separator (propertize " ┆ " 'face 'shadow))
+  (setq icomplete-with-completion-tables t)
+  (setq icomplete-in-buffer t)
+  (setq icomplete-tidy-shadowed-file-names nil)
+
+  (fido-mode -1)                        ; Emacs 27.1
+  (icomplete-mode 1)
+
+  (defun prot/icomplete-minibuffer-truncate ()
+    "Truncate minibuffer lines in `icomplete-mode'.
+  This should only affect the horizontal layout and is meant to
+  enforce `icomplete-prospects-height' being set to 1.
+
+  Hook it to `icomplete-minibuffer-setup-hook'."
+    (when (and (minibufferp)
+               (bound-and-true-p icomplete-mode))
+      (setq truncate-lines t)))
+
+  ;; Note that the the syntax for `use-package' hooks is controlled by
+  ;; the `use-package-hook-name-suffix' variable.  The "-hook" suffix is
+  ;; not an error of mine.
+  :hook (icomplete-minibuffer-setup-hook . prot/icomplete-minibuffer-truncate)
+  :bind (:map icomplete-minibuffer-map
+              ("<tab>" . icomplete-force-complete)
+              ("<return>" . icomplete-force-complete-and-exit) ; exit with completion
+              ("C-j" . exit-minibuffer) ; force input unconditionally
+              ("C-n" . icomplete-forward-completions)
+              ("<right>" . icomplete-forward-completions)
+              ("<down>" . icomplete-forward-completions)
+              ("C-p" . icomplete-backward-completions)
+              ("<left>" . icomplete-backward-completions)
+              ("<up>" . icomplete-backward-completions)
+              ;; The following command is from Emacs 27.1
+              ("<C-backspace>" . icomplete-fido-backward-updir)))
+#+end_src
+*** Icomplete-vertical
+#+begin_src emacs-lisp
+(use-package icomplete-vertical
+  :straight t
+  :demand
+  :after (minibuffer icomplete) ; do not forget to check those as well
+  :config
+  (setq icomplete-vertical-prospects-height (/ (frame-height) 6))
+  (icomplete-vertical-mode -1)
+
+  (defun prot/kill-ring-yank-complete ()
+    "Insert the selected `kill-ring' item directly at point.
+When region is active, `delete-region'.
+
+Sorting of the `kill-ring' is disabled.  Items appear as they
+normally would when calling `yank' followed by `yank-pop'."
+    (interactive)
+    (let ((kills                    ; do not sort items
+           (lambda (string pred action)
+             (if (eq action 'metadata)
+                 '(metadata (display-sort-function . identity)
+                            (cycle-sort-function . identity))
+               (complete-with-action
+                action kill-ring string pred)))))
+      (icomplete-vertical-do
+          (:separator 'dotted-line :height (/ (frame-height) 4))
+        (when (use-region-p)
+          (delete-region (region-beginning) (region-end)))
+        (insert
+         (completing-read "Yank from kill ring: " kills nil t)))))
+
+  :bind (("s-y" . prot/kill-ring-yank-complete)
+         :map icomplete-minibuffer-map
+         ("C-v" . icomplete-vertical-toggle)))
+#+end_src
+*** Ido
+:PROPERTIES:
+:header-args:emacs-lisp: :tangle no
+:END:
 #+BEGIN_SRC emacs-lisp
 (use-package ido
   :init
@@ -1018,9 +1399,9 @@ are for now mostly copied from [[https://gitlab.com/protesilaos/dotemacs/][Prote
                                                   (setq-local max-mini-window-height 1))))
 #+END_SRC
 
-#+BEGIN_SRC emacs-lisp
+#+BEGIN_SRC emacs-lisp :tangle no
 (use-package ido-completing-read+
-  :ensure t
+  :straight t
   :after ido
   :config
   (ido-ubiquitous-mode 1))
@@ -1029,7 +1410,7 @@ are for now mostly copied from [[https://gitlab.com/protesilaos/dotemacs/][Prote
 Ido completion for =M-x=.
 #+BEGIN_SRC emacs-lisp :tangle no
 (use-package amx
-  :ensure t
+  :straight t
   :after (ido ido-completing-read+)
   :init
   (setq amx-backend 'ido)
@@ -1137,7 +1518,7 @@ confines of word boundaries (e.g. multiple words)."
   (find-name-arg "-iname"))
 
 (use-package async
-  :ensure t)
+  :straight t)
 
 (use-package dired-async
   :after (dired async)
@@ -1147,7 +1528,7 @@ confines of word boundaries (e.g. multiple words)."
 *** Narrowing
 #+BEGIN_SRC emacs-lisp
 (use-package dired-narrow
-  :ensure t
+  :straight t
   :after dired
   :bind (:map dired-mode-map
                  ("SPC" . dired-narrow-regexp)))
@@ -1172,7 +1553,7 @@ behaviour while inside a regular dired buffer.
 
 #+BEGIN_SRC emacs-lisp
 (use-package peep-dired
-  :ensure t
+  :straight t
   :after dired
   :bind (:map dired-mode-map
               ("P" . peep-dired))
@@ -1209,7 +1590,7 @@ target dir).
 
 #+BEGIN_SRC emacs-lisp
 (use-package dired-subtree
-  :ensure t
+  :straight t
   :after dired
   :bind (:map dired-mode-map
                           ("<tab>" . dired-subtree-toggle)
@@ -1221,7 +1602,7 @@ Open a small sidebar window showing the current directory.
 #+BEGIN_SRC emacs-lisp
 (use-package dired-sidebar
   :bind (("C-x C-n" . dired-sidebar-toggle-sidebar))
-  :ensure t
+  :straight t
   :commands (dired-sidebar-toggle-sidebar)
   :hook
   (dired-sidebar-mode . (lambda ()
@@ -1237,7 +1618,7 @@ Recursive directory sizes. Toggle with =C-x M-r=. This will take a
 while for directories with lots of nested files.
 #+BEGIN_SRC emacs-lisp
 (use-package dired-du
-  :ensure t
+  :straight t
   :config (setq dired-du-size-format 't))
 #+END_SRC
 ** Tramp
@@ -1251,10 +1632,9 @@ of src_shell{getconf "PATH"}. See [[elisp:(describe-variable
 #+end_src
 ** Git
 *** Magit
-
 #+BEGIN_SRC emacs-lisp
 (use-package magit
-  :ensure t
+  :straight t
   :custom (magit-completing-read-function 'magit-ido-completing-read)
   :init (global-magit-file-mode))
 #+END_SRC
@@ -1294,8 +1674,21 @@ Only highlight the changes within a line, not the whole line.
 Add support for [[https://nvie.com/posts/a-successful-git-branching-model/][gitflow]].
 #+begin_src emacs-lisp
 (use-package magit-gitflow
-   :ensure t
+   :straight t
    :hook (magit-mode . turn-on-magit-gitflow))
+#+end_src
+*** git-identity
+Found it in this [[https://www.manueluberti.eu/emacs/2020/03/30/lockdown-beam-git-identity/][blog post]] from Manuel Uberti. An easy way to handle multiple git identities.
+
+#+begin_src emacs-lisp
+(use-package git-identity
+  :straight t
+  :custom
+  (git-identity-verify t)
+  (git-identity-list private/git-identity-list)
+  :bind (:map magit-status-mode-map ("I" . git-identity-info)))
+(use-package git-identity-magit
+  :config (git-identity-magit-mode 1))
 #+end_src
 *** diff-hl
 Indicates changed lines in the left fringe. The Hydra can be used to
@@ -1304,8 +1697,7 @@ navigate and revert hunks directly from the buffer. Use =g= to open
 
 #+begin_src emacs-lisp
 (use-package diff-hl
-  :ensure t
-  :defer t
+  :straight t
   :bind (:map fpi-map ("g" . hydra-diff-hl/body))
   :init (global-diff-hl-mode 1)
   :config (defhydra hydra-diff-hl (:body-pre (diff-hl-mode 1)
@@ -1341,7 +1733,7 @@ some safe local variable values.
 #+begin_src emacs-lisp
 (use-package git-auto-commit-mode
   :delight
-  :ensure t
+  :straight t
   :custom
   (gac-automatically-push-p nil)
   :config
@@ -1353,12 +1745,11 @@ some safe local variable values.
   (add-to-list 'safe-local-variable-values
                '(git-auto-commit-mode . t)))
 #+end_src
-
 ** Projectile
 
 #+BEGIN_SRC emacs-lisp
 (use-package projectile
-  :ensure t
+  :straight t
   :delight '(:eval (concat " " (projectile-project-name)))
   :init
   (setq projectile-project-search-path '("~/git/projects/"))
@@ -1399,7 +1790,7 @@ brackets containing their path.
 Sort buffers in project groups using projectile.
 #+BEGIN_SRC emacs-lisp :tangle no
 (use-package ibuffer-projectile
-  :ensure t
+  :straight t
   :after (ibuffer projectile)
   :hook
   (ibuffer-mode . (lambda ()
@@ -1411,7 +1802,7 @@ Sort buffers in project groups using projectile.
 better performance.
 #+begin_src emacs-lisp
 (use-package ibuffer-vc
-  :ensure t
+  :straight t
   :custom
   (ibuffer-formats
        '((mark modified read-only vc-status-mini " "
@@ -1434,44 +1825,44 @@ better performance.
 =fit-window-to-buffer= automatically shrinks the current buffer based
 on the amount of displayed text.
 #+begin_src emacs-lisp
-(use-package window
-  :custom
-  (fit-window-to-buffer-horizontally t)
-  :bind (:map fpi-map ("s" . fit-window-to-buffer)))
+  (use-package window
+    :init
+    <<window>>
+    :custom
+    (fit-window-to-buffer-horizontally t)
+    :bind (:map fpi-map ("s" . fit-window-to-buffer))
+    )
 #+end_src
 *** Window rules
-#+begin_src emacs-lisp
-(use-package window
-  :init
-  (setq display-buffer-alist
-        '(
-          ("\\*\\(Backtrace\\|Warnings\\|Compile-Log\\|Messages\\)\\*"
-           (display-buffer-in-side-window)
-           (window-height . 0.16)
-           (side . top)
-           (slot . 0)
-           (window-parameters . ((no-other-window t))))
-          (".*\\*Completions.*"
-           (display-buffer-in-side-window)
-           (window-height . 0.16)
-           (side . bottom)
-           (slot . 0))
-          ("\\*Help.*"
-           (display-buffer-in-side-window)
-           (window-width . 0.2)
-           (side . left)
-           (slot . 0)
-           (window-parameters . ((no-other-window . t)
-                                 (mode-line-format . (" "
-                                                      mode-line-buffer-identification)))))
-          )))
+#+begin_src emacs-lisp :noweb-ref window
+(setq display-buffer-alist
+      '(("\\*\\(Backtrace\\|Warnings\\|Compile-Log\\|Messages\\)\\*"
+         (display-buffer-in-side-window)
+         (window-height . 0.16)
+         (side . top)
+         (slot . 0)
+         (window-parameters . ((no-other-window t))))
+        (".*\\*Completions.*"
+         (display-buffer-in-side-window)
+         (window-height . 0.16)
+         (side . bottom)
+         (slot . 0))
+        ("\\*Help.*"
+         (display-buffer-in-side-window)
+         (window-width . 0.2)
+         (side . left)
+         (slot . 0)
+         (window-parameters . ((no-other-window . t)
+                               (mode-line-format . (" "
+                                                    mode-line-buffer-identification)))))
+        ))
 #+end_src
 *** window-numbering
 This is a nice package for easy window focus switching. I prefer it
 over =windmove=, as it does not interfere with org keybindings.
 #+begin_src emacs-lisp
 (use-package window-numbering
-  :ensure t
+  :straight t
   :config (window-numbering-mode 1))
 #+end_src
 *** Winner-mode
@@ -1486,6 +1877,17 @@ over =windmove=, as it does not interfere with org keybindings.
   :bind (:map winner-mode-map
               ("C-c <left>" . winner-hydra/winner-undo)
               ("C-c <right>" . winner-hydra/winner-redo)))
+#+end_src
+** File encryption
+=epa= handles en-/decryption with =gnupg=. Setting ~'loopback~ pinentry mode will ask for the key passphrase in the emacs minibuffer. For this the =pinentry= package is needed, as well as setting =allow-emacs-pinentry= in the =gnupg= configuration.
+
+#+begin_src emacs-lisp
+(use-package epa
+  :custom (epa-pinentry-mode 'loopback))
+(use-package pinentry
+  :straight t
+  :config (pinentry-start)
+  :after epa)
 #+end_src
 * Applications and utilities
 ** Calendar
@@ -1548,7 +1950,7 @@ make sure to compile the tex document with the option ~--synctex=1~.
 
 #+BEGIN_SRC emacs-lisp
 (use-package pdf-tools
-  :ensure t
+  :straight t
   :config
   (setq pdf-info-epdfinfo-program (concat user-emacs-directory "epdfinfo"))
   (pdf-tools-install))
@@ -1570,10 +1972,18 @@ would be better to unbind them only when in ~pdf-view-mode~.
   :init (setq pdf-annot-minor-mode-map-prefix "a")
   :bind (:map pdf-annot-minor-mode-map ("a d" . pdf-annot-delete)))
 #+END_SRC
+
+Advice =load-theme= to update the colors for =pdf-view-midnight-mode=
+after the theme changes.
+#+begin_src emacs-lisp :tangle no :noweb-ref pre-load-theme
+(defadvice load-theme (after update-pdf-view-midnight-color activate)
+  (setq pdf-view-midnight-colors `(,(face-attribute 'default :foreground) . ,(face-attribute 'default :background))))
+#+end_src
 ** Latex
 #+begin_src emacs-lisp
 (use-package auctex
-  :ensure t)
+  :no-require t
+  :straight t)
 #+end_src
 
 =cdlatex= depends on =texmath.el=. The docstring of =cdlatex= says
@@ -1581,7 +1991,7 @@ would be better to unbind them only when in ~pdf-view-mode~.
 does not have it. So =auctex= has to deliver this dependency instead.
 #+begin_src emacs-lisp
 (use-package cdlatex
-  :ensure t
+  :straight t
   :custom
   (cdlatex-env-alist
     (list '("equation*" "\\begin{equation*}\nAUTOLABEL\n?\n\\end{equation*}" nil)
@@ -1594,7 +2004,7 @@ does not have it. So =auctex= has to deliver this dependency instead.
 needed.
 #+begin_src emacs-lisp
 (use-package sotlisp
-  :ensure t
+  :straight t
   :init
   (add-hook 'emacs-lisp-mode-hook 'speed-of-thought-mode))
 #+end_src
@@ -1603,6 +2013,11 @@ area.
 #+begin_src emacs-lisp
 (use-package eldoc
   :delight)
+#+end_src
+*** Matlab
+#+begin_src emacs-lisp
+(use-package matlab-mode
+  :straight t)
 #+end_src
 ** Org mode
 Org is the mode you never need to leave, if you do not want to. My org
@@ -1626,10 +2041,6 @@ Hansen's]] configs.
 - Babel languages :: Enable more languages to use in org-babel blocks.
 - Youtube links :: See [[http://endlessparentheses.com/embedding-youtube-videos-with-org-mode-links.html][this blog post]] for more info.
 - Ellipsis :: I currently use =" "= and previously used ="⚡⚡⚡"=.
-- Refile Targets :: Use the full outline path so I can distinguish
-  headlines with the same name & disable step-wise completion as I
-  think from the refile target backwards, not from top-level
-  downwards.
 - Drawer for Notes :: Notes go into the =NOTES= drawer. Clocking
   times should stay separate in the =LOGBOOK= drawer.
 - Track state changes :: Notes when an entry is switched to done when
@@ -1640,14 +2051,11 @@ Hansen's]] configs.
   NEXT to INPROGRESS
 - Align tags left :: Fixes problems with line breaking on small
   window width.
-- Inline image width :: Resize images to 400px but respect width
-  specifications in attribute lines.
 
 #+begin_src emacs-lisp
 (use-package org
-  :ensure org-plus-contrib
+  :straight (org-plus-contrib)
   :delight (org-cdlatex-mode)
-  :defer t
   :bind
   (("C-c c" . org-capture)
    ("C-c a" . org-agenda)
@@ -1684,7 +2092,6 @@ Hansen's]] configs.
      ("gmap"      . "http://maps.google.com/maps?q=%s")
      ("omap"      . "http://nominatim.openstreetmap.org/search?q=%s&polygon=1")))
   (org-ellipsis " ")
-  (org-refile-use-outline-path 'file)
   (org-outline-path-complete-in-steps nil)
   (org-log-state-notes-into-drawer "NOTES")
   (org-clock-into-drawer "LOGBOOK")
@@ -1709,7 +2116,7 @@ Hansen's]] configs.
      ("IDLE" :foreground "magenta" :weight bold)))
   (org-clock-in-switch-to-state 'bh/clock-in-to-inprogress)
   (org-tags-column 0)
-  (org-image-actual-width '(400))
+  <<org-custom>>
   :config
   (add-hook 'org-mode-hook 'turn-on-org-cdlatex)
   (add-to-list 'org-structure-template-alist (cons "f" "figure"))
@@ -1726,6 +2133,10 @@ Switch projects and subprojects from NEXT back to TODO"
        ((and (member (org-get-todo-state) (list "NEXT"))
              (bh/is-project-p))
         "INPROGRESS")))))
+
+<<org-crypt>>
+<<tangle-hook>>
+<<org-crypt-tangle-setup>>
 #+end_src
 #+begin_src emacs-lisp
 (use-package org-indent
@@ -1757,11 +2168,11 @@ Switch projects and subprojects from NEXT back to TODO"
               (plantuml . t)
               ;; (hvm . t)
               (ledger . t)))
-  :hook (org-babel-after-execute . org-display-inline-images))
+  :hook <<ob-hooks>>)
 #+end_src
 #+BEGIN_SRC emacs-lisp
 (use-package org-noter
-  :ensure t
+  :straight t
   :bind (:map org-mode-map ("C-c o" . org-noter))
   :custom (org-noter-default-notes-file-names '("notes.org"))
   )
@@ -1772,8 +2183,9 @@ Switch projects and subprojects from NEXT back to TODO"
   :custom
   (org-export-with-broken-links 'match)
   (org-export-backends '(ascii beamer html icalendar latex man md odt org groff koma-letter)))
-(use-package org-pdfview
-:ensure t)
+(use-package org-pdftools
+  :straight t
+  :hook (org-load . org-pdftools-setup-link))
 (use-package org-id
   :custom (org-id-link-to-org-use-id 'create-if-interactive-and-no-custom-id))
 (use-package org-clock
@@ -1789,14 +2201,16 @@ Switch projects and subprojects from NEXT back to TODO"
   (org-src-window-setup 'current-window)
   (org-src-fontify-natively t)
   (org-src-tab-acts-natively t)
-  (org-edit-src-content-indentation 0)
-)
+  (org-edit-src-content-indentation 0))
+(defun fpi/collect-org-directories-recursively (dir)
+  "Return list of all directories which contain .org files of DIR and its subdirectories"
+  (delete-dups (mapcar 'file-name-directory (directory-files-recursively dir "\.org$"))))
 (use-package org-agenda
   :custom
-  (org-agenda-files (quote ("~/s/s.org" "~/sync" "~/.emacs.d/gcal.org" "~/.emacs.d/tr.org" "~/n.org")))
+  (org-agenda-files (fpi/collect-org-directories-recursively "~/sync"))
   (org-deadline-warning-days 14)
   (org-agenda-start-on-weekday nil)
-  (org-agenda-span 14)
+  (org-agenda-span 'day)
   (org-agenda-start-day "+0d")
   (org-agenda-include-diary nil)
   (org-agenda-sticky t)
@@ -1815,7 +2229,10 @@ Switch projects and subprojects from NEXT back to TODO"
   ;; See emacs.christianbaeuerlein.com/my-org-config.html
   (org-agenda-block-separator 9472)
   (org-agenda-custom-commands
-      '(("n" "Agenda and all TODOs"
+      `(("d" "Day agenda"
+         ((agenda "" ((org-agenda-span 'day)))
+          (org-time-budgets-in-agenda-maybe)))
+        ("n" "Agenda and all TODOs"
          ((todo "INPROGRESS"
                 ((org-agenda-overriding-header "Inprogress Tasks")))
           (agenda)
@@ -1842,7 +2259,15 @@ Switch projects and subprojects from NEXT back to TODO"
                            ((org-agenda-overriding-header "Things to Watch")
                             (org-agenda-skip-function 'bh/skip-project-tasks)
                             (org-agenda-sorting-strategy
-                             '(todo-state-down effort-up))))))))
+                             '(todo-state-down effort-up))))))
+        ("z" "Todos in org-roam-dir"
+         ((alltodo ""
+                   ((org-agenda-files (fpi/collect-org-directories-recursively org-roam-directory))))))
+        ("c" "Agenda and all todos in current directory"
+         ((agenda ""
+                  ((org-agenda-files (fpi/collect-org-directories-recursively default-directory))))
+          (alltodo ""
+                   ((org-agenda-files (fpi/collect-org-directories-recursively default-directory))))))))
   )
 (use-package ob-core
   :custom
@@ -1850,7 +2275,7 @@ Switch projects and subprojects from NEXT back to TODO"
 (use-package org-screenshot)
 (use-package org-collector)
 (use-package ox)
-(use-package org-notmuch)
+(use-package ol-notmuch)
 (use-package org-expiry
   :custom
   (org-expiry-handler-function 'org-expiry-archive-subtree))
@@ -1863,7 +2288,7 @@ Switch projects and subprojects from NEXT back to TODO"
 Here is a list of nice ones: ◉, ○, ►, •. The default ones are ~'("◉" "○" "✸" "✿")~.
 #+begin_src emacs-lisp
 (use-package org-bullets
-  :ensure t
+  :straight t
   :custom (org-bullets-bullet-list '("✧"))
   :config (add-hook 'org-mode-hook (lambda () (org-bullets-mode 1))))
 #+end_src
@@ -1882,10 +2307,54 @@ Use imagemagick and standalone class for latex preview.
 (use-package org-num
   :delight)
 #+end_src
+*** Inline images
+
+Resize inline images to 400px but respect width specifications in attribute lines.
+#+begin_src emacs-lisp :noweb-ref org-custom :tangle no
+(org-image-actual-width '(400))
+#+end_src
+Also display remote images by downloading them.
+#+begin_src emacs-lisp :noweb-ref org-custom :tangle no
+(org-display-remote-inline-images 'download)
+#+end_src
+
+#+begin_src emacs-lisp :noweb-ref ob-hooks :tangle no
+(org-babel-after-execute . org-display-inline-images)
+#+end_src
+*** Refile
+Use the full outline path so I can distinguish headlines with the same name & disable step-wise completion as I think from the refile target backwards, not from top-level downwards. Also include the current file's headings as a refile targets up to a deep level, all agenda files up to a small level and all open org files up to an even smaller level.
+
+As refile only works on file-visiting buffers, we need to filter all other org buffers from ~(org-buffer-list)~.
+#+begin_src emacs-lisp
+(defun fpi/org-file-buffer-list ()
+  "Return a list of org buffers which visit files."
+  (seq-filter 'buffer-file-name (org-buffer-list)))
+#+end_src
+
+#+begin_src emacs-lisp :noweb-ref org-custom :tangle no
+(org-refile-use-outline-path 'file)
+(org-refile-targets '((buffer-file-name :maxlevel . 8)
+                      (org-agenda-files :maxlevel . 3)
+                      (fpi/org-file-buffer-list :maxlevel . 2)))
+#+end_src
+*** Time budgets
+Gives an overview of time spent on defined budgets this week. Great to track if you've worked enough hours. To use it add ~(org-time-budgets-in-agenda-maybe)~ after ~(agenda)~ in a custom agenda command.
+#+begin_src emacs-lisp
+(use-package org-time-budgets
+  :straight (:host github :repo "fpiper/org-time-budgets"
+                   :branch "develop")
+  :custom
+  (org-time-budgets '((:title "Work" :match "+work-nowork" :budget "40:00" :block workweek))))
+#+end_src
+*** Column view
+#+begin_src emacs-lisp
+(setq org-columns-default-format
+      "%50ITEM(Task) %5Effort(Effort){:} %5CLOCKSUM %3PRIORITY %20DEADLINE %20SCHEDULED %20TIMESTAMP %TODO %CATEGORY %TAGS")
+#+end_src
 *** org-caldav
 #+begin_src emacs-lisp
 (use-package org-caldav
-  :ensure t
+  :straight t
   :custom
   (org-caldav-url private/calendar-url)
   (org-caldav-calendar-id private/calendar-id)
@@ -1896,10 +2365,40 @@ Use imagemagick and standalone class for latex preview.
   (org-caldav-exclude-tags '(nocal))
 )
 #+end_src
-*** org-clock-convenience
+*** Clocking
+**** Combine adjacent clock lines
+#+begin_src emacs-lisp
+(defun fpi/org-clock-join-last-clock ()
+  "Join current clock with last one if start/end point match."
+  (save-mark-and-excursion
+    (beginning-of-line)
+    (let* ((eol (save-excursion (end-of-line) (point)))
+	   (boi (progn (re-search-forward "\\[" eol t) (backward-char) (point)))
+	   (eoi (progn (re-search-forward "\\]" eol t) (point)))
+	   (i (buffer-substring-no-properties boi eoi)) ;; last clock-in-time
+	   (boc (progn (re-search-forward "\\[" eol t) (backward-char) (point)))
+	   (eoc (progn (re-search-forward "\\]" eol t) (point)))
+	   (c (buffer-substring-no-properties boc eoc))) ;; last clock-out-time (equals org-clock-out-time if last clock)
+      (next-line)
+      (end-of-line)
+      (let* ((bol (save-excursion (beginning-of-line) (point)))
+	     (eoo (progn (re-search-backward "\\]" bol t) (forward-char) (point)))
+	     (boo (progn (re-search-backward "\\[" bol t) (point)))
+	     (o (buffer-substring-no-properties boo eoo))) ;; last-last clock-out-time
+	(when (equal i o)
+	  (delete-region boo eoo)
+	  ;; (insert (format-time-string (org-time-stamp-format t t) org-clock-out-time))
+	  (insert c)
+	  (org-evaluate-time-range)
+	  (previous-line)
+	  (delete-region (save-excursion (beginning-of-line) (backward-char) (point)) eol)
+	  (message (format "Joined nearby clocks at %s" i)))))))
+(add-hook 'org-clock-out-hook 'fpi/org-clock-join-last-clock)
+#+end_src
+**** org-clock-convenience
 #+begin_src emacs-lisp
 (use-package org-clock-convenience
-  :ensure t
+  :straight t
   :bind (:map org-agenda-mode-map
    	   ("<S-up>" . org-clock-convenience-timestamp-up)
    	   ("<S-down>" . org-clock-convenience-timestamp-down)
@@ -1909,7 +2408,7 @@ Use imagemagick and standalone class for latex preview.
 *** ox-reveal
 #+BEGIN_SRC emacs-lisp
 (use-package ox-reveal
-  :ensure t)
+  :straight t)
 (use-package reveal)
 (setq org-reveal-root (concat "file:///home/fpi/" "reveal.js"))
 ;;(setq org-reveal-root "http://cdn.jsdelivr.net/reveal.js/3.0.0/")
@@ -1919,13 +2418,29 @@ Use imagemagick and standalone class for latex preview.
 #+begin_src emacs-lisp
 (use-package ol-bbdb)
 #+end_src
+*** prettify symbols
+Set some prettify symbols for org mode.
+#+begin_src emacs-lisp
+(defun fpi/add-org-prettify-symbols ()
+  "Beautify Org Checkbox Symbol"
+  (setq prettify-symbols-alist
+        (append prettify-symbols-alist
+                '(("#+BEGIN_SRC" . ?»)
+                  ("#+END_SRC" . ?«)
+                  ("#+begin_src" . ?»)
+                  ("#+end_src" . ?«)
+                  ("[ ]" .  ?☐)
+                  ("[X]" . ?☑ )
+                  ("[-]" . ?❍ )))))
+(add-hook 'org-mode-hook 'fpi/add-org-prettify-symbols)
+#+end_src
 *** org-roam
 #+begin_src emacs-lisp
 (use-package org-roam
+  :straight t
   :delight
   :hook
   (after-init . org-roam-mode)
-  :load-path "~/git/clone/org-roam"
   :custom
   (org-roam-directory "~/git/projects/zettel/")
   :bind (:map org-roam-mode-map
@@ -1934,6 +2449,14 @@ Use imagemagick and standalone class for latex preview.
                ("C-c n g" . org-roam-show-graph))
               :map org-mode-map
               (("C-c n i" . org-roam-insert))))
+#+end_src
+**** org-roam-bibtex
+#+begin_src emacs-lisp :tangle no
+(use-package org-roam-bibtex
+  :straight t
+  :hook (org-roam-mode . org-roam-bibtex-mode)
+  :bind (:map org-mode-map
+         (("C-c n a" . orb-note-actions))))
 #+end_src
 *** Org-edna
 =Org-edna= is a great tool to manage =TODO= dependencies. I mainly use
@@ -1945,9 +2468,8 @@ hydra to manage the various =org-edna= properties. I call it in my
 explanations checkout his config.
 #+begin_src emacs-lisp
 (use-package org-edna
-  :ensure t
+  :straight t
   :after org
-  :defer t
   :config
   (org-edna-load)
   (defun org-edna-finder/link-ids (&rest ids)
@@ -2078,6 +2600,26 @@ Templates
                entry
                (id "efc97963-b714-4020-94b6-c23ad2a286ee")
                (function fpi/add-org-from-doi))
+              ("r" "Reply"
+               entry
+               (file "~/sync/refile.org")
+               "* REPLY: %:from: %:subject
+:PROPERTIES:
+:CREATED: %U
+:SOURCE: %a
+:END:
+%?
+"
+               )
+              ("c" "Checkout")
+              ("cr" ".. & read"
+               entry
+               (file "~/sync/refile.org")
+               "* TODO %a  :READLIST:
+:PROPERTIES:
+:CREATED: %U
+:END:
+%?")
   ;;             ("a" "Appointment" entry (file "~/sync/a.org")
   ;;              "* %i%?%(and (org-id-get-create) nil)\n:PROPERTIES:\n:CREATED: %U%(when %a \"\n:SOURCE: %a\")\n:END:\n%^t")
   ;;             ("t" "Soonish task" entry (file "~/sync/refile.org")
@@ -2121,7 +2663,10 @@ Templates
   ;;              :empty-lines 1
   ;;              :immediate-finish t)
               )
-            )))
+            )
+           (org-capture-templates-contexts
+            '(("r" ((in-mode . "gnus-summary-mode")
+                    (in-mode . "gnus-article-mode")))))))
 #+END_SRC
 Setup for floating capture window. For reference see [[https://www.windley.com/archives/2010/12/capture_mode_and_emacs.shtml][here]].
 #+begin_src emacs-lisp
@@ -2187,17 +2732,34 @@ A small function to toggle the encryption state of the current entry.
            (org-encrypt-entry))))))
   (define-key fpi/toggle-map "e" #'fpi/org-toggle-crypt-entry))
 #+end_src
-*** org-ref
+*** Reference management
+**** Bibtex
 #+begin_src emacs-lisp
-(use-package org-ref
-  :ensure t
+(use-package bibtex
   :custom
-  (org-ref-bibliography-notes "~/git/projects/personal/bib.org")
-  (org-ref-default-bibliography '("~/git/projects/personal/bib.bib"))
-  (org-ref-pdf-directory "~/git/projects/personal/Lit/")
+  (bibtex-autokey-titlewords 3)
+  (bibtex-autokey-titlewords-stretch 1)
+  (bibtex-autokey-titleword-length 5)
   :config
   (bibtex-set-dialect 'BibTeX))
+
+(setq bibtex-completion-bibliography "~/git/projects/zettel/Lit/bib.bib")
+(setq bibtex-completion-notes-path "~/git/projects/zettel/Lit")
+(setq bibtex-completion-notes-extension ".org")
+
 #+end_src
+**** org-ref
+#+begin_src emacs-lisp
+(use-package org-ref
+  :straight t
+  :custom
+  (org-ref-bibliography-notes nil)
+  (org-ref-notes-function 'org-ref-notes-function-many-files)
+  (org-ref-notes-directory "~/git/projects/zettel/Lit")
+  (org-ref-default-bibliography '("~/git/projects/personal/bib.bib"))
+  (org-ref-pdf-directory "~/git/projects/personal/Lit/"))
+#+end_src
+***** Capturing entries
 I store my bibtex references in an org file together with my notes. In
 addition to saving the meta information in properties using the same
 functions as =doi-utils-doi-to-org-bibtex=, I also store them a second
@@ -2652,7 +3214,7 @@ files about various topics. =Deft= handles searching and file
 creation.
 #+begin_src emacs-lisp
 (use-package deft
-  :ensure t
+  :straight t
   :custom ((deft-directory "~/git/projects/zettel")
            (deft-extensions '("org"))
            (deft-default-extension "org")
@@ -2668,7 +3230,7 @@ custom link format.
 
 #+begin_src emacs-lisp
 (use-package zetteldeft
-  :ensure t
+  :straight t
   :bind (:map fpi-map (("d d" . deft)
                        ("d D" . zetteldeft-deft-new-search)
                        ("d R" . deft-refresh)
@@ -2696,7 +3258,7 @@ custom link format.
 To open and hide a shell quickly I use =shell-pop=.
 #+begin_src emacs-lisp
 (use-package shell-pop
-  :ensure t
+  :straight t
   :bind (("C-!" . shell-pop))
   :custom
   (shell-pop-shell-type (quote ("eshell" "*eshell*" (lambda nil (eshell))))))
@@ -2727,11 +3289,11 @@ bind a small function to copy a password or a field if called with a
 prefix to my custom keymap.
 #+BEGIN_SRC emacs-lisp
 (use-package pass
-  :ensure t)
+  :straight t)
 #+END_SRC
 #+begin_src emacs-lisp
 (use-package password-store
-  :ensure t
+  :straight t
   :commands (password-store-copy
              password-store-edit
              password-store-insert)
@@ -2760,19 +3322,19 @@ user: root
 
 #+BEGIN_SRC emacs-lisp
 (use-package auth-source-pass
-  :ensure t
+  :straight t
   :config (auth-source-pass-enable))
 #+END_SRC
 ** Ledger
 Here is a good [[https://www.reddit.com/r/emacs/comments/8x4xtt][reddit thread]] about using ledger
 #+BEGIN_SRC emacs-lisp
 (use-package ledger-mode
-  :ensure t
+  :straight t
   :init (setq ledger-clear-whole-transactions 1)
   :mode "\\.dat\\'"
   "\\.ledger\\'")
 ;; (use-package flycheck-ledger
-;;   :ensure t
+;;   :straight t
 ;;   :after ledger-mode)
 #+END_SRC
 
@@ -2783,7 +3345,7 @@ transactions. They are defined in [[file:emacs-private.el.gpg::4][emacs-private.
 
 #+BEGIN_SRC emacs-lisp
 (use-package elfeed
-  :ensure t
+  :straight t
   :init
   (setq elfeed-db-directory "~/.emacs.d/elfeed")
   :custom
@@ -2841,7 +3403,7 @@ Load elfeed org after adding ~my/elfeed-mark-read~ to
 first before marking them unread based on their tag.
 #+BEGIN_SRC emacs-lisp
 (use-package elfeed-org
-  :ensure t
+  :straight t
   :config
   (elfeed-org)
   (setq rmh-elfeed-org-files (list "~/.emacs.d/elfeed.org")))
@@ -2929,9 +3491,9 @@ where it comes from.
 
 #+begin_src emacs-lisp
 (use-package gnuplot
-  :ensure t)
+  :straight t)
 (use-package gnuplot-mode
-  :ensure t)
+  :straight t)
 #+end_src
 ** HTML renderer
 =shr= is the /Simple HTML renderer/ library, which Emacs uses to
@@ -2963,7 +3525,7 @@ tools.
 Support for HTML code blocks with proper syntax highlighting. See [[https://github.com/xuchunyang/shr-tag-pre-highlight.el][its GitHub project page]].
 #+BEGIN_SRC emacs-lisp
 (use-package shr-tag-pre-highlight
-  :ensure t
+  :straight t
   :after shr
   :config
   (add-to-list 'shr-external-rendering-functions
@@ -2999,7 +3561,18 @@ I use =msmtp= to send mail.
   (mail-specify-envelope-from t)
   (mail-envelope-from 'header))
 #+end_src
-
+*** MIME
+#+begin_src emacs-lisp
+(use-package mm-decode
+  :config
+  (use-package spice-mode
+    :straight t)
+  (defun mm-display-spice-inline (handle)
+  "Show an spice mode text from HANDLE inline."
+  (mm-display-inline-fontify handle 'spice-mode))
+  (add-to-list 'mm-inline-media-tests '("application/x-wine-extension-cir" mm-display-spice-inline identity))
+  (add-to-list 'mm-inlined-types "application/x-wine-extension-cir"))
+#+end_src
 *** MUA/Notmuch
 
 After using =mu4e= as my mail user agent for a while I switched to
@@ -3015,7 +3588,7 @@ searching.
 - Setup format=flowed
 #+BEGIN_SRC emacs-lisp
 (use-package notmuch
-  :ensure t
+  :straight t
   :custom
   (notmuch-search-oldest-first nil)
   (notmuch-archive-tags '("-inbox" "-td" "+archived"))
@@ -3038,7 +3611,7 @@ message initialization (signature, ...) also have this text property.
 For now I use this bad code.
 #+BEGIN_SRC emacs-lisp
 (use-package messages-are-flowing
-  :ensure t
+  :straight t
   :config (add-hook 'message-mode-hook 'messages-are-flowing-use-and-mark-hard-newlines))
 (defun message-insert-signature (&optional force)
   (interactive)
@@ -3106,10 +3679,11 @@ For now I use this bad code.
 ** BBDB
 #+begin_src emacs-lisp
 (use-package bbdb
-  :ensure t)
+  :straight t)
 (bbdb-initialize 'gnus 'message)
 (bbdb-mua-auto-update-init 'gnus 'message)
 
+(setq bbdb-mua-pop-up 'horiz)
 ;; size of the bbdb popup
 (setq bbdb-pop-up-window-size 0.15)
 (setq bbdb-mua-pop-up-window-size 0.15)
@@ -3127,6 +3701,31 @@ For now I use this bad code.
  (lambda ()
     (define-key gnus-summary-mode-map (kbd ";") 'bbdb-mua-edit-field)))
 #+end_src
+** Spellcheck
+#+begin_src emacs-lisp
+(use-package ispell
+  :config
+  (setq ispell-program-name "/usr/bin/hunspell")
+  (setq ispell-dictionary "en_US,de_DE")
+  (ispell-set-spellchecker-params)
+  (ispell-hunspell-add-multi-dic "en_US,de_DE")
+  )
+#+end_src
+** Compile
+Fix ansi colors in compile buffers. From [[https://endlessparentheses.com/ansi-colors-in-the-compilation-buffer-output.html][endlessparentheses]].
+#+begin_src emacs-lisp
+(use-package compile
+  :custom
+  (compilation-scroll-output t)
+  :config
+  (require 'ansi-color)
+  (defun endless/colorize-compilation ()
+    "Colorize from `compilation-filter-start' to `point'."
+    (let ((inhibit-read-only t))
+      (ansi-color-apply-on-region
+     compilation-filter-start (point))))
+  :hook (compilation-filter . endless/colorize-compilation))
+#+END_src
 ** Context aware hydra
 :PROPERTIES:
 :ID:       22750e48-aaee-4f60-bdce-1d511ebe3375
@@ -3350,6 +3949,11 @@ End sentences with single spaces.
   (put 'dired-find-alternate-file 'disabled nil)
   (put 'narrow-to-region 'disabled nil))
 #+end_src
+** Rainbow mode
+#+begin_src emacs-lisp
+(use-package rainbow-mode
+  :straight t)
+#+end_src
 ** Parentheses
 #+begin_src emacs-lisp
 (use-package paren
@@ -3402,7 +4006,7 @@ temporary buffer is created.
 
 #+begin_src emacs-lisp :tangle no
 (use-package undo-propose
-  :ensure t
+  :straight t
   :bind (("C-/" . undo-propose)))
 #+end_src
 ** Electric stuff
@@ -3422,4 +4026,11 @@ temporary buffer is created.
   (electric-indent-mode 1)
   (electric-pair-mode 1)
   (electric-quote-mode -1))
+#+end_src
+* Wrapping up
+
+Some stuff that is run after everything else.
+#+begin_src emacs-lisp
+<<pre-load-theme>>
+<<load-theme>>
 #+end_src
