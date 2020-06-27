@@ -11,6 +11,7 @@ Load private settings
 (load secret-file)
 #+end_src
 * Config
+** Servers
 I use =imap= as my primary server. Setup some generic options:
 #+begin_src emacs-lisp :noweb-ref imap :tangle no
 nnimap ,@private/imap-info
@@ -56,62 +57,14 @@ RSS/Atom Feeds asynchronously.
                                                      (nnimap-inbox "INBOX")))
 (add-to-list 'gnus-secondary-select-methods '(nntp "localhost" 4321))
 #+end_src
-Sort by newest first
-#+begin_src emacs-lisp
-(setq gnus-article-sort-functions '((not gnus-thread-sort-by-date))
-      gnus-thread-sort-functions  '((not gnus-thread-sort-by-date)))
-#+end_src
-Gathering loose threads, whose parent is currently not displayed. I find the default ~'adopt~ to be too confusing.
-#+begin_src emacs-lisp
-(setq gnus-summary-make-false-root 'dummy)
-(setq gnus-summary-dummy-line-format "  %(:                                    :%) %S
-")
-(setq gnus-summary-make-false-root-always t)
-#+end_src
-Also try to connect threads by guessing which articles are missing
-#+begin_src emacs-lisp
-(setq gnus-fetch-old-headers nil)
-(setq gnus-build-sparse-threads 'more)
-#+end_src
-Better thread display (from [[https://www.emacswiki.org/emacs/GnusFormatting][emacswiki/GnusFormatting)]].
-#+begin_src emacs-lisp
-(setq
-     gnus-summary-line-format "%U%R%z %(%&user-date;  %-15,15f  %B%s%)\n"
-     gnus-user-date-format-alist '((t . "%Y-%m-%d %H:%M"))
-     gnus-summary-thread-gathering-function 'gnus-gather-threads-by-references
-     gnus-sum-thread-tree-false-root ""
-     gnus-sum-thread-tree-indent " "
-     gnus-sum-thread-tree-leaf-with-other "├► "
-     gnus-sum-thread-tree-root ""
-     gnus-sum-thread-tree-single-leaf "╰► "
-     gnus-sum-thread-tree-vertical "│")
-#+end_src
-Unicode reply symbol
-#+begin_src emacs-lisp
-(setq gnus-summary-to-prefix "→ ")
-#+end_src
-Sending mail
-#+begin_src emacs-lisp :tangle no
-(setq message-send-mail-function 'smtpmail-send-it
-      smtpmail-starttls-credentials '(("smtp.gmail.com" 587 nil nil))
-      smtpmail-auth-credentials '(("smtp.gmail.com" 587 "your-name@gmail.com" nil))
-      smtpmail-default-smtp-server "smtp.gmail.com"
-      smtpmail-smtp-server "smtp.gmail.com"
-      smtpmail-smtp-service 587
-      starttls-use-gnutls t)
-#+end_src
-Setup for fancy mail splitting. Also see the parameters in ~gnus-select-method~.
-#+begin_src emacs-lisp
-(setq nnmail-split-methods 'nnimap-split-fancy)
-
-(setq nnmail-cache-accepted-message-ids t)
-(setq nnmail-message-id-cache-length 10000)
-#+end_src
-
+** Options
+*** General
+**** Startup
 Load only groups with level < 2 for faster startup.
 #+begin_src emacs-lisp
 (setq gnus-activate-level 2)
 #+end_src
+**** Message related
 Sent mails are read.
 #+begin_src emacs-lisp
 (setq gnus-gcc-mark-as-read t)
@@ -120,35 +73,6 @@ Save sent mails in my imap folder
 #+begin_src emacs-lisp
 (setq gnus-message-archive-method "dummy string")
 (setq gnus-message-archive-group private/imap-sent-folder)
-#+end_src
-Disable indenting a topic. I always do it by accident.
-#+begin_src emacs-lisp
-(use-package gnus-topic
-  :config
-  (defun fpi/gnus-topic-toggle-topic ()
-    "Toggle display of the topic."
-    (interactive)
-    (when (gnus-group-topic-p)
-      (if (equal 'visible
-                 (nth 1 (cadr (gnus-topic-find-topology (gnus-current-topic)))))
-          (gnus-topic-hide-topic)
-        (gnus-topic-show-topic))))
-  (define-key gnus-topic-mode-map (kbd "<tab>") 'fpi/gnus-topic-toggle-topic)
-  (define-key gnus-topic-mode-map (kbd "TAB") 'fpi/gnus-topic-toggle-topic))
-#+end_src
-Function to toggle display of group levels in the group buffer.
-#+begin_src emacs-lisp
-(defvar gnus-group-line-format-wo-levels nil)
-(defun fpi/gnus-group-toggle-levels ()
-  (interactive)
-  (if gnus-group-line-format-wo-levels
-      (setq gnus-group-line-format gnus-group-line-format-wo-levels
-            gnus-group-line-format-wo-levels nil)
-    (setq gnus-group-line-format-wo-levels gnus-group-line-format
-          gnus-group-line-format (concat "[%L] " gnus-group-line-format)))
-  ;; Hack to update display
-  (gnus-group-get-new-news 0))
-(define-key gnus-topic-mode-map (kbd "T L") 'fpi/gnus-group-toggle-levels)
 #+end_src
 Enable responding to meeting invites.
 #+begin_src emacs-lisp
@@ -164,6 +88,13 @@ Enable message delaying (scheduling)
 #+begin_src emacs-lisp
 (gnus-delay-initialize)
 #+end_src
+***** BBDB integration
+Enable =mail-aliases= and create aliases for all mail adresses if an entry has multiple.
+#+begin_src emacs-lisp
+(add-hook 'message-setup-hook 'bbdb-mail-aliases)
+(setq bbdb-mail-alias 'all)
+#+end_src
+***** Mail encryption & signing
 Verify mail signatures with known protocols.
 #+begin_src emacs-lisp
 (setq mm-verify-option 'known)
@@ -172,20 +103,46 @@ Show buttons for result of signature verification & for multipart mails. To show
 #+begin_src emacs-lisp
 (setq gnus-buttonized-mime-types '("multipart/signed" "multipart/alternative"))
 #+end_src
-Enable =mail-aliases= and create aliases for all mail adresses if an entry has multiple.
+**** Mail splitting
+Setup for fancy mail splitting. Also see the parameters in ~gnus-select-method~.
 #+begin_src emacs-lisp
-(add-hook 'message-setup-hook 'bbdb-mail-aliases)
-(setq bbdb-mail-alias 'all)
+(setq nnmail-split-methods 'nnimap-split-fancy)
+
+(setq nnmail-cache-accepted-message-ids t)
+(setq nnmail-message-id-cache-length 10000)
 #+end_src
-Don't fetch attachments before showing the message text to avoid long load times with big attachments.
+**** Demon
+Background fetching for gnus. See the manual and [[https://www.emacswiki.org/emacs/GnusDemon][emacswiki]].
 #+begin_src emacs-lisp
-(setq nnimap-fetch-partial-articles "\\(text/\\|signature\\)")
+(defun gnus-demon-scan-news-level (level only)
+  (let ((win (current-window-configuration))
+	(gnus-read-active-file 'some)
+	(gnus-check-new-newsgroups nil)
+	(gnus-verbose 2)
+	(gnus-verbose-backends 5))
+    (while-no-input
+      (unwind-protect
+          (save-window-excursion
+            (when (gnus-alive-p)
+              (with-current-buffer gnus-group-buffer
+                (gnus-group-get-new-news level only))))
+        (set-window-configuration win)))))
+(defun gnus-demon-scan-news-2 ()
+  (gnus-demon-scan-news-level 2 nil))
+(defun gnus-demon-scan-news-3 ()
+  (gnus-demon-scan-news-level 3 t))
+(defun gnus-demon-scan-news-4 ()
+  (gnus-demon-scan-news-level 4 t))
+(defun gnus-demon-scan-news-5 ()
+  (gnus-demon-scan-news-level 5 t))
+
+(setq gnus-demon-timestep 10)
+(gnus-demon-add-handler 'gnus-demon-scan-news-2 3 nil)
+(gnus-demon-add-handler 'gnus-demon-scan-news-3 60 t)
+(gnus-demon-add-handler 'gnus-demon-scan-news-4 130 1)
+(gnus-demon-add-handler 'gnus-demon-scan-news-5 140 1)
 #+end_src
-Workaround for bug with ~gnus-cloud-method~ and ~custom-variable-recalc-variable~ upon reloading the =spacemacs-*= theme.
-#+begin_src emacs-lisp
-(setq server "nnimap:imsmail")
-#+end_src
-** Adaptive scoring
+**** Adaptive scoring
 See [[info:gnus#Adaptive Scoring][info:gnus#Adaptive Scoring]] and this [[https://notes.whatthefuck.computer/1417593600.0-note.html][blog post]] by Ryan Rix.
 #+begin_src emacs-lisp
 (setq gnus-use-adaptive-scoring '(word line))
@@ -236,54 +193,79 @@ Slow scoring decay prevents huge scores from building up. Only run on =.ADAPT= s
       gnus-score-decay-constant 1
       gnus-score-decay-scale 0.01)
 #+end_src
-** Window Layout
+*** Display
+Sort by newest first
+#+begin_src emacs-lisp
+(setq gnus-article-sort-functions '((not gnus-thread-sort-by-date))
+      gnus-thread-sort-functions  '((not gnus-thread-sort-by-date)))
+#+end_src
+Unicode reply symbol
+#+begin_src emacs-lisp
+(setq gnus-summary-to-prefix "→ ")
+#+end_src
+Function to toggle display of group levels in the group buffer.
+#+begin_src emacs-lisp
+(defvar gnus-group-line-format-wo-levels nil)
+(defun fpi/gnus-group-toggle-levels ()
+  (interactive)
+  (if gnus-group-line-format-wo-levels
+      (setq gnus-group-line-format gnus-group-line-format-wo-levels
+            gnus-group-line-format-wo-levels nil)
+    (setq gnus-group-line-format-wo-levels gnus-group-line-format
+          gnus-group-line-format (concat "[%L] " gnus-group-line-format)))
+  ;; Hack to update display
+  (gnus-group-get-new-news 0))
+(define-key gnus-topic-mode-map (kbd "T L") 'fpi/gnus-group-toggle-levels)
+#+end_src
+**** On threads
+Gather loose threads, whose parent is currently not displayed, under a
+dummy article. I find the default ~'adopt~ to be too confusing.
+#+begin_src emacs-lisp
+(setq gnus-summary-make-false-root 'dummy)
+(setq gnus-summary-dummy-line-format "  %(:                                    :%) %S
+")
+(setq gnus-summary-make-false-root-always t)
+#+end_src
+Also try to connect threads by guessing which articles are missing
+#+begin_src emacs-lisp
+(setq gnus-fetch-old-headers nil)
+(setq gnus-build-sparse-threads 'more)
+#+end_src
+Better thread display (from [[https://www.emacswiki.org/emacs/GnusFormatting][emacswiki/GnusFormatting)]].
+#+begin_src emacs-lisp
+(setq
+     gnus-summary-line-format "%U%R%z %(%&user-date;  %-15,15f  %B%s%)\n"
+     gnus-user-date-format-alist '((t . "%Y-%m-%d %H:%M"))
+     gnus-summary-thread-gathering-function 'gnus-gather-threads-by-references
+     gnus-sum-thread-tree-false-root ""
+     gnus-sum-thread-tree-indent " "
+     gnus-sum-thread-tree-leaf-with-other "├► "
+     gnus-sum-thread-tree-root ""
+     gnus-sum-thread-tree-single-leaf "╰► "
+     gnus-sum-thread-tree-vertical "│")
+#+end_src
+**** Topics
+Disable indenting a topic. I always do it by accident.
+#+begin_src emacs-lisp
+(use-package gnus-topic
+  :config
+  (defun fpi/gnus-topic-toggle-topic ()
+    "Toggle display of the topic."
+    (interactive)
+    (when (gnus-group-topic-p)
+      (if (equal 'visible
+                 (nth 1 (cadr (gnus-topic-find-topology (gnus-current-topic)))))
+          (gnus-topic-hide-topic)
+        (gnus-topic-show-topic))))
+  (define-key gnus-topic-mode-map (kbd "<tab>") 'fpi/gnus-topic-toggle-topic)
+  (define-key gnus-topic-mode-map (kbd "TAB") 'fpi/gnus-topic-toggle-topic))
+#+end_src
+**** Window Layout
 See [[info:gnus#Window Layout][info:gnus#Window Layout]].
 #+begin_src emacs-lisp
 (setq gnus-use-full-window nil)
 #+end_src
-** Format Summary buffer lines
-#+begin_src emacs-lisp
-;; (setq gnus-summary-line-format "%U%R%z%I%(%[ %d : %-23,23f %]%) %s
-;; ")
-#+end_src
-** nnreddit
-#+begin_src emacs-lisp
-(use-package nnreddit
-  :straight t)
-(add-to-list 'gnus-secondary-select-methods '(nnreddit ""))
-#+end_src
-** Demon
-Background fetching for gnus. See the manual and [[https://www.emacswiki.org/emacs/GnusDemon][emacswiki]].
-#+begin_src emacs-lisp
-(defun gnus-demon-scan-news-level (level only)
-  (let ((win (current-window-configuration))
-	(gnus-read-active-file 'some)
-	(gnus-check-new-newsgroups nil)
-	(gnus-verbose 2)
-	(gnus-verbose-backends 5))
-    (while-no-input
-      (unwind-protect
-          (save-window-excursion
-            (when (gnus-alive-p)
-              (with-current-buffer gnus-group-buffer
-                (gnus-group-get-new-news level only))))
-        (set-window-configuration win)))))
-(defun gnus-demon-scan-news-2 ()
-  (gnus-demon-scan-news-level 2 nil))
-(defun gnus-demon-scan-news-3 ()
-  (gnus-demon-scan-news-level 3 t))
-(defun gnus-demon-scan-news-4 ()
-  (gnus-demon-scan-news-level 4 t))
-(defun gnus-demon-scan-news-5 ()
-  (gnus-demon-scan-news-level 5 t))
-
-(setq gnus-demon-timestep 10)
-(gnus-demon-add-handler 'gnus-demon-scan-news-2 3 nil)
-(gnus-demon-add-handler 'gnus-demon-scan-news-3 60 t)
-(gnus-demon-add-handler 'gnus-demon-scan-news-4 130 1)
-(gnus-demon-add-handler 'gnus-demon-scan-news-5 140 1)
-#+end_src
-** Modeline indicator
+**** Modeline indicator
 From the [[https://www.emacswiki.org/emacs/GnusNotify][emacswiki Gnus Notify]].
 #+begin_quote
 […] use ~G p~ in the group buffer, then add ~(modeline-notify t)~ […]
@@ -448,4 +430,15 @@ contains new messages"))
 
 (provide 'gnus-notify)
 ;;; gnus-notify.el ends here
+#+end_src
+*** Misc
+Workaround for bug with ~gnus-cloud-method~ and ~custom-variable-recalc-variable~ upon reloading the =spacemacs-*= theme.
+#+begin_src emacs-lisp
+(setq server "nnimap:imsmail")
+#+end_src
+**** nnreddit
+#+begin_src emacs-lisp
+(use-package nnreddit
+  :straight t)
+(add-to-list 'gnus-secondary-select-methods '(nnreddit ""))
 #+end_src
