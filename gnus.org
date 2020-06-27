@@ -13,9 +13,7 @@ Load private settings
 * Config
 I use =imap= as my primary server. Setup some generic options:
 #+begin_src emacs-lisp :noweb-ref imap :tangle no
-nnimap ,private/imap-name
-(nnimap-address ,private/imap-address)
-(nnimap-server-port 993)
+nnimap ,@private/imap-info
 (nnimap-stream ssl)
 (nnir-search-engine imap)
 #+end_src
@@ -48,8 +46,14 @@ Noweb the primary server settings together.
         <<imap>>
         ))
 #+end_src
-Add local nntp server
+
+Setup a secondary imap server and a local nntp server I use to fetch
+RSS/Atom Feeds asynchronously.
 #+begin_src emacs-lisp
+(add-to-list 'gnus-secondary-select-methods `(nnimap ,@private/personal-imap-info
+                                                     (nnimap-stream ssl)
+                                                     (nnir-search-engine imap)
+                                                     (nnimap-inbox "INBOX")))
 (add-to-list 'gnus-secondary-select-methods '(nntp "localhost" 4321))
 #+end_src
 Sort by newest first
