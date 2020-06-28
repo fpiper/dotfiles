@@ -2071,10 +2071,10 @@ navigate and revert hunks directly from the buffer. Use =g= to open
   "
   Diff-hl:
     _n_: next hunk        _s_tage hunk     _g_: Magit status
-    _p_: previous hunk    _r_evert hunk    _q_uit
-    ^ ^                   _P_opup hunk     _Q_uit and deactivate git-gutter
-    _a_: first hunk
-    _e_: last hunk        _A_mend mode
+    _p_: previous hunk    _r_evert hunk    _b_: Magit blame popup
+    ^ ^                   _P_opup hunk     ^ ^
+    _a_: first hunk       ^ ^              _q_uit
+    _e_: last hunk        _A_mend mode     _Q_uit and deactivate git-gutter
   "
   ("n" diff-hl-next-hunk)
   ("p" diff-hl-previous-hunk)
@@ -2087,6 +2087,7 @@ navigate and revert hunks directly from the buffer. Use =g= to open
   ("P" diff-hl-diff-goto-hunk)
   ("A" diff-hl-amend-mode)
   ("g" magit-status :color blue)
+  ("b" magit-blame :color blue)
   ("q" nil :color blue)
   ("Q" (diff-hl-mode -1)
        :color blue))
