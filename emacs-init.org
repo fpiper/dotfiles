@@ -2347,9 +2347,8 @@ after the theme changes.
 #+end_src
 ** Latex
 #+begin_src emacs-lisp
-(use-package auctex
-  :no-require t
-  :straight t)
+(use-package tex-site
+  :straight auctex)
 #+end_src
 
 =cdlatex= depends on =texmath.el=. The docstring of =cdlatex= says
@@ -2382,8 +2381,8 @@ area.
 #+end_src
 *** Matlab
 #+begin_src emacs-lisp
-(use-package matlab-mode
-  :straight t)
+(use-package matlab
+  :straight matlab-mode)
 #+end_src
 ** Org mode
 Org is the mode you never need to leave, if you do not want to. My org
