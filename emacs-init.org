@@ -304,17 +304,24 @@ Instead of the above code I set the font directly using
 appreciate light themes more. [[https://gitlab.com/protesilaos/modus-themes][modus-operandi]] is an interesting light
 theme promising high color contrast. I ended up using the
 =spacemacs-light= and =spacemacs-dark= themes.
-#+begin_src emacs-lisp
+
+This is written here for clarity, but only executed at the end of my
+init files, after some variables which depend on the current theme are
+defined, for example ~pdf-view-midnight-colors~.
+#+NAME: themes
+#+begin_src emacs-lisp :tangle no
+<<theme-functions>>
 (defcustom fpi/light-theme-list '(spacemacs-light spacemacs-light-customizations)
   "List of themes to activate when using a light theme.")
 (defcustom fpi/dark-theme-list '(spacemacs-dark spacemacs-dark-customizations)
   "List of themes to activate when using a dark theme.")
 (defcustom fpi/current-theme 'light
-  "Currently activated theme variation.")
+  "Currently activated theme variation."
+  :set #'fpi/set-and-reload-theme)
 #+end_src
 
-Function to load themes based on the ~fpi/current-theme~ setting.
-#+begin_src emacs-lisp
+Functions to load themes based on the ~fpi/current-theme~ setting and to toggle the current theme between light and dark.
+#+begin_src emacs-lisp :noweb-ref theme-functions :tangle no
 (defun fpi/load-themes (&optional theme-variation)
   "Load themes based on the value of `fpi/current-theme'.
 
@@ -325,12 +332,24 @@ of `(format \"fpi/%s-theme-list\" fpi/current-theme)'"
   (mapc 'disable-theme custom-enabled-themes);; disable all themes
   (let* ((theme-variation (or theme-variation fpi/current-theme))
          (themes (eval (intern (format "fpi/%s-theme-list" theme-variation)))))
-    (mapc (lambda (theme) (load-theme theme t)) themes)
-    ))
+    (mapc (lambda (theme) (load-theme theme t)) themes)))
+(defun fpi/set-and-reload-theme (symbol value)
+  "Set SYMBOL to VALUE and update themes.
+
+Set SYMBOL to VALUE with `set-default'if it is not already set to
+that value and update the loaded themes afterwards."
+  (when (not (and (boundp symbol) (eq (eval symbol) value)))
+    (set-default symbol value)
+    (fpi/load-themes)))
+(defun fpi/toggle-theme ()
+  "Toggle between light and dark theme."
+  (interactive)
+  (if (eq fpi/current-theme 'light)
+      (customize-save-variable 'fpi/current-theme 'dark)
+    (customize-save-variable 'fpi/current-theme 'light)))
 #+end_src
-Load the themes. This is written here for clarity, but only executed at the end of the initialization after ~pdf-view-midnight-colors~, etc. are defined.
-#+begin_src emacs-lisp :tangle no :noweb-ref load-theme
-(fpi/load-themes)
+#+begin_src emacs-lisp :tangle no :noweb-ref fpi-bindings
+(define-key fpi/toggle-map "dt" #'fpi/toggle-theme)
 #+end_src
 *** Getting themes
 #+begin_src emacs-lisp
@@ -362,7 +381,7 @@ First a function to replace colors in the face specs.
 
 This call now creates a custom theme based on the settings in the sections
 [[id:82021d54-89d6-4712-8e5a-df2fc6177c96][Colors]] and [[id:a3b74d3b-675e-426d-b675-e70dcfd3d2b6][Faces]]. These are my customizations to the spacemacs theme. Make sure to manually run these customization blocks after changing a face, as only the result blocks are tangled!
-#+begin_src emacs-lisp :tangle no :results code replace  :wrap "src emacs-lisp :tangle tangle/spacemacs-dark-customizations-theme.el"
+#+begin_src emacs-lisp :tangle no :results code replace  :wrap "src emacs-lisp :tangle tangle/spacemacs-dark-customizations-theme.el" :exports both
 `(progn
    (deftheme spacemacs-dark-customizations
      "My customizations to spacemacs-dark (Created 2020-06-27)")
@@ -707,7 +726,7 @@ This call now creates a custom theme based on the settings in the sections
   (provide-theme 'spacemacs-dark-customizations))
 #+end_src
 
-#+begin_src emacs-lisp :tangle no :results code replace  :wrap "src emacs-lisp :tangle tangle/spacemacs-light-customizations-theme.el"
+#+begin_src emacs-lisp :tangle no :results code replace  :wrap "src emacs-lisp :tangle tangle/spacemacs-light-customizations-theme.el" :exports both
 `(progn
    (deftheme spacemacs-light-customizations
      "My customizations to spacemacs-light (Created 2020-06-27)")
@@ -2353,10 +2372,12 @@ would be better to unbind them only when in ~pdf-view-mode~.
 
 Advice =load-theme= to update the colors for =pdf-view-midnight-mode=
 after the theme changes.
-#+begin_src emacs-lisp :tangle no :noweb-ref pre-load-theme
+#+NAME: theme-dependent-vars
+#+begin_src emacs-lisp :tangle no
 (defadvice load-theme (after update-pdf-view-midnight-color activate)
-  (setq pdf-view-midnight-colors `(,(face-attribute 'default :foreground) . ,(face-attribute 'default :background))))
+  (customize-save-variable 'pdf-view-midnight-colors `(,(face-attribute 'default :foreground) . ,(face-attribute 'default :background))))
 #+end_src
+
 ** Latex
 #+begin_src emacs-lisp
 (use-package tex-site
@@ -4493,6 +4514,6 @@ temporary buffer is created.
 
 Some stuff that is run after everything else.
 #+begin_src emacs-lisp
-<<pre-load-theme>>
-<<load-theme>>
+<<theme-dependent-vars>>
+<<themes>>
 #+end_src
