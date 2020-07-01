@@ -79,7 +79,7 @@ Enable responding to meeting invites.
 (use-package gnus-icalendar
   :config
   (gnus-icalendar-setup)
-  (setq gnus-icalendar-org-capture-file "~/win/Documents/sync/appointments.org")
+  (setq gnus-icalendar-org-capture-file "~/sync/appointments.org")
   (setq gnus-icalendar-org-capture-headline '("Calendar")) ;;make sure to create Calendar heading first
   (gnus-icalendar-org-setup)
   )
@@ -203,20 +203,6 @@ Unicode reply symbol
 #+begin_src emacs-lisp
 (setq gnus-summary-to-prefix "→ ")
 #+end_src
-Function to toggle display of group levels in the group buffer.
-#+begin_src emacs-lisp
-(defvar gnus-group-line-format-wo-levels nil)
-(defun fpi/gnus-group-toggle-levels ()
-  (interactive)
-  (if gnus-group-line-format-wo-levels
-      (setq gnus-group-line-format gnus-group-line-format-wo-levels
-            gnus-group-line-format-wo-levels nil)
-    (setq gnus-group-line-format-wo-levels gnus-group-line-format
-          gnus-group-line-format (concat "[%L] " gnus-group-line-format)))
-  ;; Hack to update display
-  (gnus-group-get-new-news 0))
-(define-key gnus-topic-mode-map (kbd "T L") 'fpi/gnus-group-toggle-levels)
-#+end_src
 **** On threads
 Gather loose threads, whose parent is currently not displayed, under a
 dummy article. I find the default ~'adopt~ to be too confusing.
@@ -259,6 +245,20 @@ Disable indenting a topic. I always do it by accident.
         (gnus-topic-show-topic))))
   (define-key gnus-topic-mode-map (kbd "<tab>") 'fpi/gnus-topic-toggle-topic)
   (define-key gnus-topic-mode-map (kbd "TAB") 'fpi/gnus-topic-toggle-topic))
+#+end_src
+Function to toggle display of group levels in the group buffer.
+#+begin_src emacs-lisp
+(defvar gnus-group-line-format-wo-levels nil)
+(defun fpi/gnus-group-toggle-levels ()
+  (interactive)
+  (if gnus-group-line-format-wo-levels
+      (setq gnus-group-line-format gnus-group-line-format-wo-levels
+            gnus-group-line-format-wo-levels nil)
+    (setq gnus-group-line-format-wo-levels gnus-group-line-format
+          gnus-group-line-format (concat "[%L] " gnus-group-line-format)))
+  ;; Hack to update display
+  (gnus-group-get-new-news 0))
+(define-key gnus-topic-mode-map (kbd "T L") 'fpi/gnus-group-toggle-levels)
 #+end_src
 **** Window Layout
 See [[info:gnus#Window Layout][info:gnus#Window Layout]].
