@@ -2609,6 +2609,8 @@ Switch projects and subprojects from NEXT back to TODO"
       `(("d" "Day agenda"
          ((agenda "" ((org-agenda-span 'day)))
           (org-time-budgets-in-agenda-maybe)))
+        ("w" "Week agenda"
+         ((agenda "" ((org-agenda-span 'week)))))
         ("n" "Agenda and all TODOs"
          ((todo "INPROGRESS"
                 ((org-agenda-overriding-header "Inprogress Tasks")))
