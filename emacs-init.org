@@ -1928,6 +1928,13 @@ behaviour while inside a regular dired buffer.
   (peep-dired-ignored-extensions
    '("mkv" "webm" "mp4" "mp3" "ogg" "iso")))
 #+END_SRC
+*** dired git info
+#+begin_src emacs-lisp
+(use-package dired-git-info
+  :straight t
+  :bind (:map dired-mode-map
+              (")" . dired-git-info-mode)))
+#+end_src
 *** dired-x
 Some additional features that are shipped with Emacs.
 
@@ -1940,8 +1947,6 @@ Some additional features that are shipped with Emacs.
   (dired-mode . (lambda ()
                   (setq dired-clean-confirm-killing-deleted-buffers t))))
 #+END_SRC
-
-
 *** dired-subtree
 + The tab key will expand or contract the subdirectory at point.
 + =C-TAB= will behave just like org-mode handles its headings: hit it
