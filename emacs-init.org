@@ -2847,8 +2847,13 @@ Set some prettify symbols for org mode.
                ("C-c n f" . org-roam-find-file)
                ("C-c n g" . org-roam-show-graph))
               :map org-mode-map
-              (("C-c n i" . org-roam-insert))))
+              (("C-c n i" . org-roam-insert)))
+  :config (defun org-roam--roam-file-link-face (path)
+            "Return `org-link'"
+            'org-link)
+  )
 #+end_src
+Fix for hanging emacs. The original function calls file-exist-p which opens a slow tramp connection.
 **** org-roam-bibtex
 #+begin_src emacs-lisp :tangle no
 (use-package org-roam-bibtex
