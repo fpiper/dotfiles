@@ -2041,6 +2041,12 @@ Only highlight the changes within a line, not the whole line.
   :custom
   (magit-diff-refine-hunk 'all))
 #+END_SRC
+**** Forge
+#+begin_src emacs-lisp
+(use-package forge
+  :after magit
+  :straight t)
+#+end_src
 **** gitflow
 Add support for [[https://nvie.com/posts/a-successful-git-branching-model/][gitflow]].
 #+begin_src emacs-lisp
