@@ -2655,9 +2655,6 @@ Switch projects and subprojects from NEXT back to TODO"
 (use-package org-collector)
 (use-package ox)
 (use-package ol-notmuch)
-(use-package org-expiry
-  :custom
-  (org-expiry-handler-function 'org-expiry-archive-subtree))
 (use-package org-habit)
 #+end_src
 #+begin_src emacs-lisp
@@ -2838,6 +2835,9 @@ Set some prettify symbols for org mode.
          (("C-c n a" . orb-note-actions))))
 #+end_src
 *** Org-edna
+:PROPERTIES:
+:ID:       fd3936c7-9fc5-42d0-990d-32024e23b22f
+:END:
 =Org-edna= is a great tool to manage =TODO= dependencies. I mainly use
 it to mark tasks as =NEXT= after switching another task to =DONE=. The
 functions below are taken from Josh's Emacs Config over at [[https://github.com/mm--/dot-emacs/blob/master/jmm-org-config.org][Github]]. He
@@ -2934,27 +2934,41 @@ content syncing upon commit.
 Templates
 #+BEGIN_SRC emacs-lisp
 (use-package org-capture
-  :custom (
-           (org-journal-file (format "~/sync/journal/%s.org" (nth 2 (calendar-current-date))))
-           (org-capture-templates
-            `(("j" "Journal")
-              ("jj" "Journal Entry (Link)"
-               entry
-               (file+olp+datetree
-                ,org-journal-file)
-               ;; "** %<%H:%M> %a\n %i%? \n%:description\n%:elfeed-entry-content\n%:elfeed-entry-date\n%:elfeed-entry-meta\n%:elfeed-entry-title\n%:elfeed-entry-enclosures\n%:elfeed-entry-tags" )
-               "** %<%H:%M> %a
+  :custom
+  ((org-journal-file (format "~/sync/journal/%s.org" (nth 2 (calendar-current-date))))
+   (org-capture-templates
+    `(
+<<org-capture-templates>>))
+   (org-capture-templates-contexts
+    '(
+      <<org-capture-templates-contexts>>))))
+#+END_SRC
+**** Templates
+***** Journal
+Capture templates for journal entries. Mostly to just keep track of things I have looked at and which may be interesting later, but do not warrant a zettel right now.
+#+BEGIN_SRC emacs-lisp :tangle no :noweb-ref org-capture-templates
+("j" "Journal")
+("jj" "Journal Entry (Link)"
+ entry
+ (file+olp+datetree
+  ,org-journal-file)
+ ;; "** %<%H:%M> %a\n %i%? \n%:description\n%:elfeed-entry-content\n%:elfeed-entry-date\n%:elfeed-entry-meta\n%:elfeed-entry-title\n%:elfeed-entry-enclosures\n%:elfeed-entry-tags" )
+ "** %<%H:%M> %a
 %i%?" )
-              ("je" "Journal Entry"
-               entry
-               (file+olp+datetree
-                ,org-journal-file)
-               "** %<%H:%M> %?
+("je" "Journal Entry"
+ entry
+ (file+olp+datetree
+  ,org-journal-file)
+ "** %<%H:%M> %?
 %i" )
-              ("i" "Interrupt"
-               entry
-               (id "802014b3-fddf-4090-b140-7fb62cb982f2")
-               "** Interrupt: %?
+#+END_SRC
+***** Interrupts
+For interruptions. These are saved in a global refile file and to be sorted to their appropriate place.
+#+BEGIN_SRC emacs-lisp :tangle no :noweb-ref org-capture-templates
+("i" "Interrupt"
+ entry
+ (file "~/sync/refile.org")
+ "** Interrupt: %?
 :PROPERTIES:
 :CREATED: %U
 :SOURCE: %a
@@ -2962,92 +2976,118 @@ Templates
 :LOGBOOK:
 :END:
 "
-:clock-in t
-:clock-resume t)
-              ("a" "Appointment"
-               entry
-               (id "802014b3-fddf-4090-b140-7fb62cb982f2")
-               "** %?
+ :clock-in t
+ :clock-resume t)
+#+END_SRC
+***** Appointments
+#+BEGIN_SRC emacs-lisp :tangle no :noweb-ref org-capture-templates
+("a" "Appointment"
+ entry
+ (id "802014b3-fddf-4090-b140-7fb62cb982f2")
+ "** %?
 :PROPERTIES:
 :CREATED: %U
 :DATE: %^t
+<<org-capture-template-properties>>
 :SOURCE: %a
 :END:
 "
-               )
-              ("b" "Bibtex entry"
-               entry
-               (id "efc97963-b714-4020-94b6-c23ad2a286ee")
-               (function fpi/add-org-from-doi))
-              ("r" "Reply"
-               entry
-               (file "~/sync/refile.org")
-               "* REPLY: %:from: %:subject
+ )
+#+END_SRC
+***** Tasks
+Instead of project related capture templates, I use the same template for all tasks and refile them manually to where they belong.
+#+BEGIN_SRC emacs-lisp :tangle no :noweb-ref org-capture-templates
+("t" "Task"
+ entry
+ (file "~/sync/refile.org")
+ "** NEXT %?
 :PROPERTIES:
 :CREATED: %U
+<<org-capture-template-properties>>
+:SOURCE: %a
+:END:
+%i")
+#+END_SRC
+***** Plans & Ideas
+#+BEGIN_SRC emacs-lisp :tangle no :noweb-ref org-capture-templates
+("p" "Plans/Ideas"
+ entry
+ (file "~/sync/refile.org")
+ "*** PLANNING %?
+:PROPERTIES:
+:CREATED: %U
+<<org-capture-template-properties>>
+:SOURCE: %a
+:END:
+%i")
+#+END_SRC
+***** Reply to Mail
+#+BEGIN_SRC emacs-lisp :tangle no :noweb-ref org-capture-templates
+("r" "Respond" entry (file "~/sync/refile.org")
+ "* NEXT Respond to %:from on %:subject
+:PROPERTIES:
+:CREATED: %U
+<<org-capture-template-properties>>
+:END:
+%a" :immediate-finish t)
+#+END_SRC
+
+#+BEGIN_SRC emacs-lisp :tangle no :noweb-ref org-capture-templates-contexts
+("r" ((in-mode . "gnus-summary-mode")
+                     (in-mode . "gnus-article-mode")))
+#+END_SRC
+***** Interesting stuff I have to look at later
+#+BEGIN_SRC emacs-lisp :tangle no :noweb-ref org-capture-templates
+("c" "Checkout")
+("cr" ".. & read"
+ entry
+ (file "~/sync/refile.org")
+ "* TODO %a  :READLIST:
+:PROPERTIES:
+:CREATED: %U
+<<org-capture-template-properties>>
 :SOURCE: %a
 :END:
 %?
-"
-               )
-              ("c" "Checkout")
-              ("cr" ".. & read"
-               entry
-               (file "~/sync/refile.org")
-               "* TODO %a  :READLIST:
-:PROPERTIES:
-:CREATED: %U
-:END:
-%?")
-  ;;             ("a" "Appointment" entry (file "~/sync/a.org")
-  ;;              "* %i%?%(and (org-id-get-create) nil)\n:PROPERTIES:\n:CREATED: %U%(when %a \"\n:SOURCE: %a\")\n:END:\n%^t")
-  ;;             ("t" "Soonish task" entry (file "~/sync/refile.org")
-  ;;              "* NEXT %?%(and (org-id-get-create) nil)\n:PROPERTIES:\n:CREATED: %U%(when %a \"\n:SOURCE: %a\")\n:END:\n%i")
-  ;;             ("s" "Shelve something" entry (file+headline "~/sync/t.org" "Shelf")
-  ;;              "* NEXT %?%(and (org-id-get-create) nil)\n:PROPERTIES:\n:CREATED: %U%(when %a \"\n:SOURCE: %a\")\n:END:\n%i")
-  ;;             ;; ("r" "respond" entry (file "~/sync/refile.org")
-  ;;             ;; "* NEXT Respond to %:from on %:subject\n:PROPERTIES:\n:CREATED: %U\n:END:\n%a\n" :clock-in t :clock-resume t :immediate-finish t)
-  ;;             ("r" "respond" entry (file "~/sync/refile.org")
-  ;;              "* NEXT Respond to %:from on %:subject\n:PROPERTIES:\n:CREATED: %U\n:END:\n%a\n" :immediate-finish t)
-  ;;             ("n" "note" entry (file "~/sync/refile.org")
-  ;;              "* %? :NOTE:\n%U\n%a\n" :clock-in t :clock-resume t)
-  ;;             ("j" "Journal/Interruptions" entry (file+olp+datetree "~/sync/diary.org")
-  ;;              "* %?\n%U\n" :clock-in t :clock-resume t)
-  ;;             ("h" "Habit" entry (file "~/sync/refile.org")
-  ;;              "* NEXT %?\n%U\n%a\nSCHEDULED: %(format-time-string \"%<<%Y-%m-%d %a .+1d/3d>>\")\n:PROPERTIES:\n:STYLE: habit\n:REPEAT_TO_STATE: NEXT\n:END:\n")
-  ;;             ("m" "Meeting" entry (file "~/sync/refile.org")
-  ;;              "* MEETING with %? :MEETING:\n%U" :clock-in t :clock-resume t)
-  ;;             ("p" "Phone call" entry (file "~/sync/refile.org")
-  ;;              "* PHONE %? :PHONE:\n%U" :clock-in t :clock-resume t)
-
-  ;;             ("c" "Item to Current Clocked Task" item (clock)
-  ;;              "%i%?" :empty-lines 1)
-  ;;             ("K" "Kill-ring to Current Clocked Task" plain (clock)
-  ;;              "%c" :immediate-finish t :empty-lines 1)
-
-  ;;             ("p" "Gcal Appointment" entry (file "~/.emacs.d/gcal.org")
-  ;;              "* %?\n%^T\n")
-
-  ;;             ("z" "Zettel" entry (file "~/zettel.org")
-  ;;              "* %i%? %(and (org-id-get-create) nil)
-  ;; :PROPERTIES:\n     :CREATED: %u\n     :END:\n   ")
-
-  ;;             ("l" "Ledger")
-  ;;             ("lb" "Bank" plain (file ,(format "~/.personal/f/%s.ledger" (format-time-string "%Y")))
-  ;;              ,my/org-ledger-card-template
-  ;;              :empty-lines 1
-  ;;              :immediate-finish t)
-  ;;             ("lc" "Cash" plain (file ,(format "~/.personal/f/%s.ledger" (format-time-string "%Y")))
-  ;;              ,my/org-ledger-cash-template
-  ;;              :empty-lines 1
-  ;;              :immediate-finish t)
-              )
-            )
-           (org-capture-templates-contexts
-            '(("r" ((in-mode . "gnus-summary-mode")
-                    (in-mode . "gnus-article-mode")))))))
+")
 #+END_SRC
-Setup for floating capture window. For reference see [[https://www.windley.com/archives/2010/12/capture_mode_and_emacs.shtml][here]].
+***** Ledger transactions
+#+BEGIN_SRC emacs-lisp :tangle no :noweb-ref org-capture-templates
+("l" "Ledger")
+            ("lb" "Bank" plain (file ,(format "~/.personal/f/%s.ledger" (format-time-string "%Y")))
+             ,private/org-ledger-card-template
+             :empty-lines 1
+             :immediate-finish t)
+            ("lc" "Cash" plain (file ,(format "~/.personal/f/%s.ledger" (format-time-string "%Y")))
+             ,private/org-ledger-cash-template
+             :empty-lines 1
+             :immediate-finish t)
+#+END_SRC
+***** Old templates
+Templates I no longer use, but may be interesting.
+#+BEGIN_SRC emacs-lisp :tangle no
+("n" "note" entry (file "~/sync/refile.org")
+ "* %? :NOTE:\n%U\n%a\n" :clock-in t :clock-resume t)
+("j" "Journal/Interruptions" entry (file+olp+datetree "~/sync/diary.org")
+ "* %?\n%U\n" :clock-in t :clock-resume t)
+("h" "Habit" entry (file "~/sync/refile.org")
+ "* NEXT %?\n%U\n%a\nSCHEDULED: %(format-time-string \"%<<%Y-%m-%d %a .+1d/3d>>\")\n:PROPERTIES:\n:STYLE: habit\n:REPEAT_TO_STATE: NEXT\n:END:\n")
+("m" "Meeting" entry (file "~/sync/refile.org")
+ "* MEETING with %? :MEETING:\n%U" :clock-in t :clock-resume t)
+("p" "Phone call" entry (file "~/sync/refile.org")
+ "* PHONE %? :PHONE:\n%U" :clock-in t :clock-resume t)
+
+("c" "Item to Current Clocked Task" item (clock)
+ "%i%?" :empty-lines 1)
+("K" "Kill-ring to Current Clocked Task" plain (clock)
+ "%c" :immediate-finish t :empty-lines 1)
+("p" "Gcal Appointment" entry (file "~/.emacs.d/gcal.org")
+ "* %?\n%^T\n")
+("z" "Zettel" entry (file "~/zettel.org")
+ "* %i%? %(and (org-id-get-create) nil)
+:PROPERTIES:\n:CREATED: %u\n:END:\n")
+#+END_SRC
+**** Setup for floating capture window. For reference see [[https://www.windley.com/archives/2010/12/capture_mode_and_emacs.shtml][here]].
 #+begin_src emacs-lisp
 (defun fpi/make-floating-frame (&optional width height minibuffer name)
   (interactive)
@@ -3077,6 +3117,38 @@ Setup for floating capture window. For reference see [[https://www.windley.com/a
   (org-capture)
   (remove-hook 'org-capture-mode-hook 'delete-other-windows))
 #+end_src
+*** Org Expiry
+This is an easy way to (semi-)automatically archive no longer relevant entries.
+
+I want to archive entries sometime after they are set to =DONE=. I first thought about using [[id:fd3936c7-9fc5-42d0-990d-32024e23b22f][Org Edna]]'s =TRIGGER= keyword:
+: :TRIGGER: self set-property("EXPIRY" "some-date")
+But unfortunately it does not support evaluating lisp for the property value. Therefore either an absolute expiry date has to be known when setting the =TRIGGER= or one needs to use a relative date.
+
+To come by with relatives dates I use the =CLOSED= property as reference for org-expiry when evaluating relative timestamps. The relative timestamp can then already be set directly in the capture template. Ten days gives me enough time to check whether the content is no longer important and to review the clocked times.
+#+begin_src fundamental :noweb-ref org-capture-template-properties
+:EXPIRY: +10d
+#+end_src
+As I do not always mark appointments as =DONE=, I set the =CLOSED= property already in the capture template (to the same time as the actual date). This is currently bugged..
+#+begin_src fundamental :noweb-ref org-capture-template-closed
+CLOSED: %\\1
+#+end_src
+
+#+begin_src emacs-lisp
+(use-package org-expiry
+  :after org
+  :straight (org-plus-contrib)
+  :custom
+  (org-expiry-handler-function 'org-expiry-archive-subtree)
+  (org-expiry-inactive-timestamps t)
+  (org-expiry-created-property-name "CLOSED"))
+;; (defun fpi/org-insert-expiry (&optional date)
+;;   (interactive)
+;;   (let ((date (or date "fri")))
+;;     (with-temp-buffer
+;;       (org-insert-time-stamp (org-read-date nil t "fri") nil t)
+;;       (buffer-string))))
+#+end_src
+(org-read-date nil nil ".")
 *** Ricing
 #+begin_src emacs-lisp
 (setq line-spacing 0.1)
@@ -3146,6 +3218,15 @@ time in a bibtex src block in the heading. The src blocks are tangled
 to compile into a separate =.bib= file. The function below creates new
 entries from a given doi and is called in my respective capture
 template.
+
+Here is my capture template.
+#+BEGIN_SRC emacs-lisp :tangle no :noweb-ref org-capture-templates
+("b" "Bibtex entry"
+ entry
+ (id "efc97963-b714-4020-94b6-c23ad2a286ee")
+ (function fpi/add-org-from-doi))
+#+END_SRC
+And the function to create the file.
 #+begin_src emacs-lisp
 (defun fpi/add-org-from-doi (&optional doi)
   "Get bibtex entry from doi and format as Org header with
