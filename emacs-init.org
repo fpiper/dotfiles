@@ -2720,7 +2720,9 @@ Gives an overview of time spent on defined budgets this week. Great to track if 
   :straight (:host github :repo "fpiper/org-time-budgets"
                    :branch "develop")
   :custom
-  (org-time-budgets '((:title "Work" :match "+work-nowork" :budget "40:00" :block workweek))))
+  (org-time-budgets '((:title "Work" :match "+work-nowork" :budget "40:00" :block workweek)
+                      (:title "Research" :match "+work+research" :budget "24:00" :block total-only)
+                      (:title "Teaching" :match "+work+teaching" :budget "8:00" :block total-only))))
 #+end_src
 *** Column view
 #+begin_src emacs-lisp
