@@ -2452,7 +2452,7 @@ Hansen's]] configs.
 
 #+begin_src emacs-lisp
 (use-package org
-  :straight (org-plus-contrib)
+  :straight (org-plus-contrib :host github :repo "fpiper/org-mode" :branch "develop" :local-repo "org" :files (:defaults "contrib/lisp/*.el"))
   :delight (org-cdlatex-mode)
   :bind
   (("C-c c" . org-capture)
