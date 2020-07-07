@@ -2585,7 +2585,8 @@ Switch projects and subprojects from NEXT back to TODO"
   :straight t
   :hook (org-load . org-pdftools-setup-link))
 (use-package org-id
-  :custom (org-id-link-to-org-use-id 'create-if-interactive-and-no-custom-id))
+  :custom (org-id-link-to-org-use-id 'create-if-interactive-and-no-custom-id)
+  <<org-id-custom>>)
 (use-package org-clock
   :custom
   (org-clock-out-remove-zero-time-clocks t)
@@ -2726,6 +2727,78 @@ print the list.
   :after org
   :straight (org-plus-contrib))
 #+end_src
+*** Gnorb
+:PROPERTIES:
+:ID:       990e2668-11d6-45eb-9c9b-1dc0b89b556d
+:END:
+This combines [[file:gnus.org][Gnus]] conversations with Org mode for note taking and [[id:390b66e5-b123-4cb1-9a56-61e41d7a818a][BBDB]] for contact information.
+#+begin_src emacs-lisp
+(use-package gnorb
+  :straight t
+  :config
+  (gnorb-install-defaults)
+  :custom
+  <<gnorb-custom>>)
+#+end_src
+To setup =gnorb= we need to do several things according to [[info:gnorb#Tracking Setup][the manual]]:
+1. Activate the gnus registry with ~(gnus-registry-initialize)~
+2. Make sure global id tracking in org-id is enabled
+   #+begin_src emacs-lisp :noweb-ref org-id-custom :tangle no
+   (org-id-track-globally t)
+   #+end_src
+3. Add nngnorb to ~gnus-secondary-select-methods~
+4. Call ~(gnorb-tracking-initialize)~. As this requires =gnus= to be loaded, this is called in =gnus.org=
+5. Set gnorb saved messages groups
+  #+begin_src emacs-lisp :tangle no :noweb-ref gnorb-custom
+  (gnorb-gnus-sent-groups '("nnimap+imsmail:INBOX/work" "nnimap+imsmail:Gesendete ELemente"))
+  #+end_src
+6. Set todo capture template
+   #+begin_src emacs-lisp :tangle no :noweb-ref gnorb-custom
+   (gnorb-gnus-new-todo-capture-key "t")
+   #+end_src
+
+Default keybindings:
+#+begin_example emacs-lisp
+(global-set-key (kbd "C-c A") 'gnorb-restore-layout)
+(eval-after-load "gnorb-bbdb"
+  '(progn
+     (define-key bbdb-mode-map (kbd "C-c S") #'gnorb-bbdb-mail-search)
+     (define-key bbdb-mode-map (kbd "C-c l") #'gnorb-bbdb-open-link)
+     (define-key bbdb-mode-map [remap bbdb-mail] #'gnorb-bbdb-mail)
+     (eval-after-load "gnorb-org"
+       (org-defkey org-mode-map (kbd "C-c C") #'gnorb-org-contact-link))))
+(eval-after-load "gnorb-org"
+  '(progn
+     (org-defkey org-mode-map (kbd "C-c t") #'gnorb-org-handle-mail)
+     (org-defkey org-mode-map (kbd "C-c v") #'gnorb-org-view)
+     (org-defkey org-mode-map (kbd "C-c E") #'gnorb-org-email-subtree)
+     (setq gnorb-org-agenda-popup-bbdb t)
+     (eval-after-load "org-agenda"
+       '(progn (org-defkey org-agenda-mode-map (kbd "C-c t") #'gnorb-org-handle-mail)
+               (org-defkey org-agenda-mode-map (kbd "C-c v") #'gnorb-org-view)))))
+(eval-after-load "gnorb-gnus"
+  '(progn
+     (define-key gnus-summary-mime-map "a" #'gnorb-gnus-article-org-attach)
+     (define-key gnus-summary-mode-map (kbd "C-c t") #'gnorb-gnus-incoming-do-todo)
+     (define-key gnus-summary-mode-map (kbd "C-c v") #'gnorb-gnus-view)
+     (define-key gnus-summary-mode-map (kbd "C-c C-t") #'gnorb-gnus-tag-message)
+     (define-key gnus-summary-limit-map (kbd "g") #'gnorb-gnus-insert-tagged-messages)
+     (define-key gnus-summary-limit-map (kbd "G") #'gnorb-gnus-insert-tracked-messages)
+     (setq gnorb-gnus-capture-always-attach t)
+     (push '("attach to org heading" . gnorb-gnus-mime-org-attach)
+           gnus-mime-action-alist)
+     (push '(gnorb-gnus-mime-org-attach "a" "Attach to Org heading")
+           gnus-mime-button-commands)
+     (setq gnus-mime-button-map
+           (let ((map (make-sparse-keymap)))
+             (dolist (c gnus-mime-button-commands)
+               (define-key map (cadr c) (car c)))
+             map))))
+(eval-after-load "message"
+  '(progn
+     (define-key message-mode-map (kbd "C-c t") #'gnorb-gnus-outgoing-do-todo)))
+#+end_example
+
 *** Inline images
 
 Resize inline images to 400px but respect width specifications in attribute lines.
@@ -4187,6 +4260,9 @@ For now I use this bad code.
   (footnote-section-tag ""))
 #+end_src
 ** BBDB
+:PROPERTIES:
+:ID:       390b66e5-b123-4cb1-9a56-61e41d7a818a
+:END:
 #+begin_src emacs-lisp
 (use-package bbdb
   :straight t)
