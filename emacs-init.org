@@ -2711,6 +2711,21 @@ Use imagemagick and standalone class for latex preview.
 (use-package org-num
   :delight)
 #+end_src
+*** org-checklist
+#+begin_quote
+This file provides some functions for handing repeated tasks which involve
+checking off a list of items. By setting the RESET_CHECK_BOXES property in an
+item, when the TODO state is set to done all checkboxes under that item are
+cleared. If the LIST_EXPORT_BASENAME property is set, a file will be created
+using the value of that property plus a timestamp, containing all the items
+in the list which are not checked. Additionally the user will be prompted to
+print the list.
+#+end_quote
+#+begin_src emacs-lisp
+(use-package org-checklist
+  :after org
+  :straight (org-plus-contrib))
+#+end_src
 *** Inline images
 
 Resize inline images to 400px but respect width specifications in attribute lines.
