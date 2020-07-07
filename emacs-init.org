@@ -2629,9 +2629,16 @@ Switch projects and subprojects from NEXT back to TODO"
   (org-agenda-custom-commands
       `(("d" "Day agenda"
          ((agenda "" ((org-agenda-span 'day)))
-          (org-time-budgets-in-agenda-maybe)))
-        ("w" "Week agenda"
+          (org-time-budgets-in-agenda-maybe)
+          (tags-todo "/+INPROGRESS"
+                     ((org-agenda-overriding-header "Active Tasks")))))
+        ("w" . "Week agendas")
+        ("ww" "Standard week agenda"
          ((agenda "" ((org-agenda-span 'week)))))
+        ("wn" "Next Week's agenda"
+         ((agenda "" ((org-agenda-span 'week)
+                      (org-agenda-start-day "mon")))
+          (tags-todo "+work")))
         ("n" "Agenda and all TODOs"
          ((todo "INPROGRESS"
                 ((org-agenda-overriding-header "Inprogress Tasks")))
