@@ -1,4 +1,4 @@
-#+PROPERTY: header-args:emacs-lisp :tangle tangle/gnus.el
+#+PROPERTY: header-args:emacs-lisp :tangle tangle/gnus.el :noweb yes
 
 #+begin_src shell :results silent :tangle tangle/symlink.sh :shebang "#!/bin/bash"
 ln -siv $(pwd)/tangle/gnus.el ~/.gnus.el
@@ -56,6 +56,7 @@ RSS/Atom Feeds asynchronously.
                                                      (nnir-search-engine imap)
                                                      (nnimap-inbox "INBOX")))
 (add-to-list 'gnus-secondary-select-methods '(nntp "localhost" 4321))
+<<secondary-select-methods>>
 #+end_src
 ** Options
 *** General
@@ -193,6 +194,30 @@ Slow scoring decay prevents huge scores from building up. Only run on =.ADAPT= s
       gnus-score-decay-constant 1
       gnus-score-decay-scale 0.01)
 #+end_src
+**** Registry
+Use the [[info:gnus#The Gnus Registry][Gnus Registry]]. This is required to use [[id:990e2668-11d6-45eb-9c9b-1dc0b89b556d][Gnorb]].
+#+begin_src emacs-lisp
+(gnus-registry-initialize)
+#+end_src
+#+begin_src emacs-lisp :tangle no :noweb-ref secondary-select-methods
+(add-to-list 'gnus-secondary-select-methods '(nngnorb "Gnorb server"))
+#+end_src
+Enable gnorb tracking
+#+begin_src emacs-lisp
+(gnorb-tracking-initialize)
+#+end_src
+Hint for existing relevant tracked conversations in the summary buffer (see [[info:gnorb#Hinting in Gnus][info:gnorb#Hinting in Gnus]]). Already tracked messages are marked with =&= and new maybe relevant messages with =¡=.
+#+begin_src fundamental :tangle no :noweb-ref gnorb-summary-line-format
+%ug
+#+end_src
+Display [[info:gnorb#Tagging Messages and Contacts][message tags]] in the summary line. Stop other summary line content at column 120 and insert the tags after.
+#+begin_src fundamental :tangle no :noweb-ref gnorb-summary-tags
+%-120=%uG
+#+end_src
+Also automatically set message tags
+#+begin_src emacs-lisp
+(setq gnorb-gnus-auto-tag-messages t)
+#+end_src
 *** Display
 Sort by newest first
 #+begin_src emacs-lisp
@@ -219,9 +244,11 @@ Also try to connect threads by guessing which articles are missing
 #+end_src
 Better thread display (from [[https://www.emacswiki.org/emacs/GnusFormatting][emacswiki/GnusFormatting)]].
 #+begin_src emacs-lisp
-(setq
-     gnus-summary-line-format "%U%R%z %(%&user-date;  %-15,15f  %B%s%)\n"
-     gnus-user-date-format-alist '((t . "%Y-%m-%d %H:%M"))
+(setq gnus-summary-line-format (concat "%U%R%z"
+                                      "<<gnorb-summary-line-format>>"
+                                      " %(%&user-date;  %-15,15f  %B%s%) "
+                                      "<<gnorb-summary-tags>>" "\n")
+     gnus-user-date-format-alist '((t . "%y-%m-%d %H:%M"))
      gnus-summary-thread-gathering-function 'gnus-gather-threads-by-references
      gnus-sum-thread-tree-false-root ""
      gnus-sum-thread-tree-indent " "
