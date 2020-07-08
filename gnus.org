@@ -218,6 +218,14 @@ Also automatically set message tags
 #+begin_src emacs-lisp
 (setq gnorb-gnus-auto-tag-messages t)
 #+end_src
+**** Gnus Cloud
+The [[info:gnus#The Gnus Cloud][Gnus Cloud]] lets you synchronize marks and general data (whatever that is) across different machines. This seems more complete than manually (with Nextcloud, …) syncing the news related files (=~/.newsrc.eld=, =~/News=, …).
+
+To enable it go to the gnus server buffer and mark the servers to be synced with =i= and the (imap) server which is used as host with =I=.
+#+begin_src emacs-lisp
+(setq gnus-cloud-method (concat "nnimap:" (car private/personal-imap-info)))
+#+end_src
+Commands to interact with the gnus cloud are prefixed with =~= in the group buffer.
 *** Display
 Sort by newest first
 #+begin_src emacs-lisp
