@@ -249,6 +249,9 @@ To enable it go to the gnus server buffer and mark the servers to be synced with
 (setq gnus-cloud-method (concat "nnimap:" (car private/personal-imap-info)))
 #+end_src
 Commands to interact with the gnus cloud are prefixed with =~= in the group buffer.
+#+begin_src emacs-lisp
+(setq gnus-cloud-synced-files '("~/.authinfo.gpg" "~/.gnus.registry.eieio" (:directory "~/News" :match ".*.\\(SCORE\\|ADAPT\\)")))
+#+end_src
 *** Display
 Sort by newest first
 #+begin_src emacs-lisp
