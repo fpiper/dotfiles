@@ -244,8 +244,10 @@ Also try to connect threads by guessing which articles are missing
 #+end_src
 Better thread display (from [[https://www.emacswiki.org/emacs/GnusFormatting][emacswiki/GnusFormatting)]].
 #+begin_src emacs-lisp
-(setq
-     gnus-summary-line-format "%U%R%z<<gnorb-summary-line-format>> %(%&user-date;  %-15,15f  %B%s%) <<gnorb-summary-tags>>\n"
+(setq gnus-summary-line-format (concat "%U%R%z"
+                                      "<<gnorb-summary-line-format>>"
+                                      " %(%&user-date;  %-15,15f  %B%s%) "
+                                      "<<gnorb-summary-tags>>" "\n")
      gnus-user-date-format-alist '((t . "%y-%m-%d %H:%M"))
      gnus-summary-thread-gathering-function 'gnus-gather-threads-by-references
      gnus-sum-thread-tree-false-root ""
