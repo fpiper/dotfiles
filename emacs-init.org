@@ -3333,12 +3333,26 @@ A small function to toggle the encryption state of the current entry.
 #+begin_src emacs-lisp
 (use-package org-ref
   :straight t
+  :bind (:map org-mode-map (("C-c n p" . fpi/open-bibtex-pdf-or-directory)))
   :custom
   (org-ref-bibliography-notes nil)
   (org-ref-notes-function 'org-ref-notes-function-many-files)
   (org-ref-notes-directory "~/git/projects/zettel/Lit")
   (org-ref-default-bibliography '("~/git/projects/personal/bib.bib"))
-  (org-ref-pdf-directory "~/git/projects/personal/Lit/"))
+  (org-ref-pdf-directory "~/git/projects/personal/Lit/")
+  :config
+  (defun fpi/open-bibtex-pdf-or-directory ()
+    (interactive)
+    (save-excursion
+      (bibtex-beginning-of-entry)
+      (let* ((bibtex-expand-strings t)
+             (entry (bibtex-parse-entry t))
+             (key (reftex-get-bib-field "=key=" entry))
+             (pdf (funcall org-ref-get-pdf-filename-function key)))
+        (if (file-exists-p pdf)
+            (org-open-link-from-string (format "[[file:%s]]" pdf))
+          (dired (file-name-directory pdf))
+          (ding))))))
 #+end_src
 ***** Capturing entries
 I store my bibtex references in an org file together with my notes. In
