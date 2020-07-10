@@ -237,9 +237,10 @@ only.
 #+end_src
 ** GUI Interface
 Disable most of the user interface.
-
 #+BEGIN_SRC emacs-lisp
 (use-package emacs
+  :custom
+  <<emacs-custom>>
   :config
   (tooltip-mode -1)
   (tool-bar-mode -1)
@@ -247,6 +248,12 @@ Disable most of the user interface.
   (scroll-bar-mode -1)
   )
 #+END_SRC
+
+Audible bell is useless when the sound is turned off and annoying when sound is on. Instead use visible bell.
+#+begin_src emacs-lisp :tangle no :noweb-ref emacs-custom
+(visible-bell t)
+#+end_src
+
 In /awesomewm/ and other tiling window managers the emacs window
 leaves a gap at the bottom. This removes it.
 #+BEGIN_SRC emacs-lisp
