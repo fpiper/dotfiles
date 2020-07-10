@@ -2832,8 +2832,8 @@ As refile only works on file-visiting buffers, we need to filter all other org b
 
 #+begin_src emacs-lisp :noweb-ref org-custom :tangle no
 (org-refile-use-outline-path 'file)
-(org-refile-targets '((buffer-file-name :maxlevel . 8)
-                      (org-agenda-files :maxlevel . 5)
+(org-refile-targets '((buffer-file-name :maxlevel . 12)
+                      (org-agenda-files :maxlevel . 10)
                       (fpi/org-file-buffer-list :maxlevel . 2)))
 #+end_src
 *** Time budgets
