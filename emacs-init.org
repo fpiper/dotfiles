@@ -2635,55 +2635,12 @@ Switch projects and subprojects from NEXT back to TODO"
   ;; See emacs.christianbaeuerlein.com/my-org-config.html
   (org-agenda-block-separator 9472)
   (org-agenda-custom-commands
-      `(("d" "Day agenda"
-         ((agenda "" ((org-agenda-span 'day)))
-          (org-time-budgets-in-agenda-maybe)
-          (tags-todo "/+INPROGRESS"
-                     ((org-agenda-overriding-header "Active Tasks")))))
-        ("w" . "Week agendas")
-        ("ww" "Standard week agenda"
-         ((agenda "" ((org-agenda-span 'week)))))
-        ("wn" "Next Week's agenda"
-         ((agenda "" ((org-agenda-span 'week)
-                      (org-agenda-start-day "mon")))
-          (tags-todo "+work")))
-        ("n" "Agenda and all TODOs"
-         ((todo "INPROGRESS"
-                ((org-agenda-overriding-header "Inprogress Tasks")))
-          (agenda)
-          (tags-todo "+soon+LEVEL=2"
-                     ((org-agenda-overriding-header "2nd Level /Soon/ Tasks")))
-          (tags-todo "+soon"
-                     ((org-agenda-overriding-header "All /Soon/ Tasks")))
-          (tags-todo "+shelve")
-          (tags-todo "+habit")
-          (todo "IDLE")
-          (tags-todo "-habit-shelve-soon-idle")))
-        ("r" "Refile entries" ((tags "+REFILE")))
-        ("i" "Idle Actions"
-               ((tags-todo "IDLE-READLIST-WATCH"
-                           ((org-agenda-overriding-header "Idle Tasks")
-                            (org-agenda-skip-function 'bh/skip-project-tasks)
-                            (org-agenda-sorting-strategy
-                             '(todo-state-down effort-up))))
-                (tags-todo "READLIST"
-                           ((org-agenda-overriding-header "Idle Reading List")
-                            (org-agenda-sorting-strategy
-                             '(todo-state-down effort-up))))
-                (tags-todo "WATCH"
-                           ((org-agenda-overriding-header "Things to Watch")
-                            (org-agenda-skip-function 'bh/skip-project-tasks)
-                            (org-agenda-sorting-strategy
-                             '(todo-state-down effort-up))))))
-        ("z" "Todos in org-roam-dir"
-         ((alltodo ""
-                   ((org-agenda-files (fpi/collect-org-directories-recursively org-roam-directory))))))
-        ("c" "Agenda and all todos in current directory"
-         ((agenda ""
-                  ((org-agenda-files (fpi/collect-org-directories-recursively default-directory))))
-          (alltodo ""
-                   ((org-agenda-files (fpi/collect-org-directories-recursively default-directory))))))))
-  )
+   `(
+     <<org-agenda-custom-commands>>
+     )))
+#+end_src
+
+#+begin_src emacs-lisp
 (use-package ob-core
   :custom
   (org-confirm-babel-evaluate nil))
@@ -2693,6 +2650,7 @@ Switch projects and subprojects from NEXT back to TODO"
 (use-package ol-notmuch)
 (use-package org-habit)
 #+end_src
+
 #+begin_src emacs-lisp
 (use-package org-inlinetask)
 #+end_src
@@ -2718,6 +2676,122 @@ Use imagemagick and standalone class for latex preview.
 #+begin_src emacs-lisp
 (use-package org-num
   :delight)
+#+end_src
+*** Org agenda custom commands
+**** Task-related agendas
+Simple day agenda with =INPROGRESS= tasks
+#+begin_src emacs-lisp :tangle no :noweb-ref org-agenda-custom-commands
+("d" "Day agenda"
+    ((agenda "" ((org-agenda-span 'day)))
+     (org-time-budgets-in-agenda-maybe)
+     (tags-todo "/+INPROGRESS"
+                ((org-agenda-overriding-header "Active Tasks")))))
+#+end_src
+Agenda with all open tasks
+#+begin_src emacs-lisp :tangle no :noweb-ref org-agenda-custom-commands
+("n" "Agenda and all TODOs"
+ ((todo "INPROGRESS"
+        ((org-agenda-overriding-header "Inprogress Tasks")))
+  (agenda)
+  (tags-todo "+soon+LEVEL=2"
+             ((org-agenda-overriding-header "2nd Level /Soon/ Tasks")))
+  (tags-todo "+soon"
+             ((org-agenda-overriding-header "All /Soon/ Tasks")))
+  (tags-todo "+shelve")
+  (tags-todo "+habit")
+  (todo "IDLE")
+  (tags-todo "-habit-shelve-soon-idle")))
+#+end_src
+***** Fancy agenda to choose todays tasks
+Based on https://github.com/psamim/dotfiles/blob/master/doom/config.el#L73.
+#+begin_src emacs-lisp :tangle no :noweb-ref org-agenda-custom-commands
+("o" "My Agenda"
+ ((agenda "" ((org-agenda-block-separator ? )
+              (org-agenda-overriding-header "\n⚡ Deadlines:\n⎺⎺⎺⎺⎺⎺⎺⎺⎺")
+              (org-agenda-skip-function '(org-agenda-skip-entry-if 'notdeadline))
+              (org-agenda-format-date (lambda (date) ""))))
+  (agenda* "" ((org-agenda-block-separator ? )
+               (org-agenda-skip-function '(fpi/org-agenda-skip-if-not-today))
+               (org-deadline-warning-days 0)
+               (org-agenda-todo-ignore-timestamp 'all)
+               (org-agenda-start-day "+0d")
+               (org-agenda-span 1)
+               (org-agenda-overriding-header "⚡ Schedule:\n⎺⎺⎺⎺⎺⎺⎺⎺⎺")
+               (org-agenda-repeating-timestamp-show-all nil)
+               (org-agenda-remove-tags t)
+               (org-agenda-use-time-grid t)
+               ;; (org-agenda-prefix-format   "  %-3i  %30b %t%s")
+               (org-agenda-todo-keyword-format " ☐ ")
+               (org-agenda-current-time-string "⮜┈┈┈┈┈┈┈ now")
+               (org-agenda-scheduled-leaders '("" ""))
+               (org-agenda-time-grid (quote ((daily today remove-match)
+                                             (0900 1200 1500 1800 2100)
+                                             "      " "┈┈┈┈┈┈┈┈┈┈┈┈┈")))))
+  (org-time-budgets-in-agenda-maybe)
+  (agenda "" ((org-agenda-block-separator ? )
+              (org-agenda-overriding-header "\n⚡ Scheduled Tasks:\n⎺⎺⎺⎺⎺⎺⎺⎺⎺")
+              (org-agenda-skip-function '(org-agenda-skip-entry-if 'notscheduled))
+              (org-agenda-use-time-grid nil)
+              (org-agenda-format-date (lambda (date) ""))))
+  ))
+#+end_src
+#+begin_src emacs-lisp
+(defun fpi/org-agenda-skip-if-not-today ()
+  "Skip all scheduled entries and deadlines not due for today."
+  (let ((subtree-end (save-excursion (org-end-of-subtree t)))
+        (deadline-day
+         (when (org-entry-get nil "DEADLINE")
+         (time-to-days
+          (org-time-string-to-time
+           (org-entry-get nil "DEADLINE")))))
+        (scheduled-day
+         (when (org-entry-get nil "SCHEDULED")
+         (time-to-days
+          (org-time-string-to-time
+           (org-entry-get nil "SCHEDULED")))))
+        (now (time-to-days (current-time))))
+    (and (or (and deadline-day
+                  (not (= deadline-day now)))
+             (and scheduled-day
+                  (not (= scheduled-day now))))
+         subtree-end)))
+#+end_src
+**** Week agendas
+#+begin_src emacs-lisp :tangle no :noweb-ref org-agenda-custom-commands
+("w" . "Week agendas")
+("ww" "Standard week agenda"
+ ((agenda "" ((org-agenda-span 'week)))))
+("wn" "Next Week's agenda"
+ ((agenda "" ((org-agenda-span 'week)
+              (org-agenda-start-day "mon")))
+  (tags-todo "+work")))
+#+end_src
+**** Misc agendas
+#+begin_src emacs-lisp :tangle no :noweb-ref org-agenda-custom-commands
+("r" "Refile entries" ((tags "+REFILE")))
+("i" "Idle Actions"
+       ((tags-todo "IDLE-READLIST-WATCH"
+                   ((org-agenda-overriding-header "Idle Tasks")
+                    (org-agenda-skip-function 'bh/skip-project-tasks)
+                    (org-agenda-sorting-strategy
+                     '(todo-state-down effort-up))))
+        (tags-todo "READLIST"
+                   ((org-agenda-overriding-header "Idle Reading List")
+                    (org-agenda-sorting-strategy
+                     '(todo-state-down effort-up))))
+        (tags-todo "WATCH"
+                   ((org-agenda-overriding-header "Things to Watch")
+                    (org-agenda-skip-function 'bh/skip-project-tasks)
+                    (org-agenda-sorting-strategy
+                     '(todo-state-down effort-up))))))
+("z" "Todos in org-roam-dir"
+ ((alltodo ""
+           ((org-agenda-files (fpi/collect-org-directories-recursively org-roam-directory))))))
+("c" "Agenda and all todos in current directory"
+ ((agenda ""
+          ((org-agenda-files (fpi/collect-org-directories-recursively default-directory))))
+  (alltodo ""
+           ((org-agenda-files (fpi/collect-org-directories-recursively default-directory))))))
 #+end_src
 *** org-checklist
 #+begin_quote
