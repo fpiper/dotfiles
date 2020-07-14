@@ -2498,7 +2498,7 @@ Hansen's]] configs.
      ("omap"      . "http://nominatim.openstreetmap.org/search?q=%s&polygon=1")))
   (org-ellipsis " ")
   (org-outline-path-complete-in-steps nil)
-  (org-log-state-notes-into-drawer "NOTES")
+  (org-log-into-drawer "NOTES")
   (org-clock-into-drawer "LOGBOOK")
   (org-log-done 'time)
   (org-log-redeadline 'time)
