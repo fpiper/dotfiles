@@ -100,3 +100,18 @@ rm $catFile
 
 $symlinkFile
 #+end_src
+
+** =dots= script
+I place this script in my =PATH= to execute commands in the dotfiles
+directory from anywhere.
+
+#+begin_src shell :shebang "#!/bin/bash" :tangle tangle/dots.sh
+cd ~/git/projects/dotfiles
+$@
+#+end_src
+
+Create a symlink for this script.
+
+#+BEGIN_SRC sh :tangle tangle/symlink.sh :results silent :shebang "#!/bin/bash"
+ln -siv $(pwd)/tangle/dots.sh ~/.local/bin/dots
+#+END_SRC
