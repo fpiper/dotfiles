@@ -2521,25 +2521,6 @@ Hansen's]] configs.
   (org-outline-path-complete-in-steps nil)
   (org-log-into-drawer "NOTES")
   (org-clock-into-drawer "LOGBOOK")
-  (org-log-done 'time)
-  (org-log-redeadline 'time)
-  (org-log-reschedule 'time)
-  (org-todo-keywords '((sequence "PLANNING(p)" "NEXT(n)" "INPROGRESS(i!)" "WAITING(w@/!)" "|" "ICEBOX(x@)" "DONE(d)")
-                       (sequence "S(s)" "DONE(d)")
-                       (sequence "PHONE(P)" "MEETING(m)" "|" "CANCELLED(c)")
-                       (sequence "TODO(t)" "|" "DONE(d)")
-                       (sequence "IDLE(a)")))
-  (org-use-fast-todo-selection t)
-  (org-todo-keyword-faces
-   '(("NEXT" :foreground "light blue" :weight bold)
-     ("INPROGRESS" :foreground "burlywood" :weight bold)
-     ("DONE" :foreground "forest green" :weight bold)
-     ("WAITING" :foreground "orange" :weight bold)
-     ("ICEBOX" :foreground "orange" :weight normal)
-     ("CANCELLED" :foreground "forest green" :weight bold)
-     ("MEETING" :foreground "yellow" :weight bold)
-     ("PHONE" :foreground "yellow" :weight bold)
-     ("IDLE" :foreground "magenta" :weight bold)))
   (org-clock-in-switch-to-state 'bh/clock-in-to-inprogress)
   (org-tags-column 0)
   <<org-custom>>
@@ -2698,8 +2679,86 @@ Use imagemagick and standalone class for latex preview.
 (use-package org-num
   :delight)
 #+end_src
-*** Org agenda custom commands
-**** Task-related agendas
+*** Task organization
+**** Todo settings
+- WAITING tasks are waiting on the completion of other tasks
+- NEXT tasks can be picked up
+- INPROGRESS are current tasks with time clocked
+- DONE are complete tasks
+- ICEBOX tasks are on ice for whatever reason
+
+TODO->DONE cycle is for habits.\\
+Idle states cover things to do for time in between, checking the
+inbox, reading news, …
+
+Phonecalls?
+
+#+BEGIN_SRC dot :file /tmp/todo.png
+digraph hierarch{
+        node [shape=box]
+        // Tasks, Projects
+        PLANNING -> NEXT, INPROGRESS, ICEBOX
+        WAITING -> NEXT -> INPROGRESS -> DONE, WAITING, ICEBOX
+        NEXT -> WAITING -> INPROGRESS, ICEBOX
+        NEXT -> ICEBOX, DONE
+
+        // stuff for idle time
+        IDLE -> IDLE
+        //NEXT -> DONE
+
+        // Phonecalls, Meetings
+        PHONE -> DONE, CANCELED
+        MEETING -> DONE, CANCELED
+}
+#+END_SRC
+
+#+RESULTS:
+[[file:/tmp/todo.png]]
+
+#+begin_src emacs-lisp :noweb-ref org-custom :tangle no
+(org-todo-keywords '((sequence "PLANNING(p)" "NEXT(n)" "INPROGRESS(i!)" "WAITING(w@/!)" "|" "ICEBOX(x@)" "DONE(d)")
+                     (sequence "S(s)" "DONE(d)")
+                     (sequence "PHONE(P)" "MEETING(m)" "|" "CANCELLED(c)")
+                     (sequence "TODO(t)" "|" "DONE(d)")
+                     (sequence "IDLE(a)")))
+(org-use-fast-todo-selection t)
+(org-todo-keyword-faces
+ '(("NEXT" :foreground "light blue" :weight bold)
+   ("INPROGRESS" :foreground "burlywood" :weight bold)
+   ("DONE" :foreground "forest green" :weight bold)
+   ("WAITING" :foreground "orange" :weight bold)
+   ("ICEBOX" :foreground "orange" :weight normal)
+   ("CANCELLED" :foreground "forest green" :weight bold)
+   ("MEETING" :foreground "yellow" :weight bold)
+   ("PHONE" :foreground "yellow" :weight bold)
+   ("IDLE" :foreground "magenta" :weight bold)))
+#+end_src
+
+Switch a todo entry from NEXT to INPROGRESS when clocking in.
+#+begin_src emacs-lisp :tangle no
+(setq org-clock-in-switch-to-state 'bh/clock-in-to-inprogress)
+(defun bh/clock-in-to-inprogress (kw)
+  "Switch a task from NEXT to INPROGRESS when clocking in.
+Skips capture tasks, projects, and subprojects.
+Switch projects and subprojects from NEXT back to TODO"
+  (when (not (and (boundp 'org-capture-mode) org-capture-mode))
+    (cond
+     ((and (member (org-get-todo-state) (list "NEXT"))
+           (bh/is-task-p))
+      "INPROGRESS")
+     ((and (member (org-get-todo-state) (list "NEXT"))
+           (bh/is-project-p))
+      "INPROGRESS"))))
+#+end_src
+***** State changes
+Track state changes to done & changes to schedules and deadlines.
+#+begin_src emacs-lisp :tangle no :noweb-ref org-custom
+(org-log-done 'time)
+(org-log-redeadline 'time)
+(org-log-reschedule 'time)
+#+end_src
+**** Org agenda custom commands
+***** Task-related agendas
 Simple day agenda with =INPROGRESS= tasks
 #+begin_src emacs-lisp :tangle no :noweb-ref org-agenda-custom-commands
 ("d" "Day agenda"
@@ -2723,7 +2782,7 @@ Agenda with all open tasks
   (todo "IDLE")
   (tags-todo "-habit-shelve-soon-idle")))
 #+end_src
-***** Fancy agenda to choose todays tasks
+****** Fancy agenda to choose todays tasks
 Based on https://github.com/psamim/dotfiles/blob/master/doom/config.el#L73.
 #+begin_src emacs-lisp :tangle no :noweb-ref org-agenda-custom-commands
 ("o" "My Agenda"
@@ -2777,7 +2836,7 @@ Based on https://github.com/psamim/dotfiles/blob/master/doom/config.el#L73.
                   (not (= scheduled-day now))))
          subtree-end)))
 #+end_src
-**** Week agendas
+***** Week agendas
 #+begin_src emacs-lisp :tangle no :noweb-ref org-agenda-custom-commands
 ("w" . "Week agendas")
 ("ww" "Standard week agenda"
@@ -2787,7 +2846,7 @@ Based on https://github.com/psamim/dotfiles/blob/master/doom/config.el#L73.
               (org-agenda-start-day "mon")))
   (tags-todo "+work")))
 #+end_src
-**** Misc agendas
+***** Misc agendas
 #+begin_src emacs-lisp :tangle no :noweb-ref org-agenda-custom-commands
 ("r" "Refile entries" ((tags "+REFILE")))
 ("i" "Idle Actions"
@@ -2813,6 +2872,78 @@ Based on https://github.com/psamim/dotfiles/blob/master/doom/config.el#L73.
           ((org-agenda-files (fpi/collect-org-directories-recursively default-directory))))
   (alltodo ""
            ((org-agenda-files (fpi/collect-org-directories-recursively default-directory))))))
+#+end_src
+**** Refile
+Use the full outline path so I can distinguish headlines with the same name & disable step-wise completion as I think from the refile target backwards, not from top-level downwards. Also include the current file's headings as a refile targets up to a deep level, all agenda files up to a small level and all open org files up to an even smaller level.
+
+As refile only works on file-visiting buffers, we need to filter all other org buffers from ~(org-buffer-list)~.
+#+begin_src emacs-lisp
+(defun fpi/org-file-buffer-list ()
+  "Return a list of org buffers which visit files."
+  (seq-filter 'buffer-file-name (org-buffer-list)))
+#+end_src
+
+#+begin_src emacs-lisp :noweb-ref org-custom :tangle no
+(org-refile-use-outline-path 'file)
+(org-refile-targets '((buffer-file-name :maxlevel . 12)
+                      (org-agenda-files :maxlevel . 10)
+                      (fpi/org-file-buffer-list :maxlevel . 2)))
+#+end_src
+**** Time budgets
+Gives an overview of time spent on defined budgets this week. Great to track if you've worked enough hours. To use it add ~(org-time-budgets-in-agenda-maybe)~ after ~(agenda)~ in a custom agenda command.
+#+begin_src emacs-lisp
+(use-package org-time-budgets
+  :straight (:host github :repo "fpiper/org-time-budgets"
+                   :branch "develop")
+  :custom
+  (org-time-budgets '((:title "Work" :match "+work-nowork" :budget "40:00" :blocks (workday week))
+                      (:title "Research" :match "+work+research" :budget "24:00" :blocks (nil week))
+                      (:title "Teaching" :match "+work+teaching" :budget "8:00" :blocks (nil week)))))
+#+end_src
+**** Column view
+#+begin_src emacs-lisp
+(setq org-columns-default-format
+      "%50ITEM(Task) %5Effort(Effort){:} %5CLOCKSUM %3PRIORITY %20DEADLINE %20SCHEDULED %20TIMESTAMP %TODO %CATEGORY %TAGS")
+#+end_src
+**** Clocking
+***** Combine adjacent clock lines
+#+begin_src emacs-lisp
+(defun fpi/org-clock-join-last-clock ()
+  "Join current clock with last one if start/end point match."
+  (save-mark-and-excursion
+    (beginning-of-line)
+    (let* ((eol (save-excursion (end-of-line) (point)))
+	   (boi (progn (re-search-forward "\\[" eol t) (backward-char) (point)))
+	   (eoi (progn (re-search-forward "\\]" eol t) (point)))
+	   (i (buffer-substring-no-properties boi eoi)) ;; last clock-in-time
+	   (boc (progn (re-search-forward "\\[" eol t) (backward-char) (point)))
+	   (eoc (progn (re-search-forward "\\]" eol t) (point)))
+	   (c (buffer-substring-no-properties boc eoc))) ;; last clock-out-time (equals org-clock-out-time if last clock)
+      (next-line)
+      (end-of-line)
+      (let* ((bol (save-excursion (beginning-of-line) (point)))
+	     (eoo (progn (re-search-backward "\\]" bol t) (forward-char) (point)))
+	     (boo (progn (re-search-backward "\\[" bol t) (point)))
+	     (o (buffer-substring-no-properties boo eoo))) ;; last-last clock-out-time
+	(when (equal i o)
+	  (delete-region boo eoo)
+	  ;; (insert (format-time-string (org-time-stamp-format t t) org-clock-out-time))
+	  (insert c)
+	  (org-evaluate-time-range)
+	  (previous-line)
+	  (delete-region (save-excursion (beginning-of-line) (backward-char) (point)) eol)
+	  (message (format "Joined nearby clocks at %s" i)))))))
+(add-hook 'org-clock-out-hook 'fpi/org-clock-join-last-clock)
+#+end_src
+***** org-clock-convenience
+#+begin_src emacs-lisp
+(use-package org-clock-convenience
+  :straight t
+  :bind (:map org-agenda-mode-map
+   	   ("<S-up>" . org-clock-convenience-timestamp-up)
+   	   ("<S-down>" . org-clock-convenience-timestamp-down)
+   	   ("<C-right>" . org-clock-convenience-fill-gap)
+   	   ("<C-left>" . org-clock-convenience-fill-gap-both)))
 #+end_src
 *** org-checklist
 #+begin_quote
@@ -2915,38 +3046,6 @@ Also display remote images by downloading them.
 #+begin_src emacs-lisp :noweb-ref ob-hooks :tangle no
 (org-babel-after-execute . org-display-inline-images)
 #+end_src
-*** Refile
-Use the full outline path so I can distinguish headlines with the same name & disable step-wise completion as I think from the refile target backwards, not from top-level downwards. Also include the current file's headings as a refile targets up to a deep level, all agenda files up to a small level and all open org files up to an even smaller level.
-
-As refile only works on file-visiting buffers, we need to filter all other org buffers from ~(org-buffer-list)~.
-#+begin_src emacs-lisp
-(defun fpi/org-file-buffer-list ()
-  "Return a list of org buffers which visit files."
-  (seq-filter 'buffer-file-name (org-buffer-list)))
-#+end_src
-
-#+begin_src emacs-lisp :noweb-ref org-custom :tangle no
-(org-refile-use-outline-path 'file)
-(org-refile-targets '((buffer-file-name :maxlevel . 12)
-                      (org-agenda-files :maxlevel . 10)
-                      (fpi/org-file-buffer-list :maxlevel . 2)))
-#+end_src
-*** Time budgets
-Gives an overview of time spent on defined budgets this week. Great to track if you've worked enough hours. To use it add ~(org-time-budgets-in-agenda-maybe)~ after ~(agenda)~ in a custom agenda command.
-#+begin_src emacs-lisp
-(use-package org-time-budgets
-  :straight (:host github :repo "fpiper/org-time-budgets"
-                   :branch "develop")
-  :custom
-  (org-time-budgets '((:title "Work" :match "+work-nowork" :budget "40:00" :blocks (workday week))
-                      (:title "Research" :match "+work+research" :budget "24:00" :blocks (nil week))
-                      (:title "Teaching" :match "+work+teaching" :budget "8:00" :blocks (nil week)))))
-#+end_src
-*** Column view
-#+begin_src emacs-lisp
-(setq org-columns-default-format
-      "%50ITEM(Task) %5Effort(Effort){:} %5CLOCKSUM %3PRIORITY %20DEADLINE %20SCHEDULED %20TIMESTAMP %TODO %CATEGORY %TAGS")
-#+end_src
 *** org-caldav
 #+begin_src emacs-lisp
 (use-package org-caldav
@@ -2960,46 +3059,6 @@ Gives an overview of time spent on defined budgets this week. Great to track if 
   (org-caldav-delete-calendar-entries 'never)
   (org-caldav-exclude-tags '(nocal))
 )
-#+end_src
-*** Clocking
-**** Combine adjacent clock lines
-#+begin_src emacs-lisp
-(defun fpi/org-clock-join-last-clock ()
-  "Join current clock with last one if start/end point match."
-  (save-mark-and-excursion
-    (beginning-of-line)
-    (let* ((eol (save-excursion (end-of-line) (point)))
-	   (boi (progn (re-search-forward "\\[" eol t) (backward-char) (point)))
-	   (eoi (progn (re-search-forward "\\]" eol t) (point)))
-	   (i (buffer-substring-no-properties boi eoi)) ;; last clock-in-time
-	   (boc (progn (re-search-forward "\\[" eol t) (backward-char) (point)))
-	   (eoc (progn (re-search-forward "\\]" eol t) (point)))
-	   (c (buffer-substring-no-properties boc eoc))) ;; last clock-out-time (equals org-clock-out-time if last clock)
-      (next-line)
-      (end-of-line)
-      (let* ((bol (save-excursion (beginning-of-line) (point)))
-	     (eoo (progn (re-search-backward "\\]" bol t) (forward-char) (point)))
-	     (boo (progn (re-search-backward "\\[" bol t) (point)))
-	     (o (buffer-substring-no-properties boo eoo))) ;; last-last clock-out-time
-	(when (equal i o)
-	  (delete-region boo eoo)
-	  ;; (insert (format-time-string (org-time-stamp-format t t) org-clock-out-time))
-	  (insert c)
-	  (org-evaluate-time-range)
-	  (previous-line)
-	  (delete-region (save-excursion (beginning-of-line) (backward-char) (point)) eol)
-	  (message (format "Joined nearby clocks at %s" i)))))))
-(add-hook 'org-clock-out-hook 'fpi/org-clock-join-last-clock)
-#+end_src
-**** org-clock-convenience
-#+begin_src emacs-lisp
-(use-package org-clock-convenience
-  :straight t
-  :bind (:map org-agenda-mode-map
-   	   ("<S-up>" . org-clock-convenience-timestamp-up)
-   	   ("<S-down>" . org-clock-convenience-timestamp-down)
-   	   ("<C-right>" . org-clock-convenience-fill-gap)
-   	   ("<C-left>" . org-clock-convenience-fill-gap-both)))
 #+end_src
 *** Babel
 This function is handy to use in header arguments to create names based on the current org heading. E.g. =:var data=(fpi/format-headline "/tmp/prefix_")=
@@ -3506,85 +3565,6 @@ Here's a function to easily copy a doi from the results of =crossref-lookup=.
 (use-package biblio
   :bind (:map biblio-selection-mode-map
               ("d" . fpi/biblio-get-doi)))
-#+end_src
-*** Todo settings
-- WAITING tasks are waiting on the completion of other tasks
-- NEXT tasks can be picked up
-- INPROGRESS are current tasks with time clocked
-- DONE are complete tasks
-- ICEBOX tasks are on ice for whatever reason
-
-TODO->DONE cycle is for habits.\\
-Idle states cover things to do for time in between, checking the
-inbox, reading news, …
-
-Phonecalls?
-
-#+BEGIN_SRC dot :file /tmp/todo.png
-digraph hierarch{
-        node [shape=box]
-        // Tasks, Projects
-        PLANNING -> NEXT, INPROGRESS, ICEBOX
-        WAITING -> NEXT -> INPROGRESS -> DONE, WAITING, ICEBOX
-        NEXT -> WAITING -> INPROGRESS, ICEBOX
-        NEXT -> ICEBOX, DONE
-
-        // stuff for idle time
-        IDLE -> IDLE
-        //NEXT -> DONE
-
-        // Phonecalls, Meetings
-        PHONE -> DONE, CANCELED
-        MEETING -> DONE, CANCELED
-}
-#+END_SRC
-
-#+RESULTS:
-[[file:/tmp/todo.png]]
-
-#+BEGIN_SRC emacs-lisp :tangle no
-(setq org-todo-keywords '((sequence "PLANNING(p)" "NEXT(n)" "INPROGRESS(i)" "WAITING(w@/!)" "|" "ICEBOX(x@)" "DONE(d)")
-                          (sequence "S(s)" "DONE(d)")
-                          (sequence "PHONE(P)" "MEETING(m)" "|" "CANCELLED(c)")
-                          (sequence "TODO(t)" "|" "DONE(d)")
-                          (sequence "IDLE(a)")))
-(setq org-use-fast-todo-selection t)
-
-
-(setq org-todo-keyword-faces
-      '(("NEXT" :foreground "light blue" :weight bold)
-        ("INPROGRESS" :foreground "burlywood" :weight bold)
-        ("DONE" :foreground "forest green" :weight bold)
-        ("WAITING" :foreground "orange" :weight bold)
-        ("ICEBOX" :foreground "orange" :weight normal)
-        ("CANCELLED" :foreground "forest green" :weight bold)
-        ("MEETING" :foreground "yellow" :weight bold)
-        ("PHONE" :foreground "yellow" :weight bold)
-        ("IDLE" :foreground "magenta" :weight bold)))
-#+END_SRC
-
-Switch a todo entry from NEXT to INPROGRESS when clocking in.
-#+begin_src emacs-lisp :tangle no
-(setq org-clock-in-switch-to-state 'bh/clock-in-to-inprogress)
-(defun bh/clock-in-to-inprogress (kw)
-  "Switch a task from NEXT to INPROGRESS when clocking in.
-Skips capture tasks, projects, and subprojects.
-Switch projects and subprojects from NEXT back to TODO"
-  (when (not (and (boundp 'org-capture-mode) org-capture-mode))
-    (cond
-     ((and (member (org-get-todo-state) (list "NEXT"))
-           (bh/is-task-p))
-      "INPROGRESS")
-     ((and (member (org-get-todo-state) (list "NEXT"))
-           (bh/is-project-p))
-      "INPROGRESS"))))
-#+end_src
-**** State changes
-Track state changes to done & changes to schedules and deadlines.
-#+begin_src emacs-lisp :tangle no
-(setq org-log-done 'time)
-(setq org-log-redeadline 'time)
-(setq org-log-reschedule 'time)
 #+end_src
 *** Toggle drawer visibility
 #+begin_src emacs-lisp
