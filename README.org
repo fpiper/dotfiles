@@ -25,6 +25,14 @@ git branch -a | grep -v -e +$ -e master | sed "s/[ *] //" | xargs git merge
 git push --force origin master
 #+end_src
 
+To integrate changes from =origin= perform a rebase instead of merge
+to loose the old merge commit but keep any local changes.
+
+#+begin_src shell :shebang "#!/bin/bash" :tangle tangle/pull.sh
+git fetch
+git rebase origin/master master
+#+end_src
+
 ** Updating all tangled files
 This script (re-)tangles all =.org= and =.org.gpg= files in the
 current directory. Run this in case the org files were updated outside

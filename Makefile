@@ -8,3 +8,9 @@ tangle:
 
 link:
 	tangle/link.sh
+
+fetch:
+	git fetch
+
+pull:
+	tangle/pull.sh
