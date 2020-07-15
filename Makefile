@@ -1,9 +1,11 @@
-.PHONY: merge tangle
+.PHONY: merge install link tangle fetch pull
 
 merge:
 	tangle/merge.sh
 
-tangle:
+install: tangle link
+
+tangle: tangle/tangle.sh
 	tangle/tangle.sh
 
 link:
@@ -14,3 +16,6 @@ fetch:
 
 pull:
 	tangle/pull.sh
+
+tangle/tangle.sh: README.org
+	emacs --batch --eval "(and (require 'org) (org-babel-tangle-file \"README.org\"))"
