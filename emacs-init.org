@@ -3550,7 +3550,7 @@ digraph hierarch{
 
 #+begin_src emacs-lisp :noweb-ref org-custom :tangle no
 (org-todo-keywords '((sequence "HOLD(h)" "NEXT(n)" "INPROGRESS(i!)" "WAITING(w@/!)" "|" "ICEBOX(x@)" "DONE(d)") ;;todos
-                     (sequence "PLANNING(p)" "TODO(t)" "ACTIVE(a)" "|" "CANCELLED(c)" "DONE(d)") ;;projects
+                     (sequence "PLANNING(p)" "READY(r)" "ACTIVE(a)" "|" "CANCELLED(c)" "DONE(d)") ;;projects
                      (sequence "PHONE(P)" "MEETING(m)" "|" "CANCELLED(c)" "DONE(d)")
                      (sequence "TODO(t)" "|" "DONE(d)") ;;habits
                      (sequence "IDLE(b)")))
