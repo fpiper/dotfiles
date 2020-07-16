@@ -2716,21 +2716,23 @@ digraph hierarch{
 [[file:/tmp/todo.png]]
 
 #+begin_src emacs-lisp :noweb-ref org-custom :tangle no
-(org-todo-keywords '((sequence "PLANNING(p)" "NEXT(n)" "INPROGRESS(i!)" "WAITING(w@/!)" "|" "ICEBOX(x@)" "DONE(d)")
-                     (sequence "S(s)" "DONE(d)")
-                     (sequence "PHONE(P)" "MEETING(m)" "|" "CANCELLED(c)")
-                     (sequence "TODO(t)" "|" "DONE(d)")
-                     (sequence "IDLE(a)")))
+(org-todo-keywords '((sequence "HOLD(h)" "NEXT(n)" "INPROGRESS(i!)" "WAITING(w@/!)" "|" "ICEBOX(x@)" "DONE(d)") ;;todos
+                     (sequence "PLANNING(p)" "TODO(t)" "ACTIVE(a)" "|" "CANCELLED(c)" "DONE(d)") ;;projects
+                     (sequence "PHONE(P)" "MEETING(m)" "|" "CANCELLED(c)" "DONE(d)")
+                     (sequence "TODO(t)" "|" "DONE(d)") ;;habits
+                     (sequence "IDLE(b)")))
 (org-use-fast-todo-selection t)
 (org-todo-keyword-faces
- '(("NEXT" :foreground "light blue" :weight bold)
+ '(("HOLD" :foreground "light gray" :weight bold)
+   ("NEXT" :foreground "light blue" :weight bold)
    ("INPROGRESS" :foreground "burlywood" :weight bold)
+   ("ACTIVE" :foreground "chocolate" :weight bold)
    ("DONE" :foreground "forest green" :weight bold)
    ("WAITING" :foreground "orange" :weight bold)
    ("ICEBOX" :foreground "orange" :weight normal)
    ("CANCELLED" :foreground "forest green" :weight bold)
-   ("MEETING" :foreground "yellow" :weight bold)
-   ("PHONE" :foreground "yellow" :weight bold)
+   ("MEETING" :foreground "yellow3" :weight bold)
+   ("PHONE" :foreground "yellow3" :weight bold)
    ("IDLE" :foreground "magenta" :weight bold)))
 #+end_src
 
