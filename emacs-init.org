@@ -3311,24 +3311,6 @@ I use a org version with some custom patches. Rather than using something like =
   (org-use-speed-commands (lambda () (and (looking-at org-outline-regexp) (looking-back "^\**"))))
   (org-pretty-entities t)
   (org-fast-tag-selection-single-key t)
-  (org-tag-alist (quote ((:startgroup)
-                         ("@errand" . ?e)
-                         ("@office" . ?o)
-                         ("@home" . ?H)
-                         (:endgroup)
-                         ("IDLE" . ?i)
-                         ("shelf" . ?s)
-                         ("soon" . ?t)
-                         ("project" . ?p)
-                         ;; ("HOLD" . ?h)
-                         ;; ("PERSONAL" . ?P)
-                         ("WORK" . ?W)
-                         ;; ("ORG" . ?O)
-                         ("crypt" . ?E)
-                         ("NOTE" . ?n)
-                         ;; ("CANCELLED" . ?c)
-                         ("FLAGGED" . ??)
-                         )))
   (org-link-abbrev-alist
    '(("google"    . "http://www.google.com/search?q=")
      ("ddg"       . "https://duckduckgo.com/?q=")
@@ -3338,7 +3320,6 @@ I use a org version with some custom patches. Rather than using something like =
   (org-outline-path-complete-in-steps nil)
   (org-log-into-drawer "NOTES")
   (org-clock-into-drawer "LOGBOOK")
-  (org-clock-in-switch-to-state 'bh/clock-in-to-inprogress)
   (org-tags-column 0)
   (org-tags-exclude-from-inheritance '(
    <<org-custom-no-inheritance-tags>>
@@ -3348,18 +3329,8 @@ I use a org version with some custom patches. Rather than using something like =
   (add-hook 'org-mode-hook 'turn-on-org-cdlatex)
   (add-to-list 'org-structure-template-alist (cons "f" "figure"))
   ;; (add-to-list 'org-tags-exclude-from-inheritance "MARKED")
-  (defun bh/clock-in-to-inprogress (kw)
-    "Switch a task from NEXT to INPROGRESS when clocking in.
-Skips capture tasks, projects, and subprojects.
-Switch projects and subprojects from NEXT back to TODO"
-    (when (not (and (boundp 'org-capture-mode) org-capture-mode))
-      (cond
-       ((and (member (org-get-todo-state) (list "NEXT"))
-             (bh/is-task-p))
-        "INPROGRESS")
-       ((and (member (org-get-todo-state) (list "NEXT"))
-             (bh/is-project-p))
-        "INPROGRESS")))))
+  <<org-config>>
+  )
 
 <<org-crypt>>
 <<tangle-hook>>
@@ -3513,7 +3484,10 @@ Use imagemagick and standalone class for latex preview.
   :delight)
 #+end_src
 *** Task organization
-**** Todo settings
+Much of my current task workflow is largely inspired by [[http://doc.rix.si/cce/cce-org.html][Ryan Rix's]] and [[http://doc.norang.ca/org-mode.html][Bernt
+Hansen's]] configs.
+**** =[WIP]= Task Setup
+***** Todos
 - WAITING tasks are waiting on the completion of other tasks
 - NEXT tasks can be picked up
 - INPROGRESS are current tasks with time clocked
@@ -3524,35 +3498,36 @@ TODO->DONE cycle is for habits.\\
 Idle states cover things to do for time in between, checking the
 inbox, reading news, …
 
-Phonecalls?
-
 #+BEGIN_SRC dot :file /tmp/todo.png
-digraph hierarch{
+digraph hierarch {
         node [shape=box]
-        // Tasks, Projects
-        PLANNING -> NEXT, INPROGRESS, ICEBOX
-        WAITING -> NEXT -> INPROGRESS -> DONE, WAITING, ICEBOX
-        NEXT -> WAITING -> INPROGRESS, ICEBOX
+        // Projects
+        PLANNING -> READY -> ACTIVE -> DONE, ICEBOX
+        // Tasks
+        HOLD -> NEXT -> INPROGRESS -> DONE, ICEBOX
         NEXT -> ICEBOX, DONE
+        NEXT -> WAITING -> NEXT
+        INPROGRESS -> WAITING -> INPROGRESS
 
-        // stuff for idle time
         IDLE -> IDLE
-        //NEXT -> DONE
+        TODO -> DONE -> TODO
 
-        // Phonecalls, Meetings
-        PHONE -> DONE, CANCELED
-        MEETING -> DONE, CANCELED
+        { rank = source; PLANNING; HOLD }
+        { rank = same; READY; NEXT; TODO; IDLE }
+        { rank = same; ACTIVE; INPROGRESS }
+        { rank = sink; ICEBOX; DONE }
 }
 #+END_SRC
 
 #+RESULTS:
 [[file:/tmp/todo.png]]
 
+
 #+begin_src emacs-lisp :noweb-ref org-custom :tangle no
 (org-todo-keywords '((sequence "HOLD(h)" "NEXT(n)" "INPROGRESS(i!)" "WAITING(w@/!)" "|" "ICEBOX(x@)" "DONE(d)") ;;todos
-                     (sequence "PLANNING(p)" "READY(r)" "ACTIVE(a)" "|" "CANCELLED(c)" "DONE(d)") ;;projects
-                     (sequence "PHONE(P)" "MEETING(m)" "|" "CANCELLED(c)" "DONE(d)")
-                     (sequence "TODO(t)" "|" "DONE(d)") ;;habits
+                     (sequence "PLANNING(p)" "READY(r)" "ACTIVE(a!)" "|" "ICEBOX(x@)" "DONE(d)") ;;projects
+                     ;; (sequence "PHONE(P)" "MEETING(m)" "|" "CANCELED(c)" "DONE(d)")
+                     (sequence "TODO(t)" "|" "DONE(d)")
                      (sequence "IDLE(b)")))
 (org-use-fast-todo-selection t)
 (org-todo-keyword-faces
@@ -3563,37 +3538,69 @@ digraph hierarch{
    ("DONE" :foreground "forest green" :weight bold)
    ("WAITING" :foreground "orange" :weight bold)
    ("ICEBOX" :foreground "orange" :weight normal)
-   ("CANCELLED" :foreground "forest green" :weight bold)
-   ("MEETING" :foreground "yellow3" :weight bold)
-   ("PHONE" :foreground "yellow3" :weight bold)
+   ;; ("CANCELLED" :foreground "forest green" :weight bold)
+   ;; ("MEETING" :foreground "yellow3" :weight bold)
+   ;; ("PHONE" :foreground "yellow3" :weight bold)
    ("IDLE" :foreground "magenta" :weight bold)))
 #+end_src
-
+****** Automatically do =NEXT→INPROGRESS= / =READY→ACTIVE=
 Switch a todo entry from NEXT to INPROGRESS when clocking in.
-#+begin_src emacs-lisp :tangle no
-(setq org-clock-in-switch-to-state 'bh/clock-in-to-inprogress)
+#+begin_src emacs-lisp :tangle no :noweb-ref org-config
 (defun bh/clock-in-to-inprogress (kw)
   "Switch a task from NEXT to INPROGRESS when clocking in.
-Skips capture tasks, projects, and subprojects.
-Switch projects and subprojects from NEXT back to TODO"
+Switch projects from READY to ACTIVE."
   (when (not (and (boundp 'org-capture-mode) org-capture-mode))
     (cond
-     ((and (member (org-get-todo-state) (list "NEXT"))
-           (bh/is-task-p))
+     ((member (org-get-todo-state) (list "NEXT"))
       "INPROGRESS")
-     ((and (member (org-get-todo-state) (list "NEXT"))
-           (bh/is-project-p))
-      "INPROGRESS"))))
+     ((member (org-get-todo-state) (list "READY"))
+      "ACTIVE"))))
 #+end_src
-***** State changes
+#+begin_src emacs-lisp :tangle no :noweb-ref org-custom
+(org-clock-in-switch-to-state 'bh/clock-in-to-inprogress)
+#+end_src
+****** State changes
 Track state changes to done & changes to schedules and deadlines.
 #+begin_src emacs-lisp :tangle no :noweb-ref org-custom
 (org-log-done 'time)
 (org-log-redeadline 'time)
 (org-log-reschedule 'time)
 #+end_src
-**** Org agenda custom commands
-***** Task-related agendas
+***** Tags
+Inspired by [[https://bzg.fr/en/some-emacs-org-mode-features-you-may-not-know.html/][Bastien Guerry]], [[https://github.com/jwiegley/dot-emacs][John Wiegley]].
+#+begin_src emacs-lisp :tangle no :noweb-ref org-custom
+(org-tag-alist (quote (("HOT" . ?h)
+                       (:startgroup) ;; Location 
+                       ("@errand" . ?E) ("@office" . ?O) ("@home" . ?H)
+                       (:endgroup)
+                       (:startgrouptag) ;; context tags
+                       ("net" . ?n) ("call" . ?c) ("reply" . ?R)
+                       (:endgrouptag)
+                       (:startgroup)
+                       ("handson" . ?o) ;; For focused/active tasks
+                       (:grouptags)
+                       ;; ("code" . ?c) ("design" . ?d) ("review" . ?v)
+                       (:endgroup)
+                       (:startgroup)
+                       ("handsoff" . ?f) ;; For listening/passive tasks
+                       (:grouptags)
+                       ("read" . ?r) ("watch" . ?w)
+                       (:endgroup)
+                       ("crypt" . ?E)
+                       ("FLAGGED" . ??)
+                       )))
+#+end_src
+***** INPROGRESS Custom Agendas
+- John Wiegley: Different background colors for different source files
+****** General
+- "h": Next action for hot projects
+- Project Next actions agenda
+- "P": All Projects
+- "r": uncategorized items (CATEGORY="Inbox"&LEVEL=2)
+- "w": waiting/delegated tasks (W-TODO="DONE"|TODO={WAITING\|DELEGATED})
+- Unscheduled tasks (TODO<>""&TODO<>{DONE\|CANCELED\|NOTE\|PROJECT\|DEFERRED\|SOMEDAY})
+- "c": Appointment calendar
+****** Task-related agendas
 Simple day agenda with =INPROGRESS= tasks
 #+begin_src emacs-lisp :tangle no :noweb-ref org-agenda-custom-commands
 ("d" "Day agenda"
@@ -3617,7 +3624,7 @@ Agenda with all open tasks
   (todo "IDLE")
   (tags-todo "-habit-shelve-soon-idle")))
 #+end_src
-****** Fancy agenda to choose todays tasks
+******* Fancy agenda to choose todays tasks
 Based on https://github.com/psamim/dotfiles/blob/master/doom/config.el#L73.
 #+begin_src emacs-lisp :tangle no :noweb-ref org-agenda-custom-commands
 ("o" "My Agenda"
@@ -3671,7 +3678,7 @@ Based on https://github.com/psamim/dotfiles/blob/master/doom/config.el#L73.
                   (not (= scheduled-day now))))
          subtree-end)))
 #+end_src
-***** Week agendas
+****** Week agendas
 #+begin_src emacs-lisp :tangle no :noweb-ref org-agenda-custom-commands
 ("w" . "Week agendas")
 ("ww" "Standard week agenda"
@@ -3681,7 +3688,7 @@ Based on https://github.com/psamim/dotfiles/blob/master/doom/config.el#L73.
               (org-agenda-start-day "mon")))
   (tags-todo "+work")))
 #+end_src
-***** Misc agendas
+****** Misc agendas
 #+begin_src emacs-lisp :tangle no :noweb-ref org-agenda-custom-commands
 ("r" "Refile entries" ((tags "+REFILE")))
 ("i" "Idle Actions"
@@ -3707,6 +3714,31 @@ Based on https://github.com/psamim/dotfiles/blob/master/doom/config.el#L73.
           ((org-agenda-files (fpi/collect-org-directories-recursively default-directory))))
   (alltodo ""
            ((org-agenda-files (fpi/collect-org-directories-recursively default-directory))))))
+#+end_src
+***** Filtering
+****** Auto Exclude
+#+begin_src emacs-lisp
+;; https://github.com/jwiegley/dot-emacs/blob/master/dot-org.el
+(defun org-my-auto-exclude-function (tag)
+  (and (cond
+        ((string= tag "call")
+         (let ((hour (nth 2 (decode-time))))
+           (or (< hour 8) (> hour 21))))
+        ((string= tag "errand")
+         (let ((hour (nth 2 (decode-time))))
+           (or (< hour 12) (> hour 17))))
+        ((or (string= tag "home") (string= tag "nasim"))
+         (with-temp-buffer
+           (call-process "ifconfig" nil t nil "en0" "inet")
+           (call-process "ifconfig" nil t nil "en1" "inet")
+           (call-process "ifconfig" nil t nil "bond0" "inet")
+           (goto-char (point-min))
+           (not (re-search-forward "inet 192\\.168\\.1\\." nil t))))
+        ((string= tag "net")
+         (not (quickping "imap.fastmail.com")))
+        ((string= tag "fun")
+         org-clock-current-task))
+       (concat "-" tag)))
 #+end_src
 **** Refile
 Use the full outline path so I can distinguish headlines with the same name & disable step-wise completion as I think from the refile target backwards, not from top-level downwards. Also include the current file's headings as a refile targets up to a deep level, all agenda files up to a small level and all open org files up to an even smaller level.
@@ -4872,6 +4904,7 @@ Basic flow:
 3. Do stuff. Change clocks, capture stuff, take notes, take breaks, …
 4. At the end of the day clock out with ~bh/punch-out~.
 
+**** Clocking
 While punched in org continues to clock your time. Each time you clock
 out of an entry it clocks you in on the parent entry or the default
 organizational task.
@@ -5004,6 +5037,7 @@ Add a note to the current clock
     (org-clock-goto)
     (org-add-note)))
 #+END_SRC
+**** General
 Go to any heading in an agenda file (or more specifically in any file
 included in 'org-refile-targets)
 #+begin_src emacs-lisp
@@ -5017,7 +5051,6 @@ included in 'org-refile-targets)
     (org-show-context)
     (current-buffer)))
 #+END_SRC
-
 **** Filter functions
 Various functions to determine if the current entry is a task, a
 project or neither.
