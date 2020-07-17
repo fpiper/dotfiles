@@ -1469,8 +1469,29 @@ Goes backward if ARG is negative; error if CHAR not found."
                                (backward-char)
                              (forward-char))
                            (point))))
+  <<simple-config>>
   :bind (:map global-map
-              ("M-z" . zap-up-to-char)))
+              ("M-z" . zap-up-to-char)
+              <<simple-bindings>>
+              ))
+#+end_src
+Use a hard ~keyboard-quit~. This is from Jeff Norden ([[https://lists.gnu.org/archive/html/emacs-devel/2020-07/msg00326.html][Message on emacs-devel]]).
+#+begin_src emacs-lisp :tangle no :noweb-ref simple-config
+(defun keyboard-quit-strong ()
+  "Run `keyboard-quit' to return emacs to a more responsive state.
+If repeated twice in a row, run `top-level' instead, to also exit
+any recursive editing levels."
+  (interactive)
+  (when (eq last-command 'keyboard-quit-strong)
+    (setq this-command 'top-level) ;dis-arm a 3rd C-g
+    (ding)
+    (top-level))
+  ;; Not reached after `top-level'. (A rare behavior in lisp.)
+  (keyboard-quit))
+#+end_src
+
+#+begin_src emacs-lisp :tangle no :noweb-ref simple-bindings
+("C-g" . keyboard-quit-strong)
 #+end_src
 * Selection and search methods
 ** Completion frameworks
