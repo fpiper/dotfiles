@@ -92,8 +92,7 @@ header argument in the source code.
 
 ;; package.el to enable use of list-packages
 <<package.el>>
-;; (setq safe-local-variable-values (list (cons 'buffer-auto-save-file-name nil)
-                                       ;; (cons 'header-line-format " ")))
+
 (setq vc-follow-symlinks t)
 
 ;; For use on Windows via SSH X-Forwarding
@@ -1406,6 +1405,29 @@ Remember where point is in a file.
   (kept-old-versions 2)
   (create-lockfiles nil))
 #+end_src
+** Local variables
+#+begin_src emacs-lisp
+(use-package files
+  :custom
+  <<files-custom>>
+  )
+#+end_src
+
+[[info:emacs#File Variables][File Variables]] are useful to ensure same behaviour in some files with different emacs configurations or to change behaviour from the default for one file.
+Some settings could be harmful to emacs and the underlying system. Therefore many settings have to be declared as safe before using them.
+#+begin_src emacs-lisp :tangle no :noweb-ref files-custom
+(safe-local-variable-values
+ '((whitespace-style face trailing space-before-tab indentation empty space-after-tab newline-mark)
+   (eval set-window-buffer nil (current-buffer))
+   (right-margin-width . 2)
+   (left-margin-width . 2)
+   (line-spacing . 0.2)
+   (after-save-hook org-babel-tangle)
+   (header-line-format . " ")
+   (after-save-hook . (org-babel-tangle))
+   <<safe-local-variable-values>>
+))
+#+end_src
 ** Personal keymap
 
 Unfortunately =C-c [a-z]= is not always a safe place for user-defined
@@ -2160,15 +2182,12 @@ some safe local variable values.
   :delight
   :straight t
   :custom
-  (gac-automatically-push-p nil)
-  :config
-  (add-to-list 'safe-local-variable-values
-               '(eval add-hook
-                     (quote after-save-hook)
-                     (quote gac-after-save-func)
-                     t t))
-  (add-to-list 'safe-local-variable-values
-               '(git-auto-commit-mode . t)))
+  (gac-automatically-push-p nil))
+#+end_src
+
+#+begin_src emacs-lisp :tangle no :noweb-ref safe-local-variable-values
+(git-auto-commit-mode . t)
+(gac-debounce-interval . 600)
 #+end_src
 ** Projectile
 
