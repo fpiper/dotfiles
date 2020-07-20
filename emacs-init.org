@@ -2915,7 +2915,8 @@ Gives an overview of time spent on defined budgets this week. Great to track if 
 #+begin_src emacs-lisp
 (use-package org-time-budgets
   :straight (:host github :repo "fpiper/org-time-budgets"
-                   :branch "develop")
+                   :branch "develop"
+                   :no-byte-compile t)
   :custom
   (org-time-budgets '((:title "Work" :match "+work-nowork" :budget "40:00" :blocks (workday week))
                       (:title "Research" :match "+work+research" :budget "24:00" :blocks (nil week))
