@@ -1946,7 +1946,10 @@ confines of word boundaries (e.g. multiple words)."
   :hook
   (dired-mode . dired-hide-details-mode)
   (dired-mode . hl-line-mode)
-  (dired-mode . auto-revert-mode))
+  (dired-mode . auto-revert-mode)
+  :bind (:map dired-mode-map
+              <<dired-bindings>>
+              ))
 
 (use-package find-dired
   :after dired
@@ -2074,6 +2077,335 @@ of src_shell{getconf "PATH"}. See [[elisp:(describe-variable
   (add-to-list 'tramp-remote-path 'tramp-own-remote-path))
 #+end_src
 ** Git
+*** Git annex
+There are some great ressources on [[https://git-annex.branchable.com/][git-annex]] integration in emacs in [[https://github.com/mm--/dot-emacs/blob/master/jmm-emacs.org][Josh's config]]. Most of my configuration is copied from there.
+#+begin_src emacs-lisp
+(use-package git-annex
+  :straight t
+  :config
+  <<git-annex-config>>
+  :bind
+  (:map git-annex-dired-map
+        <<git-annex-dired-bindings>>)
+  :after (dired))
+#+end_src
+**** Actions to lock/unlock files
+#+begin_src emacs-lisp :tangle no :noweb-ref git-annex-dired-bindings
+("l" . git-annex-dired-lock-files)
+("u" . git-annex-dired-unlock-files)
+#+end_src
+=git-annex.el= defines a handy macro to define generic =git-annex= CLI calls.
+#+begin_src emacs-lisp :tangle no :noweb-ref git-annex-config
+(git-annex-dired-do-to-files "lock" "Annex: locked %d file(s)")
+(git-annex-dired-do-to-files "unlock" "Annex: unlocked %d file(s)")
+#+end_src
+**** Fix faces
+=git-annex.el= kinda clobbers ~dired-marked-face~ and ~dired-flagged-face~. This fixes that.
+#+begin_src emacs-lisp :tangle no :noweb-ref git-annex-config
+(progn
+  (add-to-list 'dired-font-lock-keywords
+	       (list "^[*].+ -> .*\\.git/annex/"
+		     '("\\(.+\\)\\( -> .+\\)" (dired-move-to-filename) nil
+		       (1 dired-marked-face)
+		       (2 git-annex-dired-annexed-invisible))))
+  (add-to-list 'dired-font-lock-keywords
+	       (list "^[D].+ -> .*\\.git/annex/"
+		     '("\\(.+\\)\\( -> .+\\)" (dired-move-to-filename) nil
+		       (1 dired-flagged-face)
+		       (2 git-annex-dired-annexed-invisible)))))
+#+end_src
+**** Make it easy to add metadata tags in git-annex
+#+begin_src emacs-lisp :tangle no :noweb-ref git-annex-dired-bindings
+("t" . jmm/dired-git-annex-tag)
+#+end_src
+Git-annex has a pretty cool ability to tag files and filter directory views based on metadata. It's kind of a pain to tag files, though, so here's a function that adds some autocompletion to tagging files.
+#+BEGIN_SRC emacs-lisp :tangle no :noweb-ref git-annex-config
+(defvar-local jmm/git-annex-directory-tags nil
+  "Current git-annex tags set in the directory, as a list.")
+
+(defun jmm/dired-git-annex-current-tags (file-list &optional intersection)
+  "Get current git-annex tag for each file in FILE-LIST. With
+  optional argument INTERSECTION, only show tags all files share in common."
+  (let* ((metadata (with-output-to-string
+		    (with-current-buffer
+			standard-output
+		      (apply #'process-file "git" nil t nil "annex" "metadata" "--json" file-list))))
+	 (json-array-type 'list)
+	 (jsonout (-map 'json-read-from-string (split-string metadata "\n" t))))
+    (-reduce (if intersection '-intersection '-union) (--map (cdr (assoc 'tag (cdr (assoc 'fields it)))) jsonout))))
+
+(defun jmm/dired-git-annex-tag (file-list tags &optional arg)
+  "Add git-annex TAGS to each file in FILE-LIST.
+Used as an interactive command, prompt for a list of tags for all
+files, showing the current tags all files currently have in common."
+  (interactive
+   (let* ((files (dired-get-marked-files t current-prefix-arg))
+	  (shared-tags (jmm/dired-git-annex-current-tags files t))
+	  ;; Cache directory tags
+	  (current-tags (or jmm/git-annex-directory-tags
+			    (setq jmm/git-annex-directory-tags
+				  (or (jmm/dired-git-annex-current-tags '("--all")) '("")))))
+	  (crm-separator " ")
+	  (crm-local-completion-map
+	   (let ((map (make-sparse-keymap)))
+	     (set-keymap-parent map crm-local-completion-map)
+	     (define-key map " " 'self-insert-command)
+	     map))
+	  (tags (completing-read-multiple
+		 "Tags: " (--map (concat it crm-separator) current-tags)
+		 nil nil
+		 (when shared-tags (mapconcat 'identity shared-tags " ")))))
+     (setq jmm/git-annex-directory-tags (-union tags jmm/git-annex-directory-tags))
+     (list files tags current-prefix-arg)))
+  (let ((args (cl-loop for x in tags
+		       append (list "-t" x))))
+    (-each file-list
+      (lambda (file)
+	(apply #'call-process "git" nil nil nil "annex" "metadata" (append args (list file)))))
+    (message (format "Tagged %d file(s)" (length file-list)))))
+#+END_SRC
+**** Mark unavailable files
+#+begin_src emacs-lisp :tangle no :noweb-ref git-annex-dired-bindings
+("*")
+("* a" . jmm/dired-mark-git-annex-available-files)
+("* u" . jmm/dired-mark-git-annex-unavailable-files)
+#+end_src
+
+When you use this in combination with ~dired-do-kill-lines~ (by default bound to ~k~), it's easy to hide files that aren't present in the current annex repository.
+#+BEGIN_SRC emacs-lisp :tangle no :noweb-ref git-annex-config
+(defun jmm/dired-mark-git-annex-unavailable-files ()
+  "Mark git-annex files that are not present."
+  (interactive)
+  (dired-mark-if
+   (and (looking-at-p ".* -> \\(.*\\.git/annex/.+\\)")
+	(not (file-exists-p (file-truename (dired-get-filename t)))))
+   "unavailable file"))
+
+(defun jmm/dired-mark-git-annex-available-files ()
+  "Mark git-annex files that are present."
+  (interactive)
+  (dired-mark-if
+   (and (looking-at-p ".* -> \\(.*\\.git/annex/.+\\)")
+	(file-exists-p (file-truename (dired-get-filename t))))
+   "available file"))
+#+END_SRC
+**** Mark git-annex files with git-annex-matching-options
+#+BEGIN_SRC emacs-lisp :tangle no :noweb-ref dired-bindings
+("% a" . jmm/dired-mark-files-git-annex-matching)
+#+END_SRC
+
+This command makes it easy to mark dired files using ~git-annex-matching-options~.
+
+For instance, you could find files that are in a certain remote using ~--in=remote~ or mark/unmark files that have a certain tag using ~--metadata tag=sometag~.
+#+BEGIN_SRC emacs-lisp :tangle no :noweb-ref git-annex-config
+(defun jmm/dired-mark-files-git-annex-matching (matchingoptions &optional marker-char)
+  "Mark all files that match git annex's MATCHINGOPTIONS for use in later commands.
+A prefix argument means to unmark them instead.
+`.' and `..' are never marked."
+  (interactive
+   (list (read-string (concat (if current-prefix-arg "Unmark" "Mark")
+                              " files matching (git annex match expression): ")
+                      nil 'jmm-dired-annex-matchingoptions-history)
+	 (if current-prefix-arg ?\040)))
+  (let ((dired-marker-char (or marker-char dired-marker-char)))
+    (dired-mark-if
+     (and (not (looking-at-p dired-re-dot))
+	  (not (eolp))			; empty line
+	  (let ((fn (dired-get-filename nil t)))
+	    (when (and fn (not (file-directory-p fn)))
+	      (message "Checking %s" fn)
+	      (s-present? (shell-command-to-string
+			   (mapconcat
+			    #'identity
+			    (list "git annex find" matchingoptions (shell-quote-argument fn))
+			    " "))))))
+     "matching file")))
+#+END_SRC
+**** Real file size
+:PROPERTIES:
+:header-args:emacs-lisp: :tangle no
+:END:
+Dired by default only shows the symlink file size. While it can be told to dereference symbolic links with the =-L= flag this only works on annexed files if they are present on the current machine.
+Settings this flag causes more problems than it solves. Instead Josh has derived the functions below to determine the file size. I do not use them for now, but copied them here for future reference/usage.
+***** Get git-annex file sizes
+#+begin_src emacs-lisp :tangle no :noweb-ref git-annex-dired-bindings
+("s" . jmm/dired-git-annex-print-human-file-size)
+#+end_src
+#+BEGIN_SRC emacs-lisp :tangle no :noweb-ref git-annex-config
+(defun jmm/git-annex-file-target (filename)
+  "If FILENAME is a git annex file, return its symlink target."
+  (-when-let (symname (and filename
+			   (file-symlink-p filename)))
+    (when (string-match-p ".*\\.git/annex/.+" symname)
+      symname)))
+
+(defun jmm/dired-git-annex-file-target ()
+  "If the dired file at point is a git annex file, return its symlink target."
+  (jmm/git-annex-file-target (dired-get-filename nil t)))
+
+(defun jmm/git-annex-file-size (filename)
+  "Try to determine the size of the git annex file FILENAME."
+  (-when-let (target (jmm/git-annex-file-target filename))
+    (or (save-match-data
+	  (when (string-match "SHA256E-s\\([0-9]+\\)--" target)
+	    (string-to-number (match-string 1 target))))
+	(-some-> (expand-file-name target (file-name-directory filename))
+		 file-attributes
+		 file-attribute-size))))
+
+(defun jmm/dired-git-annex-print-human-file-size ()
+  "Try to print the human readable file size of the dired git-annex file at point."
+  (interactive)
+  (let* ((filename (dired-get-filename nil t))
+	 (string-file (file-name-nondirectory filename)))
+    (-if-let (filesize (-some-> (jmm/git-annex-file-size filename)
+				file-size-human-readable))
+	(message "%s - %s" filesize string-file)
+      (message "Can't determine git annex file size of %s" string-file))))
+#+END_SRC
+***** Show git-annex file sizes in dired
+#+begin_src emacs-lisp :tangle no :noweb-ref git-annex-dired-bindings
+("S" . jmm/dired-git-annex-add-real-file-sizes)
+#+end_src
+
+#+BEGIN_SRC emacs-lisp :tangle no :noweb-ref git-annex-config
+;; Based off of `dired--align-all-files'
+(defun jmm/dired-git-annex-add-real-file-sizes ()
+  "Go through all the git-annex files in dired, replace the
+symlink file size with the real file size, then try to align
+everything."
+  (interactive)
+  (require 'dired-aux)
+  (let ((regexp directory-listing-before-filename-regexp))
+    (save-excursion
+      (goto-char (point-min))
+      (dired-goto-next-file)
+      (while (or (dired-move-to-filename)
+		 (progn (save-restriction
+			  (narrow-to-region (dired-subdir-min) (dired-subdir-max))
+			  (dired--align-all-files))
+			(dired-next-subdir 1 t)
+			(dired-goto-next-file)
+			(dired-move-to-filename)))
+	(let ((inhibit-read-only t))
+	  (when (and (jmm/dired-git-annex-file-target)
+		     (re-search-backward regexp (line-beginning-position) t))
+	    (goto-char (match-beginning 0))
+	    (-when-let (newsize (-some-> (jmm/git-annex-file-size (dired-get-filename nil t))
+					 file-size-human-readable))
+	      (search-backward-regexp "[[:space:]]" nil t)
+	      (when (re-search-forward "[[:space:]]+\\([^[:space:]]+\\)[[:space:]]" nil t)
+		(goto-char (match-beginning 1))
+		(delete-region (point) (match-end 1))
+		(insert-and-inherit newsize))))
+	  (forward-line))))))
+#+END_SRC
+
+#+BEGIN_SRC emacs-lisp :tangle no
+;; (add-hook 'dired-mode-hook #'jmm/dired-git-annex-add-real-file-sizes)
+;; (add-hook 'dired-after-readin-hook #'jmm/dired-git-annex-add-real-file-sizes)
+#+END_SRC
+***** Sort dired by file size
+#+BEGIN_SRC emacs-lisp :tangle no :noweb-ref git-annex-config
+(defun jmm/dired-dir-files-beginning ()
+  "First point where there's a filename on the line. Beginning of line."
+  (save-excursion
+    (goto-char (dired-subdir-min))
+    (dired-goto-next-file)
+    (beginning-of-line)
+    (point)))
+
+(defun jmm/dired-dir-files-end ()
+  "Last point where there's a filename. End of line."
+  (save-excursion
+    (goto-char (dired-subdir-max))
+    (while (not (dired-get-filename nil t))
+      (dired-previous-line nil))
+    (end-of-line)
+    (point)))
+
+(defun jmm/dired-file-size ()
+  "Return the file size of a file at point (for sorting). Takes
+into account git-annex files."
+  (let* ((filename (dired-get-filename nil t))
+	 (string-file (file-name-nondirectory filename)))
+    (or (jmm/git-annex-file-size filename)
+	(file-attribute-size (file-attributes filename)))))
+
+;; TODO: Should just try to directly use the field listed.
+(defun jmm/dired-sort-size (&optional ascending)
+  "Sort some dired lines by size (consider annex sizes).
+With optional argument ASCENDING, sort by ascending file size. (I
+like going the other way around usually.)"
+  (interactive "P")
+  (let (buffer-read-only
+	(beg (jmm/dired-dir-files-beginning))
+	(end (jmm/dired-dir-files-end)))
+    (save-excursion
+      (save-restriction
+	(narrow-to-region beg end)
+	(goto-char (point-min))
+	(sort-subr (not ascending)
+		   'forward-line 'end-of-line
+		   #'jmm/dired-file-size nil)))))
+#+END_SRC
+**** Browsing URLs for git-annex files
+#+begin_src emacs-lisp :tangle no :noweb-ref git-annex-dired-bindings
+("b" . jmm/git-annex-browse-url)
+#+end_src
+#+BEGIN_SRC emacs-lisp
+;; TODO: Process multiple files at once?
+(defun jmm/git-annex-whereis-info (filename)
+  "Get information about where a git-annex file exists.
+Returns a parsed json list from whereis."
+  (let* ((json-array-type 'list)
+	 (whereisdata (shell-command-to-string
+		       (mapconcat
+			#'identity
+			(list "git annex whereis --json" (shell-quote-argument filename))
+			" "))))
+    (when (s-present? whereisdata)
+      (json-read-from-string whereisdata))))
+
+(defun jmm/git-annex-urls (filename)
+  "Get the git-annex web urls for FILENAME."
+  (-some->> (jmm/git-annex-whereis-info filename)
+	    (assoc-default 'whereis)
+	    (-mapcat (lambda (x) (assoc-default 'urls x)))
+	    (-map (lambda (s) (s-chop-prefix "yt:" s)))))
+
+(defun jmm/git-annex-browse-url ()
+  "Browse the first git-annex web urls for file at point."
+  (interactive)
+  (let* ((filename (dired-get-filename nil t))
+	 (filestr (file-name-nondirectory filename)))
+    (-if-let (url (car (jmm/git-annex-urls filename)))
+	(progn
+	  (message "Opening url: %s" url)
+	  (jmm/org-open-link-alternate-browser #'browse-url url))
+      (user-error "No url found for %s" filestr))))
+#+END_SRC
+**** Eshell helper functions
+Helper functions to open dired view from eshell or list =git-annex= files which match a search.
+#+BEGIN_SRC emacs-lisp
+(defun jmm/git-annex-find-files (&rest args)
+  "Generate a list of git annex files that match ARGS.
+For example, ARGS could be \"--in=here\""
+  (-remove #'s-blank?
+	   (s-split "\0"
+		    (shell-command-to-string (mapconcat #'identity
+							(append '("git annex find --print0") args)
+							" ")))))
+(defun eshell/dga (&rest args)
+  "Show a `dired' buffer of git annex files that match ARGS.
+For example, ARGS could be \"--in=here\""
+  (dired (cons "." (apply #'jmm/git-annex-find-files args))))
+
+(defun eshell/gaf (&rest args)
+  "Return a list of git annex files that match ARGS.
+For example, ARGS could be \"--in=here\""
+  (apply #'jmm/git-annex-find-files args))
+#+END_SRC
 *** Magit
 #+BEGIN_SRC emacs-lisp
 (use-package magit
