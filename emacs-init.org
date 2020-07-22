@@ -3414,6 +3414,9 @@ I use a org version with some custom patches. Rather than using something like =
   (org-src-fontify-natively t)
   (org-src-tab-acts-natively t)
   (org-edit-src-content-indentation 0))
+#+end_src
+
+#+begin_src emacs-lisp
 (defun fpi/collect-org-directories-recursively (dir)
   "Return list of all directories which contain .org files of DIR and its subdirectories"
   (delete-dups (mapcar 'file-name-directory (directory-files-recursively dir "\.org$"))))
@@ -3443,7 +3446,10 @@ I use a org version with some custom patches. Rather than using something like =
   (org-agenda-custom-commands
    `(
      <<org-agenda-custom-commands>>
-     )))
+     ))
+  :config
+  <<org-agenda-config>>
+  )
 #+end_src
 
 #+begin_src emacs-lisp
@@ -3522,13 +3528,21 @@ digraph hierarch {
 #+RESULTS:
 [[file:/tmp/todo.png]]
 
+#+begin_src emacs-lisp :noweb-ref org-config :tangle no
+(defvar org-task-keywords
+  '("HOLD" "NEXT" "INPROGRESS" "WAITING")
+  "Org todo keywords to demark tasks")
+(defvar org-project-keywords
+  '("PLANNING" "READY" "ACTIVE")
+  "Org todo keywords to demark projects")
+#+end_src
 
 #+begin_src emacs-lisp :noweb-ref org-custom :tangle no
 (org-todo-keywords '((sequence "HOLD(h)" "NEXT(n)" "INPROGRESS(i!)" "WAITING(w@/!)" "|" "ICEBOX(x@)" "DONE(d)") ;;todos
                      (sequence "PLANNING(p)" "READY(r)" "ACTIVE(a!)" "|" "ICEBOX(x@)" "DONE(d)") ;;projects
                      ;; (sequence "PHONE(P)" "MEETING(m)" "|" "CANCELED(c)" "DONE(d)")
                      (sequence "TODO(t)" "|" "DONE(d)")
-                     (sequence "IDLE(b)")))
+                     (sequence "IDLE(b)" "|")))
 (org-use-fast-todo-selection t)
 (org-todo-keyword-faces
  '(("HOLD" :foreground "light gray" :weight bold)
@@ -3590,6 +3604,28 @@ Inspired by [[https://bzg.fr/en/some-emacs-org-mode-features-you-may-not-know.ht
                        ("FLAGGED" . ??)
                        )))
 #+end_src
+Exclude =HOT= from inheritance
+#+begin_src emacs-lisp :tangle no :noweb-ref org-custom-no-inheritance-tags
+"HOT"
+#+end_src
+***** Creating projects
+#+begin_src emacs-lisp
+(defun fpi/make-parent-project ()
+  (when (or (string-equal org-state "NEXT")
+            (string-equal org-state "HOLD")
+            (string-equal org-state "INPROGRESS")
+            (string-equal org-state "WAITING"))
+    ;; Activate parent
+    (org-up-element)
+    (let ((todo (org-entry-is-todo-p)))
+      (when todo
+        (org-todo "ACTIVE")
+        ;; (end-of-line)
+        ;; (insert " [0/0]")
+        (org-update-statistics-cookies nil)
+        ))
+    ))
+#+end_src
 ***** INPROGRESS Custom Agendas
 - John Wiegley: Different background colors for different source files
 ****** General
@@ -3602,6 +3638,153 @@ Inspired by [[https://bzg.fr/en/some-emacs-org-mode-features-you-may-not-know.ht
 - "c": Appointment calendar
 ****** Task-related agendas
 Simple day agenda with =INPROGRESS= tasks
+******* Hot Projects
+#+begin_src emacs-lisp :tangle no :noweb-ref org-agenda-custom-commands
+("h" "Current Hotlist" tags "TODO={NEXT\\|INPROGRESS\\|WAITING}"
+ ((org-agenda-overriding-header "Current Hotlist")
+  (org-agenda-skip-function
+   (function fpi/org-agenda-skip-all-not-hot))))
+#+end_src
+#+begin_src emacs-lisp :tangle no :noweb-ref org-agenda-config
+(defun fpi/org-agenda-skip-all-not-hot ()
+  "Skip all not hot entries."
+  (when (not (member "HOT" (my-org-current-tags 1)))
+    (or (outline-next-heading)
+        (goto-char (point-max)))))
+(defun fpi/org-agenda-skip-all-not-project ()
+  "Skip all not hot entries."
+  (when (not (member "HOT" (my-org-current-tags 1)))
+    (or (outline-next-heading)
+        (goto-char (point-max)))))
+(defun my-org-current-tags (depth)
+  (save-excursion
+    (ignore-errors
+      (let (should-skip)
+        (while (and (> depth 0)
+                    (not should-skip)
+                    (prog1
+                        (setq depth (1- depth))
+                      (not (org-up-element))))
+          (if (looking-at "^\*+\\s-+")
+              (setq should-skip (org-get-local-tags))))
+        should-skip))))
+(defun fpi/org-goto-top-project (depth)
+  "Go to the top project of heading under point"
+  (save-restriction
+    (widen)
+    (let ((top (point)))
+      (with-demoted-errors
+          (while (and (> depth 0)
+                      (progn
+                        (setq depth (1- depth))
+                        (not (org-up-element))))
+            (when (fpi/is-not-done-project-p)
+              (setq top (point)))))
+      (goto-char top))))
+(defun fpi/parent-is-not-done-project-p ()
+  "Return t if parent heading is a not done project."
+  (save-excursion
+    (save-restriction
+    (widen)
+    (and (not (org-up-element))
+         (fpi/is-not-done-project-p)))))
+(defun fpi/is-not-done-project-p ()
+  "Return t if current heading is a not done project."
+  (save-restriction
+    (widen)
+    (let ((todo (org-get-todo-state)))
+      (member todo org-project-keywords))))
+#+end_src
+To narrow the agenda to the currently selected project this function from [[https://github.com/mm--/dot-emacs/blob/master/jmm-org-config.org][Josh's emacs config]] is useful.
+#+begin_src emacs-lisp :tangle no :noweb-ref org-agenda-config
+(defun fpi/org-agenda-lock-to-parent-project ()
+  "In the org mode agenda, lock the restriction to the current project."
+  (interactive)
+  (save-window-excursion
+    (org-agenda-goto)
+    (if (fpi/org-goto-top-project 10)
+	(org-agenda-set-restriction-lock)
+      (user-error "No parent project found.")))
+  (org-agenda-redo-all))
+#+end_src
+
+#+begin_src emacs-lisp :tangle no :noweb-ref org-agenda-custom-commands
+("H" "Hot Projects" tags "HOT&TODO={PLANNING\\|READY\\|ACTIVE}"
+ ((org-agenda-overriding-header "Hot Projects")))
+("T" "Non-Hot Projects" tags "-HOT&TODO={ACTIVE}"
+ ((org-agenda-overriding-header "Non-Hot Projects")))
+("P" "All Projects"
+ ((tags "HOT&TODO={PLANNING\\|READY\\|ACTIVE}"
+        ((org-agenda-overriding-header "Hot Projects")))
+  (tags "-HOT&TODO={PLANNING\\|READY\\|ACTIVE}"
+        ((org-agenda-overriding-header "Non-Hot Projects")))
+  ))
+#+end_src
+******* 
+#+begin_src emacs-lisp :tangle no :noweb-ref org-agenda-custom-commands
+("n" "Project Next Actions" alltodo ""
+ ((org-agenda-overriding-header "Current Hotlist")
+  (org-agenda-skip-function
+   (function fpi/org-agenda-skip-all-not-hot))))
+#+end_src
+#+begin_src emacs-lisp :tangle no :noweb-ref org-agenda-custom-commands-wiegley
+("A" "Priority #A tasks" agenda ""
+ ((org-agenda-ndays 1)
+  (org-agenda-overriding-header "Today's priority #A tasks: ")
+  (org-agenda-skip-function
+   (quote
+    (org-agenda-skip-entry-if
+     (quote notregexp)
+     "\\=.*\\[#A\\]")))))
+("b" "Priority #A and #B tasks" agenda ""
+ ((org-agenda-ndays 1)
+  (org-agenda-overriding-header "Today's priority #A and #B tasks: ")
+  (org-agenda-skip-function
+   (quote
+    (org-agenda-skip-entry-if
+     (quote regexp)
+     "\\=.*\\[#C\\]")))))
+("r" "Uncategorized items" tags "CATEGORY=\"Inbox\"&LEVEL=2"
+ ((org-agenda-overriding-header "Uncategorized items")))
+("W" "Waiting/delegated tasks" tags "W-TODO=\"DONE\"|TODO={WAITING\\|DELEGATED}"
+ ((org-agenda-overriding-header "Waiting/delegated tasks:")
+  (org-agenda-skip-function
+   (quote
+    (org-agenda-skip-entry-if
+     (quote scheduled))))
+  (org-agenda-sorting-strategy
+   (quote
+    (todo-state-up priority-down category-up)))))
+("D" "Deadlined tasks" tags "TODO<>\"\"&TODO<>{DONE\\|CANCELED\\|NOTE\\|PROJECT}"
+ ((org-agenda-overriding-header "Deadlined tasks: ")
+  (org-agenda-skip-function
+   (quote
+    (org-agenda-skip-entry-if
+     (quote notdeadline))))
+  (org-agenda-sorting-strategy
+   (quote
+    (category-up)))))
+("S" "Scheduled tasks" tags "TODO<>\"\"&TODO<>{APPT\\|DONE\\|CANCELED\\|NOTE\\|PROJECT}&STYLE<>\"habit\""
+ ((org-agenda-overriding-header "Scheduled tasks: ")
+  (org-agenda-skip-function
+   (quote
+    (org-agenda-skip-entry-if
+     (quote notscheduled))))
+  (org-agenda-sorting-strategy
+   (quote
+    (category-up)))))
+("d" "Unscheduled open source tasks (by date)" tags "TODO<>\"\"&TODO<>{DONE\\|CANCELED\\|NOTE\\|PROJECT}"
+ ((org-agenda-overriding-header "Unscheduled Open Source tasks (by date): ")
+  (org-agenda-skip-function
+   (quote
+    (org-agenda-skip-entry-if
+     (quote scheduled)
+     (quote deadline)
+     (quote timestamp)
+     (quote regexp)
+     "\\* \\(DEFERRED\\|SOMEDAY\\)")))))
+#+end_src
+
 #+begin_src emacs-lisp :tangle no :noweb-ref org-agenda-custom-commands
 ("d" "Day agenda"
     ((agenda "" ((org-agenda-span 'day)))
