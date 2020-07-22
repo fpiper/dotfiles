@@ -2631,7 +2631,7 @@ Switch projects and subprojects from NEXT back to TODO"
   )
 (use-package org-src
   :custom
-  (org-src-window-setup 'current-window)
+  (org-src-window-setup 'other-window)
   (org-src-fontify-natively t)
   (org-src-tab-acts-natively t)
   (org-edit-src-content-indentation 0))
