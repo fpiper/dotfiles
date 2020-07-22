@@ -30,8 +30,11 @@ disable ~buffer-auto-save-file-name~ for the files.
 (use-package org-crypt
   :config (org-crypt-use-before-save-magic)
   :custom
-  (org-tags-exclude-from-inheritance (quote ("crypt")))
   (org-crypt-key "F1EF502F9E81D81381B1679AF973BBEA6994521B"))
+#+END_SRC
+
+#+BEGIN_SRC emacs-lisp :noweb-ref org-custom-no-inheritance-tags :tangle no
+"crypt"
 #+END_SRC
 
 I use =.org= configuration files also for my other dotfiles. To ensure
@@ -2542,11 +2545,14 @@ Hansen's]] configs.
   (org-clock-into-drawer "LOGBOOK")
   (org-clock-in-switch-to-state 'bh/clock-in-to-inprogress)
   (org-tags-column 0)
+  (org-tags-exclude-from-inheritance '(
+   <<org-custom-no-inheritance-tags>>
+   ))
   <<org-custom>>
   :config
   (add-hook 'org-mode-hook 'turn-on-org-cdlatex)
   (add-to-list 'org-structure-template-alist (cons "f" "figure"))
-  (add-to-list 'org-tags-exclude-from-inheritance "MARKED")
+  ;; (add-to-list 'org-tags-exclude-from-inheritance "MARKED")
   (defun bh/clock-in-to-inprogress (kw)
     "Switch a task from NEXT to INPROGRESS when clocking in.
 Skips capture tasks, projects, and subprojects.
