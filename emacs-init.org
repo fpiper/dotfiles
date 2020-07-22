@@ -3158,17 +3158,12 @@ Fix for hanging emacs. The original function calls file-exist-p which opens a sl
 :PROPERTIES:
 :ID:       fd3936c7-9fc5-42d0-990d-32024e23b22f
 :END:
-=Org-edna= is a great tool to manage =TODO= dependencies. I mainly use
-it to mark tasks as =NEXT= after switching another task to =DONE=. The
-functions below are taken from Josh's Emacs Config over at [[https://github.com/mm--/dot-emacs/blob/master/jmm-org-config.org][Github]]. He
-wrote wrote a =edna-finder= which allows link descriptions and a nice
-hydra to manage the various =org-edna= properties. I call it in my
-[[id:22750e48-aaee-4f60-bdce-1d511ebe3375][context aware hydra]] when on an org headline. For more functions and
-explanations checkout his config.
+=Org-edna= is a great tool to manage =TODO= dependencies. I mainly use it to mark tasks as =NEXT= after switching another task to =DONE=. The functions below are taken from Josh's Emacs Config over at [[https://github.com/mm--/dot-emacs/blob/master/jmm-org-config.org][Github]]. He wrote a =edna-finder= which allows link descriptions and a nice hydra to manage the various =org-edna= properties. I call it in my [[id:22750e48-aaee-4f60-bdce-1d511ebe3375][context aware hydra]] when on an org headline. For more functions and explanations checkout his config.
 #+begin_src emacs-lisp
 (use-package org-edna
   :straight t
   :after org
+  :delight
   :config
   (org-edna-load)
   (defun org-edna-finder/link-ids (&rest ids)
