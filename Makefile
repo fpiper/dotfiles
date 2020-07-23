@@ -19,5 +19,6 @@ fetch:
 pull: tangle/pull.sh
 	tangle/pull.sh
 
+.SILENT: $(addprefix tangle/,$(dst_readme))
 $(addprefix tangle/,$(dst_readme)) &: README.org
-	emacs --batch --eval "(and (require 'org) (org-babel-tangle-file \"README.org\"))"
+	emacs --batch --eval "(and (require 'org) (org-babel-tangle-file \"README.org\"))" &> /dev/null
