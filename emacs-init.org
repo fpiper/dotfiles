@@ -47,8 +47,21 @@ they are tangled upon save I use this function.
                (expand-file-name "git/projects/dotfiles/" (getenv "HOME")))
     (org-babel-tangle)
     (message "%s tangled" buffer-file-name)))
+(defmacro fpi/tangle-async (&optional file)
+  "Tangle FILE with a separate emacs instance.
 
-(add-hook 'org-mode-hook (lambda () (add-hook 'before-save-hook #'fpi/tangle-dotfiles nil t)) t)
+Note that this does not respect any customization of the tangle
+process in your init file as it is not loaded. This uses the
+emacs-async library."
+  (interactive)
+  (let ((file (or file (buffer-file-name))))
+    (and file
+         (not (file-remote-p file))
+         `(async-start
+           (lambda ()
+             (require 'org)
+             (org-babel-tangle-file ,file)
+             'ignore)))))
 #+END_SRC
 As I use =org-crypt= all =.org= files need to be decrypted before
 tangling, saved without encrypting and encrypted after tangling and
