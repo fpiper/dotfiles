@@ -3333,6 +3333,16 @@ print the list.
   :after org
   :straight (org-plus-contrib))
 #+end_src
+*** Handling web urls
+**** org-web-tools
+:PROPERTIES:
+:ID:       dc4129ff-6d76-4f12-926f-c62a687a39ec
+:END:
+This provides functions to get webpage title or content for org mode links.
+#+begin_src emacs-lisp
+(use-package org-web-tools
+  :straight t)
+#+end_src
 *** Gnorb
 :PROPERTIES:
 :ID:       990e2668-11d6-45eb-9c9b-1dc0b89b556d
@@ -3603,24 +3613,37 @@ Templates
     '(
       <<org-capture-templates-contexts>>))))
 #+END_SRC
+
 **** Templates
+:PROPERTIES:
+:header-args:emacs-lisp: :eval never
+:END:
 ***** Journal
 Capture templates for journal entries. Mostly to just keep track of things I have looked at and which may be interesting later, but do not warrant a zettel right now.
 #+BEGIN_SRC emacs-lisp :tangle no :noweb-ref org-capture-templates
 ("j" "Journal")
-("jj" "Journal Entry (Link)"
+("jj" "Link Current buffer"
  entry
  (file+olp+datetree
   ,org-journal-file)
  ;; "** %<%H:%M> %a\n %i%? \n%:description\n%:elfeed-entry-content\n%:elfeed-entry-date\n%:elfeed-entry-meta\n%:elfeed-entry-title\n%:elfeed-entry-enclosures\n%:elfeed-entry-tags" )
  "** %<%H:%M> %a
 %i%?" )
-("je" "Journal Entry"
+("je" "Manual Entry"
  entry
  (file+olp+datetree
   ,org-journal-file)
  "** %<%H:%M> %?
 %i" )
+#+END_SRC
+To get the title from the url in =kill-ring= I use [[id:dc4129ff-6d76-4f12-926f-c62a687a39ec][org-web-tools]].
+#+BEGIN_SRC emacs-lisp :tangle no :noweb-ref org-capture-templates
+("jw" "Web Link from kill-ring"
+ entry
+ (file+olp+datetree
+  ,org-journal-file)
+ "** %<%H:%M> %(org-web-tools--org-link-for-url (org-web-tools--get-first-url))%?
+%i")
 #+END_SRC
 ***** Interrupts
 For interruptions. These are saved in a global refile file and to be sorted to their appropriate place.
