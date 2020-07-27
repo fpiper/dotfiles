@@ -384,6 +384,218 @@ Instead of the above code I set the font directly using
 (set-face-attribute 'default nil :font "Hack-11")
 #+end_src
 
+#+begin_src emacs-lisp
+(use-package emacs
+  :commands (prot/font-set-face-attribute
+             prot/font-set-fonts
+             prot/font-set-font-size-family
+             prot/font-fonts-dwim)
+  :config
+  (setq x-underline-at-descent-line t)
+  (setq underline-minimum-offset 1)
+
+  (defconst prot/font-fontconfig-params
+    "embeddedbitmap=false:autohint=false:hintstyle=hintslight"
+    "Additional parameters for the given font family.
+These are specific to the fontconfig backend for GNU/Linux systems.")
+
+  (defvar prot/font-set-fonts-hook nil
+    "Hook that is called after setting fonts.
+See, for example, `prot/font-set-fonts'.")
+
+  ;; The idea with this association list is to use font combinations
+  ;; that are suitable to the given point size and intended function.
+  ;; Basically, I have three modes: my laptop's small screen, my laptop
+  ;; attached to a larger external monitor in a desktop setup (my normal
+  ;; case), and when I do presentations (i.e. my videos on Emacs).
+  ;;
+  ;; I find that at smaller sizes the open and wide proportions of
+  ;; Hack+FiraGO combined with their more intense typographic colour
+  ;; work best, while the more compact Iosevka+Source Sans Pro are
+  ;; better at larger point sizes.  The "desktop" combo is ideal for use
+  ;; on a larger monitor at a regular point size.  The latter is what I
+  ;; typically use to write prose or code.
+  ;;
+  ;; Note that the "Hack" typeface mentioned here is my patched version
+  ;; of it, which uses some alternative glyphs, is built on top of the
+  ;; latest dev branch, and is meant to improve both the Roman and
+  ;; Italic variants (alt glyphs are part of the Hack project):
+  ;; https://gitlab.com/protesilaos/hackfontmod
+  (defconst prot/font-sizes-families-alist
+    '(("laptop" . (10.5 "Hack" "Source Sans Pro" 1))
+      ("desktop" . (13 "Hack" "Alegreya" 4))
+      ("presentation" . (19 "Iosevka SS08" "Source Sans Pro" 1)))
+    "Alist of desired point sizes and their typefaces.
+Each association consists of a display type mapped to a point
+size, followed by monospaced and proportionately-spaced font
+names, and a difference in desired size between the latter two to
+account for their innate differences in proportions (this number
+represents pixels and is found empirically).
+
+The monospaced typeface is meant to be applied to the `default'
+and `fixed-pitch' faces.  The proportionately-space font is
+intended for the `variable-pitch' face.")
+
+  (defun prot/font-set-face-attribute (face family size &optional params)
+    "Set FACE font to FAMILY at SIZE with optional PARAMS."
+    (let ((params (if params
+                      params
+                    prot/font-fontconfig-params)))
+      (set-face-attribute
+       `,face nil :font
+       (format "%s-%s:%s" family (number-to-string size) params))))
+
+
+
+
+
+  (defun prot/font-set-fonts (&optional points font-mono font-var)
+    "Set default font size using presets.
+
+POINTS is the font's point size, represented as either '10' or
+'10.5'.  FONT-MONO should be a monospaced typeface, due to the
+alignment requirements of the `fixed-pitch' face.  FONT-VAR could
+be a proportionately-spaced typeface or even a monospaced one,
+since the `variable-pitch' it applies to is not supposed to be
+spacing-sensitive.  Both families must be represented as a string
+holding the family's name."
+    (interactive)
+    (let* ((data prot/font-sizes-families-alist)
+           (displays (mapcar #'car data))
+           (choice (if points
+                       points
+                     (completing-read "Pick display size: " displays nil t)))
+           (size (if points
+                     points
+                   (nth 1 (assoc `,choice data))))
+           (mono (if font-mono
+                     font-mono
+                   (if (member choice displays)
+                       (nth 2 (assoc `,choice data))
+                     nil)))
+           (var (if font-var
+                    font-var
+                  (if (member choice displays)
+                      (nth 3 (assoc `,choice data))
+                    nil)))
+           (adjust (nth 4 (assoc `,choice data))))
+      (when window-system
+        (dolist (face '(default fixed-pitch))
+          (prot/font-set-face-attribute `,face mono size))
+        (prot/font-set-face-attribute 'variable-pitch var (+ size adjust))))
+    (run-hooks 'prot/font-switch-fonts-hook))
+
+  (defvar prot/font-monospaced-fonts-list
+    '("Hack" "Iosevka SS08" "Iosevka Slab" "Source Code Pro"
+      "Ubuntu Mono" "Fantasque Sans Mono" "DejaVu Sans Mono"
+      "Fira Code" "Victor Mono" "Roboto Mono")
+    "List of typefaces for coding.
+See `prot/font-set-font-size-family' for how this is used.")
+
+  (defun prot/font-set-font-size-family ()
+    "Set point size and main typeface.
+This command is intended for testing various font families at
+some common point sizes.
+
+See `prot/font-set-fonts' for the function I would normally use
+or `prot/font-fonts-dwim' which just wraps this one with that."
+    (interactive)
+    (let* ((fonts prot/font-monospaced-fonts-list)
+           (font (completing-read "Select main font: " fonts nil t))
+           (nums (list 13 14 15 16))
+           (sizes (mapcar 'number-to-string nums))
+           (size (completing-read "Select or insert number: " sizes nil))
+           (var (face-attribute 'variable-pitch :family)))
+      (dolist (face '(default fixed-pitch))
+        (prot/font-set-face-attribute face font (string-to-number size)))
+      (prot/font-set-face-attribute 'variable-pitch var (string-to-number size))
+      (run-hooks 'prot/font-switch-fonts-hook)))
+
+  (defun prot/font-fonts-dwim (&optional arg)
+    "Set fonts interactively.
+This is just a wrapper around `prot/font-set-fonts' and
+`prot/font-set-font-size-family', whose sole purpose is to
+economise on dedicated key bindings."
+    (interactive "P")
+    (if arg
+        (prot/font-set-font-size-family)
+      (prot/font-set-fonts)))
+
+  (defvar prot/font-fonts-line-spacing-alist
+    '(("Iosevka SS08" . 1)
+      ("Iosevka Slab" . 1)
+      ("Source Code Pro" . 1)
+      ("Ubuntu Mono" . 2))
+    "Font families in need of extra `line-spacing'.
+See `prot/font-line-spacing' for how this is used.")
+
+  (defvar prot/font-fonts-bold-weight-alist
+    '(("Source Code Pro" . semibold))
+    "Font families in need of a variegated weight for `bold'.
+See `prot/font-bold-face' for how this is used.")
+
+  (defmacro prot/font-adjustment (fn doc alist cond1 cond2)
+    "Macro for functions that employ `prot/font-switch-fonts-hook'.
+NAME is the name of the resulting function.  DOC is its
+docstring.  ALIST is an assosiation list of cons cells.  COND1
+and COND2 is the body of an `if' statement's 'if' and 'then' part
+respectively."
+    `(defun ,fn ()
+       ,doc
+       (let* ((data ,alist)
+              (fonts (mapcar #'car data))
+              ;; REVIEW This should be adjusted to account for the
+              ;; possibility of a distinct font family for the `bold'
+              ;; face.
+              (font (face-attribute 'default :family))
+              (x (cdr (assoc font data))))
+         (if (member font fonts)
+             ,cond1
+           ,cond2))))
+
+  (prot/font-adjustment
+   prot/font-line-spacing
+   "Determine desirable `line-spacing', based on font family."
+   prot/font-fonts-line-spacing-alist
+   (setq-default line-spacing `,x)
+   (setq-default line-spacing nil))
+
+  ;; XXX This will not work with every theme, but only those that
+  ;; inherit the `bold' face instead of specifying a weight property.
+  ;; The intent is to configure this once and have it propagate wherever
+  ;; a heavier weight is displayed.  My Modus themes handle this
+  ;; properly.
+  (prot/font-adjustment
+   prot/font-bold-face
+   "Determine weight for the `bold' face, based on font family."
+   prot/font-fonts-bold-weight-alist
+   (set-face-attribute 'bold nil :weight `,x)
+   (set-face-attribute 'bold nil :weight 'bold))
+
+  (defun prot/font-fonts-per-monitor ()
+    "Use font settings based on screen size.
+Meant to be used at some early initialisation stage, such as with
+`after-init-hook'."
+    (let* ((display (if (<= (display-pixel-width) 1366)
+                        "laptop"
+                      "desktop"))
+           (data prot/font-sizes-families-alist)
+           (size (cadr (assoc `,display data)))
+           (mono (nth 2 (assoc `,display data)))
+           (var (nth 3 (assoc `,display data)))
+           (adjust (nth 4 (assoc `,display data))))
+      (dolist (face '(default fixed-pitch))
+        (prot/font-set-face-attribute face mono size))
+      (prot/font-set-face-attribute 'variable-pitch var (+ size adjust))
+      (run-hooks 'prot/font-switch-fonts-hook)))
+
+  :hook ((after-init-hook . prot/font-fonts-per-monitor)
+         (prot/font-set-fonts-hook . prot/font-line-spacing)
+         (prot/font-set-fonts-hook . prot/font-bold-face))
+  ;; Awkward key because I do not need it very often.  Maybe once a day.
+  ;; The "C-c f" is used elsewhere.
+  :bind ("C-c F" . prot/font-fonts-dwim))
+#+end_src
 ** Theme & Faces
 =hc-zenburn= is the theme I chose for a long time. Lately I started to
 appreciate light themes more. [[https://gitlab.com/protesilaos/modus-themes][modus-operandi]] is an interesting light
@@ -825,12 +1037,6 @@ This call now creates a custom theme based on the settings in the sections
 (progn
   (deftheme spacemacs-light-customizations "My customizations to spacemacs-light (Created 2020-06-27)")
   (custom-theme-set-faces 'spacemacs-light-customizations
-                          '(default
-                             ((t
-                               (:family "Hack" :background "#fbf8ef" :foreground "#1c1e1f"))))
-                          '(variable-pitch
-                            ((t
-                              (:family "EtBookOt" :background nil :foreground "#1c1e1f" :height 1.2))))
                           '(header-line
                             ((t
                               (:background nil :inherit nil))))
@@ -872,7 +1078,7 @@ This call now creates a custom theme based on the settings in the sections
                             ((t nil)))
                           '(org-document-title
                             ((t
-                              (:inherit nil :family "EtBookOt" :height 1.8 :foreground "#1c1e1f" :underline nil))))
+                              (:inherit nil :height 1.8 :foreground "#1c1e1f" :underline nil))))
                           '(org-document-info
                             ((t
                               (:height 1.2 :slant italic))))
@@ -881,16 +1087,16 @@ This call now creates a custom theme based on the settings in the sections
                               (:inherit shadow :height 0.6))))
                           '(org-level-1
                             ((t
-                              (:inherit nil :family "EtBookOt" :height 1.6 :weight normal :slant normal :foreground "#1c1e1f"))))
+                              (:height 1.6 :weight normal :slant normal :foreground "#1c1e1f"))))
                           '(org-level-2
                             ((t
-                              (:inherit nil :family "EtBookOt" :weight normal :height 1.3 :slant italic :foreground "#1c1e1f"))))
+                              (:weight normal :height 1.3 :slant italic :foreground "#1c1e1f"))))
                           '(org-level-3
                             ((t
-                              (:inherit nil :family "EtBookOt" :weight normal :slant italic :height 1.2 :foreground "#1c1e1f"))))
+                              (:weight normal :slant italic :height 1.2 :foreground "#1c1e1f"))))
                           '(org-level-4
                             ((t
-                              (:inherit nil :family "EtBookOt" :weight normal :slant italic :height 1.1 :foreground "#1c1e1f"))))
+                              (:weight normal :slant italic :height 1.1 :foreground "#1c1e1f"))))
                           '(org-level-5
                             ((t nil)))
                           '(org-level-6
@@ -899,9 +1105,6 @@ This call now creates a custom theme based on the settings in the sections
                             ((t nil)))
                           '(org-level-8
                             ((t nil)))
-                          '(org-headline-done
-                            ((t
-                              (:family "EtBookOt"))))
                           '(org-quote
                             ((t nil)))
                           '(org-block
@@ -983,10 +1186,10 @@ This call now creates a custom theme based on the settings in the sections
                               (:foreground "#727280"))))
                           '(org-table
                             ((t
-                              (:family "cmu typewriter text" :height 0.9 :background "#fbf8ef"))))
+                              (:inherit fixed-pitch :height 0.9 :background "#fbf8ef"))))
                           '(org-code
                             ((t
-                              (:inherit nil :family "cmu typewriter text" :foreground "#525254" :height 0.9))))
+                              (:inherit fixed-pitch :foreground "#525254" :height 0.9))))
                           '(font-latex-sectioning-0-face
                             ((t nil)))
                           '(font-latex-sectioning-1-face
@@ -1148,10 +1351,11 @@ ln -siv $(pwd)/tangle/spacemacs-light-customizations-theme.el ~/.emacs.d/
 :END:
 #+begin_src emacs-lisp :noweb-ref faces-spacemacs-light :tangle no
 ;; light
-'('(default ((t (:family ,sans-mono-font :background ,bg-white :foreground ,bg-dark
-                         ;; :height 75
-                         ))))
-  '(variable-pitch ((t (:family ,et-font :background nil :foreground ,bg-dark :height 1.2))))
+'(
+  ;; '(default ((t (:family ,sans-mono-font :background ,bg-white :foreground ,bg-dark
+  ;;                        ;; :height 75
+  ;;                        ))))
+  ;; '(variable-pitch ((t (:family ,et-font :background nil :foreground ,bg-dark :height 1.2))))
   '(header-line ((t (:background nil :inherit nil))))
   '(show-paren-match ((t nil)))
   '(magit-section-heading ((t nil)))
@@ -1167,18 +1371,18 @@ ln -siv $(pwd)/tangle/spacemacs-light-customizations-theme.el ~/.emacs.d/
   '(powerline-inactive2 ((t (:background ,bg-white))))
   '(highlight ((t (:background ,shade-white))))
   '(hl-line ((t nil)))
-  '(org-document-title ((t (:inherit nil :family ,et-font :height 1.8 :foreground ,bg-dark :underline nil))))
+  '(org-document-title ((t (:inherit nil :height 1.8 :foreground ,bg-dark :underline nil))))
   '(org-document-info ((t (:height 1.2 :slant italic))))
   '(org-archived ((t (:inherit shadow :height 0.6))))
-  '(org-level-1 ((t (:inherit nil :family ,et-font :height 1.6 :weight normal :slant normal :foreground ,bg-dark))))
-  '(org-level-2 ((t (:inherit nil :family ,et-font :weight normal :height 1.3 :slant italic :foreground ,bg-dark))))
-  '(org-level-3 ((t (:inherit nil :family ,et-font :weight normal :slant italic :height 1.2 :foreground ,bg-dark))))
-  '(org-level-4 ((t (:inherit nil :family ,et-font :weight normal :slant italic :height 1.1 :foreground ,bg-dark))))
+  '(org-level-1 ((t (:height 1.6 :weight normal :slant normal :foreground ,bg-dark))))
+  '(org-level-2 ((t (:weight normal :height 1.3 :slant italic :foreground ,bg-dark))))
+  '(org-level-3 ((t (:weight normal :slant italic :height 1.2 :foreground ,bg-dark))))
+  '(org-level-4 ((t (:weight normal :slant italic :height 1.1 :foreground ,bg-dark))))
   '(org-level-5 ((t nil)))
   '(org-level-6 ((t nil)))
   '(org-level-7 ((t nil)))
   '(org-level-8 ((t nil)))
-  '(org-headline-done ((t (:family ,et-font))))
+  ;; '(org-headline-done ((t (:family ,et-font))))
   '(org-quote ((t nil)))
   '(org-block ((t (:background nil :height 0.9 :foreground ,bg-dark :family ,sans-mono-font))))
   '(org-block-begin-line ((t (:background nil :height 0.8 :family ,sans-mono-font :foreground ,slate))))
@@ -1208,8 +1412,8 @@ ln -siv $(pwd)/tangle/spacemacs-light-customizations-theme.el ~/.emacs.d/
   '(org-agenda-done ((t (:foreground ,doc))))
   '(org-ellipsis ((t (:underline nil :foreground ,comment))))
   '(org-tag ((t (:foreground ,doc))))
-  '(org-table ((t (:family ,serif-mono-font :height 0.9 :background ,bg-white))))
-  '(org-code ((t (:inherit nil :family ,serif-mono-font :foreground ,comment :height 0.9))))
+  '(org-table ((t (:inherit fixed-pitch :height 0.9 :background ,bg-white))))
+  '(org-code ((t (:inherit fixed-pitch :foreground ,comment :height 0.9))))
   '(font-latex-sectioning-0-face ((t nil)))
   '(font-latex-sectioning-1-face ((t nil)))
   '(font-latex-sectioning-2-face ((t nil)))
