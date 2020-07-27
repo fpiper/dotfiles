@@ -1,4 +1,14 @@
 #+PROPERTY: header-args:shell :noweb yes
+* Contents :QUOTE:TOC_2_gh:
+#+BEGIN_QUOTE
+- [[#my-dotfiles][My dotfiles]]
+  - [[#initial-setup][Initial setup]]
+  - [[#git-setup][Git setup]]
+  - [[#updating-all-tangled-files][Updating all tangled files]]
+  - [[#creating-symlinks][Creating symlinks]]
+  - [[#dots-script][=dots= script]]
+#+END_QUOTE
+
 * My dotfiles
 The config files are organized in [[https://www.gnu.org/software/emacs/][emacs]] [[https://orgmode.org/][org mode]] files. They are tangled
 and symlinked to the appropriate directories.
