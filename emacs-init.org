@@ -3451,6 +3451,13 @@ This function is handy to use in header arguments to create names based on the c
         (post (or post "")))
     (format "%s%s%s" pre (nth 4 (org-heading-components)) post)))
 #+end_src
+*** Durations
+#+begin_src emacs-lisp
+(use-package org-duration
+  :after org
+  :custom
+  (org-duration-format '(("h" . t) ("min" . t) (special . h:mm))))
+#+end_src
 *** ox-reveal
 #+BEGIN_SRC emacs-lisp
 (use-package ox-reveal
