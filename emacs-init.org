@@ -401,8 +401,9 @@ defined, for example ~pdf-view-midnight-colors~.
 (defcustom fpi/dark-theme-list '(spacemacs-dark spacemacs-dark-customizations)
   "List of themes to activate when using a dark theme.")
 (defcustom fpi/current-theme 'light
-  "Currently activated theme variation."
-  :set #'fpi/set-and-reload-theme)
+  "Currently activated theme variation.")
+
+(fpi/load-themes)
 #+end_src
 
 Functions to load themes based on the ~fpi/current-theme~ setting and to toggle the current theme between light and dark.
@@ -418,20 +419,15 @@ of `(format \"fpi/%s-theme-list\" fpi/current-theme)'"
   (let* ((theme-variation (or theme-variation fpi/current-theme))
          (themes (eval (intern (format "fpi/%s-theme-list" theme-variation)))))
     (mapc (lambda (theme) (load-theme theme t)) themes)))
-(defun fpi/set-and-reload-theme (symbol value)
-  "Set SYMBOL to VALUE and update themes.
-
-Set SYMBOL to VALUE with `set-default'if it is not already set to
-that value and update the loaded themes afterwards."
-  (when (not (and (boundp symbol) (eq (eval symbol) value)))
-    (set-default symbol value)
-    (fpi/load-themes)))
 (defun fpi/toggle-theme ()
   "Toggle between light and dark theme."
   (interactive)
   (if (eq fpi/current-theme 'light)
-      (customize-save-variable 'fpi/current-theme 'dark)
-    (customize-save-variable 'fpi/current-theme 'light)))
+      (progn
+        (customize-save-variable 'fpi/current-theme 'dark)
+        (fpi/load-themes))
+    (customize-save-variable 'fpi/current-theme 'light)
+    (fpi/load-themes)))
 #+end_src
 #+begin_src emacs-lisp :tangle no :noweb-ref fpi-bindings
 (define-key fpi/toggle-map "dt" #'fpi/toggle-theme)
@@ -2836,8 +2832,12 @@ Advice =load-theme= to update the colors for =pdf-view-midnight-mode=
 after the theme changes.
 #+NAME: theme-dependent-vars
 #+begin_src emacs-lisp :tangle no
-(defadvice load-theme (after update-pdf-view-midnight-color activate)
-  (customize-save-variable 'pdf-view-midnight-colors `(,(face-attribute 'default :foreground) . ,(face-attribute 'default :background))))
+(defun update-pdf-view-midnight-color (&rest arg)
+              (customize-save-variable
+               'pdf-view-midnight-colors
+               `(,(face-attribute 'default :foreground) . ,(face-attribute 'default :background))))
+(advice-add 'load-theme :after
+            #'update-pdf-view-midnight-color)
 #+end_src
 
 ** Latex
