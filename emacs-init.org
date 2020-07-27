@@ -42,7 +42,6 @@
   - [[#elfeed][Elfeed]]
   - [[#plotting-data][Plotting data]]
   - [[#html-renderer][HTML renderer]]
-  - [[#writing-setup][Writing Setup]]
   - [[#email][Email]]
   - [[#footnote-mode][Footnote Mode]]
   - [[#bbdb][BBDB]]
@@ -57,6 +56,7 @@
   - [[#whitespace][Whitespace]]
   - [[#undo][Undo]]
   - [[#electric-stuff][Electric stuff]]
+  - [[#writing-setup][Writing Setup]]
 - [[#wrapping-up][Wrapping up]]
 #+END_QUOTE
 
@@ -4703,20 +4703,6 @@ Support for HTML code blocks with proper syntax highlighting. See [[https://gith
       (advice-add 'eww-display-html :around
                   'eww-display-html--override-shr-external-rendering-functions))))
 #+END_SRC
-** Writing Setup
-*** Olivetti Mode
-#+begin_src emacs-lisp
-(use-package olivetti
-  :straight t
-  :custom
-  (olivetti-body-width 0.65)
-  ;; (olivetti-minimum-body-width 70)
-  )
-#+end_src
-
-#+begin_src emacs-lisp :tangle no :noweb-ref fpi-bindings
-(define-key fpi/toggle-map "do" #'olivetti-mode)
-#+end_src
 ** Email
 For the setup of external mail specific programs see [[file:mail.org]].
 *** Sending mail
@@ -5223,6 +5209,20 @@ temporary buffer is created.
   (electric-indent-mode 1)
   (electric-pair-mode 1)
   (electric-quote-mode -1))
+#+end_src
+** Writing Setup
+*** Olivetti Mode
+#+begin_src emacs-lisp
+(use-package olivetti
+  :straight t
+  :custom
+  (olivetti-body-width 0.65)
+  ;; (olivetti-minimum-body-width 70)
+  )
+#+end_src
+
+#+begin_src emacs-lisp :tangle no :noweb-ref fpi-bindings
+(define-key fpi/toggle-map "do" #'olivetti-mode)
 #+end_src
 * Wrapping up
 
