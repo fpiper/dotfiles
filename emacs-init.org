@@ -3673,7 +3673,6 @@ content syncing upon commit.
   (org-attach-git-annex-cutoff 0))
 #+end_src
 *** Org-Capture
-Templates
 #+BEGIN_SRC emacs-lisp
 (use-package org-capture
   :custom
@@ -3842,7 +3841,8 @@ Templates I no longer use, but may be interesting.
  "* %i%? %(and (org-id-get-create) nil)
 :PROPERTIES:\n:CREATED: %u\n:END:\n")
 #+END_SRC
-**** Setup for floating capture window. For reference see [[https://www.windley.com/archives/2010/12/capture_mode_and_emacs.shtml][here]].
+**** Setup for floating capture window
+For reference see [[https://www.windley.com/archives/2010/12/capture_mode_and_emacs.shtml][here]].
 #+begin_src emacs-lisp
 (defun fpi/make-floating-frame (&optional width height minibuffer name)
   (interactive)
