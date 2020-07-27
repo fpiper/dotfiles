@@ -46,10 +46,10 @@
   - [[#email][Email]]
   - [[#footnote-mode][Footnote Mode]]
   - [[#bbdb][BBDB]]
-  - [[#spellcheck][Spellcheck]]
   - [[#compile][Compile]]
   - [[#context-aware-hydra][Context aware hydra]]
 - [[#language-settings][Language settings]]
+  - [[#spellcheck][Spellcheck]]
 - [[#interface][Interface]]
   - [[#general][General]]
   - [[#rainbow-mode][Rainbow mode]]
@@ -4886,16 +4886,6 @@ For now I use this bad code.
  (lambda ()
     (define-key gnus-summary-mode-map (kbd ";") 'bbdb-mua-edit-field)))
 #+end_src
-** Spellcheck
-#+begin_src emacs-lisp
-(use-package ispell
-  :config
-  (setq ispell-program-name "/usr/bin/hunspell")
-  (setq ispell-dictionary "en_US,de_DE")
-  (ispell-set-spellchecker-params)
-  (ispell-hunspell-add-multi-dic "en_US,de_DE")
-  )
-#+end_src
 ** Compile
 Fix ansi colors in compile buffers. From [[https://endlessparentheses.com/ansi-colors-in-the-compilation-buffer-output.html][endlessparentheses]].
 #+begin_src emacs-lisp
@@ -5120,6 +5110,28 @@ _q_ quit       _r_ remove result  _e_ examplify region
 End sentences with single spaces.
 #+begin_src emacs-lisp
 (setq sentence-end-double-space nil)
+#+end_src
+** Spellcheck
+#+begin_src emacs-lisp
+(use-package ispell
+  :config
+  (setq ispell-program-name "/usr/bin/hunspell")
+  (setq ispell-dictionary "en_US,de_DE")
+  (ispell-set-spellchecker-params)
+  (ispell-hunspell-add-multi-dic "en_US,de_DE")
+  )
+#+end_src
+*** Flyspell
+Setup mainly from [[https://github.com/howardabrams/dot-files/blob/master/emacs.org][Howard Abrams]].
+#+begin_src emacs-lisp
+(use-package flyspell
+  :delight
+  :init
+  (add-hook 'prog-mode-hook 'flyspell-prog-mode)
+  (dolist (hook '(text-mode-hook org-mode-hook))
+    (add-hook hook (lambda () (flyspell-mode 1))))
+  (dolist (hook '(change-log-mode-hook log-edit-mode-hook org-agenda-mode-hook))
+    (add-hook hook (lambda () (flyspell-mode -1)))))
 #+end_src
 * Interface
 ** General
