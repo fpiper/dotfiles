@@ -3414,7 +3414,11 @@ Default keybindings:
   '(progn
      (define-key message-mode-map (kbd "C-c t") #'gnorb-gnus-outgoing-do-todo)))
 #+end_example
-
+**** More refile targets
+Make gnorb consider the same refile targets as org.
+#+begin_src emacs-lisp :tangle no :noweb-ref gnorb-custom
+(gnorb-gnus-trigger-refile-targets org-refile-targets)
+#+end_src
 *** Inline images
 
 Resize inline images to 400px but respect width specifications in attribute lines.
