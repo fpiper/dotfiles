@@ -1,6 +1,6 @@
 dst_readme := tangle.sh merge.sh pull.sh link.sh dots.sh
 
-.PHONY: merge install link tangle fetch pull
+.PHONY: merge install link tangle fetch pull clean
 
 merge: tangle/merge.sh
 	tangle/merge.sh
@@ -9,6 +9,9 @@ install: tangle link
 
 tangle: tangle/tangle.sh
 	tangle/tangle.sh
+
+clean:
+	rm hash/*
 
 link: tangle/link.sh
 	tangle/link.sh

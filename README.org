@@ -1,3 +1,4 @@
+#+PROPERTY: header-args:shell :noweb yes
 * My dotfiles
 The config files are organized in [[https://www.gnu.org/software/emacs/][emacs]] [[https://orgmode.org/][org mode]] files. They are tangled
 and symlinked to the appropriate directories.
@@ -60,6 +61,12 @@ configuration files and it also needs to be loaded & setup. For
 details see [[file:emacs-init.org::org-crypt-tangle-setup][emacs-init.org]].
 
 #+begin_src shell :shebang "#!/bin/bash" :tangle tangle/tangle.sh
+files=$(ls *.org *.org.gpg)
+
+<<checkhashes>>
+
+echo "Tangling files:$tanglefiles ..."
+
 emacs --batch --eval="\
   (progn (require 'org)
          (require 'org-crypt)
@@ -74,7 +81,58 @@ emacs --batch --eval="\
                                                  (org-encrypt-entries)
                                                  (save-without-hook)))
          (let ((org-confirm-babel-evaluate nil))
-           (mapc 'org-babel-tangle-file (split-string \"$(ls *.org *.org.gpg)\"))))"
+           (mapc 'org-babel-tangle-file (split-string \"$tanglefiles\"))))"
+#+end_src
+
+*** Saving commit hashes to reduce tangling
+To reduce the amount of unnecessary tangling, save the commit hash
+upon tangling and check it before tangling again.
+
+Get the commit hash of a file using ~git log~.
+
+#+NAME: gethash
+#+begin_src shell
+function gethash {
+    git log -n 1 --pretty=format:%H -- $1
+}
+#+end_src
+
+We can save all commit hashes by looping over all files.
+
+#+NAME: savehashes
+#+begin_src shell
+HASHDIR="hash"
+<<gethash>>
+for file in $files
+do
+    gethash $file > $HASHDIR/$file
+done
+#+end_src
+
+But we really want to check the saved hash against the current hash
+first. If they do not match keep the file for tangling.
+
+#+NAME: checkhashes
+#+begin_src shell
+HASHDIR="hash"
+tanglefiles=""
+<<gethash>>
+
+exec 3>&2
+exec 2> /dev/null # disable stderr
+
+for file in $files
+do
+    if [ $(cat $HASHDIR/$file) == $(gethash $file) ]
+    then
+        : # noop
+    else # if strings not equal or ~cat~ fails
+        tanglefiles="$tanglefiles $file"
+        gethash $file > $HASHDIR/$file # save hash
+    fi
+done
+
+exec 2>&3 #reset stderr
 #+end_src
 
 ** Creating symlinks
