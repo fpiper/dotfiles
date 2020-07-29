@@ -3642,13 +3642,14 @@ Simple day agenda with =INPROGRESS= tasks
 #+begin_src emacs-lisp :tangle no :noweb-ref org-agenda-custom-commands
 ("h" "Current Hotlist" tags "TODO={NEXT\\|INPROGRESS\\|WAITING}"
  ((org-agenda-overriding-header "Current Hotlist")
-  (org-agenda-skip-function
-   (function fpi/org-agenda-skip-all-not-hot))))
+  (org-agenda-skip-function (function fpi/org-agenda-skip-all-not-hot))
+  ;; (org-agenda-prefix-format " %-3i %-12:c%30b %s")
+  ))
 #+end_src
 #+begin_src emacs-lisp :tangle no :noweb-ref org-agenda-config
 (defun fpi/org-agenda-skip-all-not-hot ()
   "Skip all not hot entries."
-  (when (not (member "HOT" (my-org-current-tags 1)))
+  (when (not (member "HOT" (my-org-current-tags (fpi/org-project-depth 10))))
     (or (outline-next-heading)
         (goto-char (point-max)))))
 (defun fpi/org-agenda-skip-all-not-project ()
@@ -3668,6 +3669,14 @@ Simple day agenda with =INPROGRESS= tasks
           (if (looking-at "^\*+\\s-+")
               (setq should-skip (org-get-local-tags))))
         should-skip))))
+(defun fpi/org-project-depth (depth)
+  "Return number of subheadings before reaching top project."
+  (let ((current (org-current-level))
+        (top (save-excursion
+               (fpi/org-goto-top-project depth)
+               (org-current-level))))
+    (- current top)
+    ))
 (defun fpi/org-goto-top-project (depth)
   "Go to the top project of heading under point"
   (save-restriction
