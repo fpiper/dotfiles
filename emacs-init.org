@@ -3503,7 +3503,7 @@ Also display remote images by downloading them.
   (org-caldav-calendar-id private/calendar-id)
   (org-caldav-inbox "~/sync/w.org")
   (org-caldav-files nil)
-  (org-caldav-sync-direction 'twoway)
+  (org-caldav-sync-direction 'cal->org)
   (org-caldav-delete-calendar-entries 'never)
   (org-caldav-exclude-tags nil)
 )
