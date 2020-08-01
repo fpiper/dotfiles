@@ -3441,6 +3441,7 @@ I use a org version with some custom patches. Rather than using something like =
   (org-agenda-skip-scheduled-if-done t)
   (org-agenda-dim-blocked-tasks t)
   (org-sort-agenda-notime-is-late t)
+  (org-agenda-scheduled-leaders '(" ➫" "➫ ")) ;; alternatives if font supports them: 👉🖝🕣🕣
   ;; See emacs.christianbaeuerlein.com/my-org-config.html
   (org-agenda-block-separator 9472)
   (org-agenda-custom-commands
