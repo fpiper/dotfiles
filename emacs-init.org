@@ -975,7 +975,7 @@ This call now creates a custom theme based on the settings in the sections
                               (:foreground "#1c661c"))))
                           '(org-scheduled-previously
                             ((t
-                              (:foreground "#002000"))))
+                              (:foreground "#002900"))))
                           '(org-agenda-done
                             ((t
                               (:foreground "#727280"))))
@@ -1125,7 +1125,7 @@ ln -siv $(pwd)/tangle/spacemacs-light-customizations-theme.el ~/.emacs.d/
  (dark-cyan          "#008b8b")
  (light-green        "#4f774f") ;;#3f773f
  (dark-green         "#1c661c")
- (dark-green2        "#002000")
+ (dark-green2        "#002900")
  (region-dark        "#2d2e2e")
  (region             "#39393d")
  (slate              "#8FA1B3")
