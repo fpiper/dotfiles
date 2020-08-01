@@ -1497,7 +1497,11 @@ Some settings could be harmful to emacs and the underlying system. Therefore man
 #+begin_src emacs-lisp :tangle no :noweb-ref files-custom
 (safe-local-variable-values
  '((whitespace-style face trailing space-before-tab indentation empty space-after-tab newline-mark)
+   (whitespace-style face trailing space-before-tab indentation empty space-after-tab)
    (eval set-window-buffer nil (current-buffer))
+   (eval add-hook 'before-save-hook (lambda nil (fpi/tangle-async)) nil t)
+   (org-attach-preferred-new-method . dir)
+   (org-attach-use-inheritance . t)
    (right-margin-width . 2)
    (left-margin-width . 2)
    (line-spacing . 0.2)
