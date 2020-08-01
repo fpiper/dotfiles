@@ -3190,7 +3190,9 @@ Switch projects and subprojects from NEXT back to TODO"
 (use-package org-indent
   :delight
   :custom
-  (org-startup-indented t))
+  (org-startup-indented t)
+  <<org-indent-custom>>
+  )
 #+end_src
 #+begin_src emacs-lisp
 (use-package ob
@@ -5415,7 +5417,33 @@ temporary buffer is created.
   (electric-quote-mode -1))
 #+end_src
 ** Writing Setup
-*** Olivetti Mode
+I gather all settings related to writing in a minor mode.
+#+begin_src emacs-lisp
+(define-minor-mode prose-mode
+  "Toggle some settings for text based buffers."
+  :init-value nil
+  :lighter " ✎"
+  (if prose-mode
+      (progn
+        (olivetti-mode 1)
+        (set-window-fringes (selected-window) 0 0)
+        (variable-pitch-mode 1)
+        )
+    (olivetti-mode -1)
+    (set-window-fringes (selected-window) nil)
+    (variable-pitch-mode -1)
+    ))
+#+end_src
+The mode is enabled for all =text-mode= based buffers by default.
+#+begin_src emacs-lisp
+(add-hook 'text-mode-hook 'prose-mode)
+#+end_src
+Also set an easy keybinding to toggle it manually.
+#+begin_src emacs-lisp :noweb-ref fpi-bindings :tangle no
+(define-key fpi/toggle-map "p" #'prose-mode)
+#+end_src
+
+Olivetti mode is used to center text in the buffer. This somehow helps with writing.
 #+begin_src emacs-lisp
 (use-package olivetti
   :straight t
@@ -5426,8 +5454,16 @@ temporary buffer is created.
   )
 #+end_src
 
-#+begin_src emacs-lisp :tangle no :noweb-ref fpi-bindings
-(define-key fpi/toggle-map "do" #'olivetti-mode)
+For org-mode also reduce indentation by =org-indent-mode= as described [[https://explog.in/notes/writingsetup.html][here]].
+#+begin_src emacs-lisp :noweb-ref org-indent-custom :tangle no
+(org-indent-indentation-per-level 1)
+#+end_src
+These settings are also from the above blog post, but mainly manually set what =org-indent-mode= does anyway.
+#+begin_src emacs-lisp :noweb-ref org-custom :tangle no
+(org-adapt-indentation nil)
+(org-hide-leading-stars t)
+(org-hide-emphasis-markers t)
+(org-cycle-separator-lines 1)
 #+end_src
 * Wrapping up
 
