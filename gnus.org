@@ -257,7 +257,10 @@ To enable it go to the gnus server buffer and mark the servers to be synced with
 #+end_src
 Commands to interact with the gnus cloud are prefixed with =~= in the group buffer.
 #+begin_src emacs-lisp
-(setq gnus-cloud-synced-files '("~/.authinfo.gpg" "~/.gnus.registry.eieio" (:directory "~/News" :match ".*.\\(SCORE\\|ADAPT\\)")))
+(setq gnus-cloud-synced-files '("~/.authinfo.gpg"
+                                "~/.gnus.registry.eieio"
+                                (:directory "~/News" :match ".*.\\(SCORE\\|ADAPT\\)")
+                                (:directory "~/git/projects/dotfiles" :match "[0-9]+-.*\\.patch")))
 #+end_src
 *** Display
 Sort by newest first
