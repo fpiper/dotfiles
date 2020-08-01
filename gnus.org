@@ -155,10 +155,10 @@ See [[info:gnus#Adaptive Scoring][info:gnus#Adaptive Scoring]] and this [[https:
       '(
         <<gnus-adaptive-scoring-wo-from>>))
 (setq gnus-default-adaptive-word-score-alist
-      `((,gnus-read-mark . 5)
-        (,gnus-catchup-mark . -5)
+      `((,gnus-read-mark . 10)
+        (,gnus-catchup-mark . -4)
         (,gnus-killed-mark . -15)
-        (,gnus-del-mark . -10))
+        (,gnus-del-mark . -8))
       )
 ;; (setq gnus-adaptive-word-score-alist gnus-default-adaptive-word-score-alist)
 #+end_src
