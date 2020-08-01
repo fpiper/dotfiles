@@ -155,10 +155,10 @@ See [[info:gnus#Adaptive Scoring][info:gnus#Adaptive Scoring]] and this [[https:
       '(
         <<gnus-adaptive-scoring-wo-from>>))
 (setq gnus-default-adaptive-word-score-alist
-      `((,gnus-read-mark . 5)
-        (,gnus-catchup-mark . -5)
+      `((,gnus-read-mark . 10)
+        (,gnus-catchup-mark . -4)
         (,gnus-killed-mark . -15)
-        (,gnus-del-mark . -10))
+        (,gnus-del-mark . -8))
       )
 ;; (setq gnus-adaptive-word-score-alist gnus-default-adaptive-word-score-alist)
 #+end_src
@@ -217,6 +217,13 @@ Slow scoring decay prevents huge scores from building up. Only run on =.ADAPT= s
       gnus-score-decay-constant 1
       gnus-score-decay-scale 0.01)
 #+end_src
+****** Ignored Words
+Do not score on some common german words. I extracted these from my score file after a few weeks of using scoring.
+#+begin_src emacs-lisp
+(setq gnus-ignored-adaptive-words
+      '("loswerden" "teilweise" "übernahme" "betrieb" "kündigt" "schnittstelle" "abgewendet" "hälfte" "massiv" "massivst" "angeblich" "verschleppt" "startup" "auslistung" "wichtiger" "öffentliches" "verwenden" "asynchron" "lieber" "arbeite" "zahlreiche" "november" "entscheidung" "käufer" "findet" "mittlere" "vorstoß" "starker" "erreicht" "letzte" "geplant" "september" "nachfolger" "ankündigen" "mildern" "antrieb" "lassen" "aufsteigen" "entdeckt" "hinweise" "bedingungen" "miniserie" "funktioniert" "umfragen" "angreifbare" "fiasko" "prüfstand" "sparsamer" "steigt" "zugangsdaten" "tutorial" "details" "verfahren" "verschiebt" "enorme" "schlechtere" "erwarten" "optimierungen" "aushalten" "kratzer" "stürze" "gelöscht" "getestet" "stalker" "showcase" "warnung" "maßnahmenplan" "konstruieren" "deutsches" "großen" "probefahrt" "interesse" "preise" "verteilt" "leaken" "günstiger" "umgerüstet" "ausflug" "edition" "definitive" "schützen" "zeiten" "größte" "sicherer" "falsches" "schnelles" "wollte" "angebunden" "externe" "aktualisiertes" "zweiten" "limitiert" "überraschend" "unsicher" "schonfrist" "strukturiert" "historisches" "riesige" "gründet" "mitarbeiter" "geleakt" "mutmaßlichem" "idiotensicher" "stunden" "zornige" "schwächer" "funktionierende" "meinen" "meisten" "geringer" "gewinnen" "rennen" "halten" "synchronisation" "normal" "riesiges" "bessere" "enthält" "integriert" "project" "zurücknehmen" "verursacht" "bleibt" "angeschlossene" "verbrauchen" "berichtet" "ausmachen" "unterschied" "stoppen" "weiterhin" "ausschluss" "schaffen" "exklusives" "riesiger" "keinen" "verbesserter" "steckt" "kündigen" "dienste" "erwägt" "dürfen" "demonstriert" "unerlaubter" "möglichkeiten" "unendlicher" "unbegrenzte" "vermehrt" "greift" "veröffentlicht" "komplett" "warten" "blockiert" "freier" "erscheinen" "reicht" "fliegen" "eigene" "erweitert" "sollen" "könnte" "erscheint" "können" "arbeiten" "eigenen" "lieferbar" "kostet" "kommen" "startet" "zurück" "bestätigt" "schnell" "bietet" "unterstützen" "zahlen" "bekommt" "ersten" "schneller" "verkauft" "kaufen" "machen" "vorgestellt" "bringt" "offenbar" "geräte" "präsentiert" "videos" "stellt" "schließt" "werden" "erhält" "wieder" "endlich" "verfügbar" "deutsche"
+        ))
+#+end_src
 **** Registry
 Use the [[info:gnus#The Gnus Registry][Gnus Registry]]. This is required to use [[id:990e2668-11d6-45eb-9c9b-1dc0b89b556d][Gnorb]].
 #+begin_src emacs-lisp
@@ -250,7 +257,10 @@ To enable it go to the gnus server buffer and mark the servers to be synced with
 #+end_src
 Commands to interact with the gnus cloud are prefixed with =~= in the group buffer.
 #+begin_src emacs-lisp
-(setq gnus-cloud-synced-files '("~/.authinfo.gpg" "~/.gnus.registry.eieio" (:directory "~/News" :match ".*.\\(SCORE\\|ADAPT\\)")))
+(setq gnus-cloud-synced-files '("~/.authinfo.gpg"
+                                "~/.gnus.registry.eieio"
+                                (:directory "~/News" :match ".*.\\(SCORE\\|ADAPT\\)")
+                                (:directory "~/git/projects/dotfiles" :match "[0-9]+-.*\\.patch")))
 #+end_src
 *** Display
 Sort by newest first
