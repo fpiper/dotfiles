@@ -5215,8 +5215,9 @@ temporary buffer is created.
 #+begin_src emacs-lisp
 (use-package olivetti
   :straight t
+  :delight
   :custom
-  (olivetti-body-width 0.65)
+  (olivetti-body-width 80)
   ;; (olivetti-minimum-body-width 70)
   )
 #+end_src
