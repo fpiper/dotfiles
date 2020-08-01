@@ -3410,6 +3410,10 @@ This provides functions to get webpage title or content for org mode links.
 (use-package org-web-tools
   :straight t)
 #+end_src
+#+begin_src emacs-lisp :noweb-ref fpi-bindings :tangle no
+(define-key fpi-map "l" #'org-web-tools-insert-link-for-url)
+#+end_src
+
 *** Gnorb
 :PROPERTIES:
 :ID:       990e2668-11d6-45eb-9c9b-1dc0b89b556d
