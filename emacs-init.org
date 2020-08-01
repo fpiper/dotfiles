@@ -121,7 +121,9 @@ emacs-async library."
          `(async-start
            (lambda ()
              (require 'org)
+             (require 'org-clock)
              (org-babel-tangle-file ,file)
+             (org-notify (format "Tangled %s" ,file))
              'ignore)))))
 #+END_SRC
 As I use =org-crypt= all =.org= files need to be decrypted before
