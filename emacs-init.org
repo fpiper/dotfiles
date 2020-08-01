@@ -3697,7 +3697,7 @@ content syncing upon commit.
 
 **** Templates
 :PROPERTIES:
-:header-args:emacs-lisp: :eval never
+:header-args:emacs-lisp: :eval never :noweb yes
 :END:
 ***** Journal
 Capture templates for journal entries. Mostly to just keep track of things I have looked at and which may be interesting later, but do not warrant a zettel right now.
