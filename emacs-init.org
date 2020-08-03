@@ -3448,6 +3448,7 @@ I use a org version with some custom patches. Rather than using something like =
    `(
      <<org-agenda-custom-commands>>
      ))
+  <<org-agenda-custom>>
   :config
   <<org-agenda-config>>
   )
@@ -3932,6 +3933,16 @@ Based on https://github.com/psamim/dotfiles/blob/master/doom/config.el#L73.
         ((string= tag "fun")
          org-clock-current-task))
        (concat "-" tag)))
+#+end_src
+****** Stuck projects
+The agenda can also list stuck projects with =C-c a #=. For this to be useful we have define what a stuck project is.
+
+A stuck project
+1. has any todo state of the states listed in ~org-project-keywords~
+2. does /not/ have a subtask with a state of =TODO=, =NEXT= or =INPROGRESS=.
+
+#+begin_src emacs-lisp :tangle no :noweb-ref org-agenda-custom
+(org-stuck-projects '("/+{PLANNING\\|READY\\|ACTIVE}" ("TODO" "NEXT" "INPROGRESS") nil ""))
 #+end_src
 **** Refile
 Use the full outline path so I can distinguish headlines with the same name & disable step-wise completion as I think from the refile target backwards, not from top-level downwards. Also include the current file's headings as a refile targets up to a deep level, all agenda files up to a small level and all open org files up to an even smaller level.
