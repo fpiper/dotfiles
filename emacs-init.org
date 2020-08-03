@@ -4633,7 +4633,7 @@ To open and hide a shell quickly I use =shell-pop=.
 #+begin_src emacs-lisp
 (use-package shell-pop
   :straight t
-  :bind (("C-!" . shell-pop))
+  :bind (("C->" . shell-pop))
   :custom
   (shell-pop-shell-type (quote ("eshell" "*eshell*" (lambda nil (eshell))))))
 #+end_src
