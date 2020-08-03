@@ -4983,7 +4983,7 @@ Hard new lines are identified using a ~hard~ text property and
 displayed as =⏎=. We need to make sure all newlines inserted by
 message initialization (signature, ...) also have this text property.
 For now I use this bad code.
-#+BEGIN_SRC emacs-lisp
+#+BEGIN_SRC emacs-lisp :tangle no
 (use-package messages-are-flowing
   :straight t
   :config (add-hook 'message-mode-hook 'messages-are-flowing-use-and-mark-hard-newlines))
