@@ -3642,7 +3642,7 @@ Exclude =HOT= from inheritance
 Simple day agenda with =INPROGRESS= tasks
 ******* Hot Projects
 #+begin_src emacs-lisp :tangle no :noweb-ref org-agenda-custom-commands
-("h" "Current Hotlist" tags "TODO={NEXT\\|INPROGRESS\\|WAITING}"
+("h" "Current Hotlist" tags "TODO={NEXT\\|INPROGRESS}"
  ((org-agenda-overriding-header "Current Hotlist")
   (org-agenda-skip-function (function fpi/org-agenda-skip-all-not-hot))
   ;; (org-agenda-prefix-format " %-3i %-12:c%30b %s")
