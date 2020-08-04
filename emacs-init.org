@@ -4402,14 +4402,21 @@ the newly set value. Open the PROPERTIES drawer."
     (interactive)
     (jmm/org-edna-set-trigger-and-point
      (format "link-ids(\"%s\")%s" (jmm/org-pop-stored-link) (if rest (concat " " rest) ""))))
-  (defhydra jmm/org-edna-hydra (:color blue)
-    "Org Edna"
-    ("l" jmm/org-edna-link "Link")
-    ("L" (jmm/org-edna-link "todo!(NEXT)") "Link NEXT")
-    ("n" (jmm/org-edna-set-trigger-and-point "next-sibling todo!(NEXT)") "Next sibling NEXT")
-    ("N" (jmm/org-edna-set-trigger-and-point "next-sibling todo!(NEXT) chain!(\"TRIGGER\")") "Chain next-sibling NEXT")
-    ("p" (jmm/org-edna-set-trigger-and-point "parent todo!(DONE)") "Parent DONE")
-    ("q" nil "cancel")))
+  (defhydra fpi/org-edna-hydra (:color blue :hint nil)
+    "
+Org Edna
+  _l_: Link               _P_: N+p
+  _L_: Link NEXT          _p_: Parent DONE
+  _n_: Sibling NEXT       ^ ^
+  _N_: Chain sibling NEXT _q_: quit
+"
+    ("l" jmm/org-edna-link)
+    ("L" (jmm/org-edna-link "todo!(NEXT)"))
+    ("n" (jmm/org-edna-set-trigger-and-point "next-sibling todo!(NEXT)"))
+    ("N" (jmm/org-edna-set-trigger-and-point "next-sibling todo!(NEXT) chain!(\"TRIGGER\")"))
+    ("P" (jmm/org-edna-set-trigger-and-point "next-sibling todo!(NEXT) chain!(\"TRIGGER\") if siblings then parent todo!(DONE) endif"))
+    ("p" (jmm/org-edna-set-trigger-and-point "parent todo!(DONE)"))
+    ("q" nil)))
 #+end_src
 *** org-attach
 =org-attach= is useful to attach reference material to org files. This can be reference images, data or other files. A special link type is available for attached files: ~[[attachment:file]]~.
@@ -5810,7 +5817,7 @@ based on the current mode and context around point.
             (etype (car elem))
             (type (org-element-property :type elem)))
        (cl-case etype
-         (headline (jmm/org-edna-hydra/body))
+         (headline (fpi/org-edna-hydra/body))
          (src-block (hydra-babel-helper/body))
          (link (hydra-org-link-helper/body))
          ((table-row table-cell) (hydra-org-table-helper/body) )
