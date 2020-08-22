@@ -3713,20 +3713,6 @@ Also display remote images by downloading them.
 #+begin_src emacs-lisp :noweb-ref ob-hooks :tangle no
 (org-babel-after-execute . org-display-inline-images)
 #+end_src
-*** org-caldav
-#+begin_src emacs-lisp
-(use-package org-caldav
-  :straight t
-  :custom
-  (org-caldav-url private/calendar-url)
-  (org-caldav-calendar-id private/calendar-id)
-  (org-caldav-inbox "~/sync/w.org")
-  (org-caldav-files nil)
-  (org-caldav-sync-direction 'cal->org)
-  (org-caldav-delete-calendar-entries 'never)
-  (org-caldav-exclude-tags nil)
-)
-#+end_src
 *** Babel
 This function is handy to use in header arguments to create names based on the current org heading. E.g. =:var data=(fpi/format-headline "/tmp/prefix_")=
 #+begin_src emacs-lisp
@@ -3754,6 +3740,29 @@ This function is handy to use in header arguments to create names based on the c
 *** ol-bbdb
 #+begin_src emacs-lisp
 (use-package ol-bbdb)
+#+end_src
+*** icalendar support
+While =org-caldav= offers syncing with caldav servers it relies on =ox-icalendar= to convert between org entries and icalendar events.
+**** org-caldav
+#+begin_src emacs-lisp
+(use-package org-caldav
+  :straight t
+  :custom
+  (org-caldav-url private/calendar-url)
+  (org-caldav-calendar-id private/calendar-id)
+  (org-caldav-inbox "~/sync/w.org")
+  (org-caldav-files nil)
+  (org-caldav-sync-direction 'cal->org)
+  (org-caldav-delete-calendar-entries 'never)
+  (org-caldav-exclude-tags nil)
+)
+#+end_src
+**** ox-icalendar
+#+begin_src emacs-lisp
+(use-package ox-icalendar
+  :after org
+  :custom
+  (org-icalendar-store-UID t))
 #+end_src
 *** prettify symbols
 Set some prettify symbols for org mode.
