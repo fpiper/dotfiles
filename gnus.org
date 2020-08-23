@@ -249,18 +249,72 @@ Also automatically set message tags
 (setq gnorb-gnus-auto-tag-messages t)
 #+end_src
 **** Gnus Cloud
-The [[info:gnus#The Gnus Cloud][Gnus Cloud]] lets you synchronize marks and general data (whatever that is) across different machines. This seems more complete than manually (with Nextcloud, …) syncing the news related files (=~/.newsrc.eld=, =~/News=, …).
+The [[info:gnus#The Gnus Cloud][Gnus Cloud]] lets you synchronize marks and general data (whatever that is) across different machines. +This seems more complete than manually (with Nextcloud, …) syncing the news related files (=~/.newsrc.eld=, =~/News=, …).+
 
 To enable it go to the gnus server buffer and mark the servers to be synced with =i= and the (imap) server which is used as host with =I=.
-#+begin_src emacs-lisp
-(setq gnus-cloud-method (concat "nnimap:" (car private/personal-imap-info)))
-#+end_src
+
 Commands to interact with the gnus cloud are prefixed with =~= in the group buffer.
-#+begin_src emacs-lisp
-(setq gnus-cloud-synced-files '("~/.authinfo.gpg"
-                                "~/.gnus.registry.eieio"
-                                (:directory "~/News" :match ".*.\\(SCORE\\|ADAPT\\)")
-                                (:directory "~/git/projects/dotfiles" :match "[0-9]+-.*\\.patch")))
+
+#+begin_src emacs-lisp :noweb yes
+(use-package gnus-cloud
+  :custom
+  (gnus-cloud-method (concat "nnimap:" (car private/personal-imap-info)))
+  (gnus-cloud-synced-files '("~/.authinfo.gpg"
+                             ;; "~/.gnus.registry.eieio"
+                             ;; (:directory "~/News" :match ".*.\\(SCORE\\|ADAPT\\)")
+                             (:directory "~/git/projects/dotfiles" :match "[0-9]+-.*\\.patch")))
+  (gnus-cloud-storage-method 'epg)
+  :config
+  <<gnus-cloud-config>>
+  )
+#+end_src
+
+***** Only download specific files
+Gnus Cloud sync all newsrc data and the specified files. Sometimes one would only want to download and update only specific files without overwriting all newsrc data.
+
+This function is very similar to ~gnus-cloud-download-data~ but takes a regexp to match against filenames. Note that it does not update ~gnus-cloud-sequence~ (for now). So when only doing partial downloads repeatedly you may need to update ~gnus-cloud-sequence~ manually.
+#+begin_src emacs-lisp :noweb-ref gnus-cloud-config
+(defun fpi/gnus-cloud-download-some (regexp &optional sequence-override)
+  "Download and install files matching REGEXP."
+  (interactive "sRegexp to match: ")
+  (let ((articles nil)
+	(highest-sequence-seen gnus-cloud-sequence)
+        chunks)
+    (dolist (header (gnus-cloud-available-chunks))
+      (let ((this-sequence (gnus-cloud-chunk-sequence (mail-header-subject header))))
+	(when (> this-sequence (or sequence-override gnus-cloud-sequence -1))
+
+	  (if (string-match (format "storage-method: %s" gnus-cloud-storage-method)
+			    (mail-header-subject header))
+	      (progn
+		(push (mail-header-number header) articles)
+		(setq highest-sequence-seen (max highest-sequence-seen this-sequence)))
+	    (gnus-message 1 "Skipping article %s because it didn't match the Gnus Cloud method %s: %s"
+			  (mail-header-number header)
+			  gnus-cloud-storage-method
+			  (mail-header-subject header))))))
+    (when articles
+      (nnimap-request-articles (nreverse articles) gnus-cloud-group-name)
+      (with-current-buffer nntp-server-buffer
+        (goto-char (point-min))
+        (while (re-search-forward "^Gnus-Cloud-Version " nil t)
+          (beginning-of-line)
+          (push (gnus-cloud-parse-chunk) chunks)
+          (forward-line 1))))
+    (mapcar (lambda (chunk) (fpi/gnus-cloud-update-some chunk regexp)) chunks)))
+
+(defun fpi/gnus-cloud-update-some (elems regexp)
+  (dolist (elem elems)
+    (let ((type (plist-get elem :type))
+          (name (plist-get elem :file-name)))
+      (when (and (memq type '(:delete :file))
+                 (with-temp-buffer
+                   (insert name)
+                   (beginning-of-buffer)
+                   (re-search-forward regexp nil t)))
+        (message "Match: Updating %s" name)
+        (gnus-cloud-update-file elem type)))))
+(define-key gnus-group-mode-map (kbd "~ p") 'fpi/gnus-cloud-download-some)
 #+end_src
 *** Display
 Sort by newest first
