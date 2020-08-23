@@ -125,6 +125,7 @@ first. If they do not match keep the file for tangling.
 #+NAME: checkhashes
 #+begin_src shell
 HASHDIR="hash"
+mkdir -p $HASHDIR
 tanglefiles=""
 <<gethash>>
 
