@@ -3927,13 +3927,19 @@ Capture templates for journal entries. Mostly to just keep track of things I hav
  (file+olp+datetree
   ,org-journal-file)
  ;; "** %<%H:%M> %a\n %i%? \n%:description\n%:elfeed-entry-content\n%:elfeed-entry-date\n%:elfeed-entry-meta\n%:elfeed-entry-title\n%:elfeed-entry-enclosures\n%:elfeed-entry-tags" )
- "** %<%H:%M> %a
+ "** %a
+:PROPERTIES:
+:CREATED: %U
+:END:
 %i%?" )
 ("je" "Manual Entry"
  entry
  (file+olp+datetree
   ,org-journal-file)
- "** %<%H:%M> %?
+ "** %?
+:PROPERTIES:
+:CREATED: %U
+:END:
 %i" )
 #+END_SRC
 To get the title from the url in =kill-ring= I use [[id:dc4129ff-6d76-4f12-926f-c62a687a39ec][org-web-tools]].
@@ -3942,7 +3948,10 @@ To get the title from the url in =kill-ring= I use [[id:dc4129ff-6d76-4f12-926f-
  entry
  (file+olp+datetree
   ,org-journal-file)
- "** %<%H:%M> %(org-web-tools--org-link-for-url (org-web-tools--get-first-url))%?
+ "** %(org-web-tools--org-link-for-url (org-web-tools--get-first-url))%?
+:PROPERTIES:
+:CREATED: %U
+:END:
 %i")
 #+END_SRC
 ***** Interrupts
