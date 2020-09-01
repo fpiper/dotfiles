@@ -300,9 +300,10 @@ to get a list of available commands. =which-key= shows these in a
 small popup, which I think is more handy.
 #+begin_src emacs-lisp
 (use-package which-key
-  :delight
   :straight t
-  :custom (which-key-idle-delay 0.4)
+  :custom
+  (which-key-idle-delay 0.4)
+  (which-key-lighter "")
   :config (which-key-mode 1))
 #+end_src
 *** Try
@@ -5472,6 +5473,7 @@ want it to be consistent within a file.
 Instead of =$= use =⏎= to indicate newlines
 #+begin_src emacs-lisp
 (use-package whitespace
+  :delight
   :custom (whitespace-display-mappings '((space-mark 32
                                                      [183]
                                                      [46])
