@@ -3901,6 +3901,10 @@ content syncing upon commit.
   :custom
   (org-attach-git-annex-cutoff 0))
 #+end_src
+Also exclude =ATTACH= from the inherited tags
+#+begin_src emacs-lisp :tangle no :noweb-ref org-custom-no-inheritance-tags
+"ATTACH"
+#+end_src
 *** Org-Capture
 #+BEGIN_SRC emacs-lisp
 (use-package org-capture
