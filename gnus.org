@@ -378,6 +378,7 @@ Better thread display (from [[https://www.emacswiki.org/emacs/GnusFormatting][em
 Disable indenting a topic. I always do it by accident.
 #+begin_src emacs-lisp
 (use-package gnus-topic
+  :delight
   :config
   (defun fpi/gnus-topic-toggle-topic ()
     "Toggle display of the topic."
