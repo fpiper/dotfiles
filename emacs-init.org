@@ -4016,7 +4016,7 @@ Instead of project related capture templates, I use the same template for all ta
 #+END_SRC
 ***** Plans & Ideas
 #+BEGIN_SRC emacs-lisp :tangle no :noweb-ref org-capture-templates
-("p" "Plans/Ideas"
+("P" "Plans/Ideas"
  entry
  (file "~/sync/refile.org")
  "*** PLANNING %?
@@ -4069,6 +4069,21 @@ Instead of project related capture templates, I use the same template for all ta
              :empty-lines 1
              :immediate-finish t)
 #+END_SRC
+***** org-protocol
+#+begin_src emacs-lisp :tangle no :noweb-ref org-capture-templates
+	("p" "Protocol" entry (file+olp+datetree ,org-journal-file)
+        "* %^{Title}
+:PROPERTIES:
+:SOURCE: %c
+:CREATED: %U
+:END:
+#+BEGIN_QUOTE\n%i\n#+END_QUOTE\n\n\n%?")
+("L" "Protocol Link" entry (file+olp+datetree ,org-journal-file)
+        "* %? [[%:link][%:description]]
+:PROPERTIES:
+:CREATED: %U
+:END:")
+#+end_src
 ***** Old templates
 Templates I no longer use, but may be interesting.
 #+BEGIN_SRC emacs-lisp :tangle no
