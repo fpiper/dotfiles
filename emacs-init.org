@@ -5342,6 +5342,20 @@ Saves to a temp file and puts the filename in the kill ring."
     (kill-new filename)
     (message filename)))
 #+end_src
+*** Whole-line-or-region
+#+begin_src emacs-lisp
+(use-package whole-line-or-region
+  :straight t
+  :config
+  (whole-line-or-region-global-mode 1)
+  (delight 'whole-line-or-region-local-mode nil t))
+#+end_src
+*** Pomodoro / Redtick
+#+begin_src emacs-lisp
+(use-package redtick
+  :straight t
+  :config (redtick-mode 1))
+#+end_src
 * Language settings
 End sentences with single spaces.
 #+begin_src emacs-lisp
