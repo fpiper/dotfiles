@@ -5416,8 +5416,33 @@ I do not really care about spaces versus tabs most of the time. I only
 want it to be consistent within a file.
 #+begin_src emacs-lisp
 (use-package emacs
+  :config
+  (define-minor-mode tab-mode
+    "Toggle tab and space based indentation."
+    :init-value nil
+    :lighter " »"
+    (if tab-mode
+        (progn
+          (setq indent-tabs-mode t)
+          (setq tab-width 4)
+          )
+      (setq indent-tabs-mode nil)
+      (setq tab-width 8)
+      ))
+  (defun enable-tab-mode ()
+    (tab-mode 1))
+  (defun disable-tab-mode ()
+    (tab-mode -1))
   :custom
-  (indent-tabs-mode nil))
+  (indent-tabs-mode nil)
+  ;; (tab-width 4)
+  ;; (tab-mode 1)
+  :hook
+  (prog-mode . enable-tab-mode)
+  (emacs-lisp-mode . disable-tab-mode)
+  (lisp-mode . disable-tab-mode)
+  (matlab-mode . enable-tab-mode)
+  )
 #+end_src
 Instead of =$= use =⏎= to indicate newlines
 #+begin_src emacs-lisp
