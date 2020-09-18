@@ -2895,7 +2895,7 @@ better performance.
 =fit-window-to-buffer= automatically shrinks the current buffer based
 on the amount of displayed text.
 #+begin_src emacs-lisp
-(use-package emacs % windows.el does not (provide 'windows)
+(use-package emacs ;; windows.el does not (provide 'windows)
   :init
   <<window>>
   :custom
