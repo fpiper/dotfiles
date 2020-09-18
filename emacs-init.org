@@ -3519,6 +3519,7 @@ digraph hierarch {
 
         IDLE -> IDLE
         TODO -> DONE -> TODO
+        INPROGRESS -> REVIEW -> DONE
 
         { rank = source; PLANNING; HOLD }
         { rank = same; READY; NEXT; TODO; IDLE }
@@ -3532,7 +3533,7 @@ digraph hierarch {
 
 #+begin_src emacs-lisp :noweb-ref org-config :tangle no
 (defvar org-task-keywords
-  '("HOLD" "NEXT" "INPROGRESS" "WAITING")
+  '("HOLD" "NEXT" "INPROGRESS" "REVIEW" "WAITING")
   "Org todo keywords to demark tasks")
 (defvar org-project-keywords
   '("PLANNING" "READY" "ACTIVE")
@@ -3540,7 +3541,7 @@ digraph hierarch {
 #+end_src
 
 #+begin_src emacs-lisp :noweb-ref org-custom :tangle no
-(org-todo-keywords '((sequence "HOLD(h)" "NEXT(n)" "INPROGRESS(i!)" "WAITING(w@/!)" "|" "ICEBOX(x@)" "DONE(d)") ;;todos
+(org-todo-keywords '((sequence "HOLD(h)" "NEXT(n)" "INPROGRESS(i!)" "WAITING(w@/!)" "REVIEW(r!)" "|" "ICEBOX(x@)" "DONE(d)") ;;todos
                      (sequence "PLANNING(p)" "READY(r)" "ACTIVE(a!)" "|" "ICEBOX(x@)" "DONE(d)") ;;projects
                      ;; (sequence "PHONE(P)" "MEETING(m)" "|" "CANCELED(c)" "DONE(d)")
                      (sequence "TODO(t)" "|" "DONE(d)")
@@ -3550,6 +3551,7 @@ digraph hierarch {
  '(("HOLD" :foreground "light gray" :weight bold)
    ("NEXT" :foreground "light blue" :weight bold)
    ("INPROGRESS" :foreground "burlywood" :weight bold)
+   ("REVIEW" :foreground "light goldenrod" :weight bold)
    ("ACTIVE" :foreground "chocolate" :weight bold)
    ("DONE" :foreground "forest green" :weight bold)
    ("WAITING" :foreground "orange" :weight bold)
@@ -3664,12 +3666,11 @@ Simple day agenda with =INPROGRESS= tasks
     (ignore-errors
       (let (should-skip)
         (while (and (> depth 0)
-                    (not should-skip)
                     (prog1
                         (setq depth (1- depth))
                       (not (org-up-element))))
           (if (looking-at "^\*+\\s-+")
-              (setq should-skip (org-get-local-tags))))
+              (setq should-skip (append should-skip (org-get-local-tags)))))
         should-skip))))
 (defun fpi/org-project-depth (depth)
   "Return number of subheadings before reaching top project."
