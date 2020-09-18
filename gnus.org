@@ -58,6 +58,10 @@ RSS/Atom Feeds asynchronously.
 (add-to-list 'gnus-secondary-select-methods '(nntp "localhost" 4321))
 <<secondary-select-methods>>
 #+end_src
+
+#+begin_src emacs-lisp
+(setq nnimap-use-namespaces t)
+#+end_src
 ** Options
 *** General
 **** Startup
