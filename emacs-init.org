@@ -339,7 +339,15 @@ leaves a gap at the bottom. This removes it.
 #+BEGIN_SRC emacs-lisp
 (setq frame-resize-pixelwise t)
 #+END_SRC
-*** Remove mode line clutter
+*** Mode Line & Header Line
+=header-info= is an easy way to move part of the mode line information to the header line instead.
+
+#+begin_src emacs-lisp
+(use-package header-info
+  :straight (:host github :repo "fpiper/header-info"
+                   :branch "master"))
+#+end_src
+**** Remove mode line clutter
 #+begin_src emacs-lisp
 (use-package delight
   :straight t
