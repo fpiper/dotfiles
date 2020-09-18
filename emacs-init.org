@@ -5087,6 +5087,7 @@ For now I use this bad code.
 (bbdb-mua-auto-update-init 'gnus 'message)
 
 (setq bbdb-mua-pop-up 'horiz)
+(setq bbdb-pop-up-layout 'one-line)
 ;; size of the bbdb popup
 (setq bbdb-pop-up-window-size 0.15)
 (setq bbdb-mua-pop-up-window-size 0.15)
