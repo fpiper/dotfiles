@@ -3557,8 +3557,7 @@ Gives an overview of time spent on defined budgets this week. Great to track if 
   (org-time-budgets '((:title "Work" :match "+work-nowork" :budget "40:00" :blocks (workday week))
                       (:title "├Research" :match "+work+research" :budget "24:00" :blocks (nil week))
                       (:title "├Teaching" :match "+work+teaching" :budget "8:00" :blocks (nil week))
-                      (:title "├Reading" :match "+work+read" :budget "0" :blocks (day week))
-                      (:title "╰Shaved Yaks" :match "+work+nonprod" :budget "0" :blocks (day week))
+                      (:title "╰Reading" :match "+work+read" :budget "5:00" :blocks (workday week))
                       (:title "Personal" :match "+nowork-nonprod" :budget "5:00" :blocks (nil week)))))
 #+end_src
 **** Column view
