@@ -4916,7 +4916,7 @@ tools.
   (browse-url-browser-function 'eww-browse-url)
   (browse-url-generic-program "firefox")
   (shr-external-browser 'browse-url-generic)
-  (shr-width (current-fill-column))
+  (shr-width 900)
   (shr-max-image-proportion 0.4)
   (shr-use-colors nil)
   (shr-use-fonts nil) )
