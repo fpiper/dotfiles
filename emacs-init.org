@@ -2825,8 +2825,9 @@ some safe local variable values.
   (setq projectile-indexing-method 'alien)
   (setq projectile-enable-caching t)
   (setq projectile-completion-system 'ido)
+  (setq projectile-file-exists-local-cache-expire (* 5 60))
   :config
-  (projectile-mode 1)
+  ;; (projectile-mode 1)
   :bind (("C-c p" . projectile-command-map)))
 #+END_SRC
 ** Working with buffers
