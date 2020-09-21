@@ -3656,9 +3656,9 @@ Simple day agenda with =INPROGRESS= tasks
   (when (not (member "HOT" (my-org-current-tags (fpi/org-project-depth 10))))
     (or (outline-next-heading)
         (goto-char (point-max)))))
-(defun fpi/org-agenda-skip-all-not-project ()
-  "Skip all not hot entries."
-  (when (not (member "HOT" (my-org-current-tags 1)))
+(defun fpi/org-agenda-skip-all-project-tasks ()
+  "Skip all entries which belong to a project."
+  (when (fpi/is-part-of-project-p 10)
     (or (outline-next-heading)
         (goto-char (point-max)))))
 (defun my-org-current-tags (depth)
@@ -3693,6 +3693,9 @@ Simple day agenda with =INPROGRESS= tasks
             (when (fpi/is-not-done-project-p)
               (setq top (point)))))
       (goto-char top))))
+(defun fpi/is-part-of-project-p (depth)
+  "Return t if any parent heading is a project."
+  (< 0 (fpi/org-project-depth depth)))
 (defun fpi/parent-is-not-done-project-p ()
   "Return t if parent heading is a not done project."
   (save-excursion
@@ -3731,6 +3734,12 @@ To narrow the agenda to the currently selected project this function from [[http
   (tags "-HOT&TODO={PLANNING\\|READY\\|ACTIVE}"
         ((org-agenda-overriding-header "Non-Hot Projects")))
   ))
+#+end_src
+Some tasks do not go into projects. Let's list only those.
+#+begin_src emacs-lisp :tangle no :noweb-ref org-agenda-custom-commands
+("g" "Non-Project (general) Tasks" tags "TODO={NEXT\\|INPROGRESS\\|REVIEW\\|WAITING}"
+ ((org-agenda-overriding-header "Non-Project Tasks")
+  (org-agenda-skip-function (function fpi/org-agenda-skip-all-project-tasks))))
 #+end_src
 ******* 
 #+begin_src emacs-lisp :tangle no :noweb-ref org-agenda-custom-commands
