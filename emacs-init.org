@@ -3723,7 +3723,7 @@ To narrow the agenda to the currently selected project this function from [[http
 #+begin_src emacs-lisp :tangle no :noweb-ref org-agenda-custom-commands
 ("H" "Hot Projects" tags "HOT&TODO={PLANNING\\|READY\\|ACTIVE}"
  ((org-agenda-overriding-header "Hot Projects")))
-("T" "Non-Hot Projects" tags "-HOT&TODO={ACTIVE}"
+("T" "Non-Hot Projects" tags "-HOT&TODO={PLANNING\\|READY\\|ACTIVE}"
  ((org-agenda-overriding-header "Non-Hot Projects")))
 ("P" "All Projects"
  ((tags "HOT&TODO={PLANNING\\|READY\\|ACTIVE}"
