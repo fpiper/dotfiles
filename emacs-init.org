@@ -4994,6 +4994,7 @@ I use =msmtp= to send mail.
   (message-sendmail-envelope-from 'header)
   (message-sendmail-f-is-evil nil)
   (message-kill-buffer-on-exit t)
+  (message-forward-as-mime t)
   :hook (message-mode . footnote-mode))
 (use-package sendmail
   :custom
