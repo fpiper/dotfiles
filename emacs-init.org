@@ -4086,6 +4086,41 @@ Instead of project related capture templates, I use the same template for all ta
              :immediate-finish t)
 #+END_SRC
 ***** org-protocol
+:PROPERTIES:
+:ID:       28704dfb-7647-43ac-b96f-5967383d1188
+:END:
+Org-protocol is an easy way to capture stuff from outside emacs.
+#+begin_src emacs-lisp
+(use-package org-protocol)
+#+end_src
+To install the handler for =org-protocol://= URIs under linux you probably need a =.desktop= file similar to the one below. Place it under =~/.local/share/applications= and run src_shell{update-desktop-database}.
+# #+HEADER: :tangle ~/.local/share/applications/org-protocol.desktop
+#+begin_src conf
+[Desktop Entry]
+Version=1.0
+Encoding=UTF-8
+Name=Org Protocol
+Comment=OrgProtocol URI handler
+Exec=/home/fpi/.local/bin/emacsclient %u
+Type=Application
+Terminal=false
+MimeType=x-scheme-handler/org-protocol;⏎
+#+end_src
+Under Windows install a registry key. The example below works for Emacs running under WSL. Place it in a =.reg= file and open it with the registry editor to install.
+# #+HEADER: :tangle ~/win/tmp/org-protocol.reg
+#+begin_src conf
+REGEDIT4
+
+[HKEY_CLASSES_ROOT\org-protocol]
+@="URL:Org Protocol"
+"URL Protocol"=""
+[HKEY_CLASSES_ROOT\org-protocol\shell]
+[HKEY_CLASSES_ROOT\org-protocol\shell\open]
+[HKEY_CLASSES_ROOT\org-protocol\shell\open\command]
+@="\"C:\\Windows\\System32\\wsl.exe\" emacsclient \"%1\""
+#+end_src
+
+To be compatible with [[https://github.com/sprig/org-capture-extension][this chromium/firefox extension]] I use these capture templates:
 #+begin_src emacs-lisp :tangle no :noweb-ref org-capture-templates
 	("p" "Protocol" entry (file+olp+datetree ,org-journal-file)
         "* %^{Title}
