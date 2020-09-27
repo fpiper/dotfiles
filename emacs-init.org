@@ -3912,16 +3912,16 @@ Based on https://github.com/psamim/dotfiles/blob/master/doom/config.el#L73.
 #+begin_src emacs-lisp :tangle no :noweb-ref org-agenda-custom-commands
 ("r" "Refile entries" ((tags "+REFILE")))
 ("i" "Idle Actions"
-       ((tags-todo "IDLE-READLIST-WATCH"
+       ((tags-todo "IDLE-read-watch"
                    ((org-agenda-overriding-header "Idle Tasks")
                     (org-agenda-skip-function 'bh/skip-project-tasks)
                     (org-agenda-sorting-strategy
                      '(todo-state-down effort-up))))
-        (tags-todo "READLIST"
+        (tags-todo "read"
                    ((org-agenda-overriding-header "Idle Reading List")
                     (org-agenda-sorting-strategy
                      '(todo-state-down effort-up))))
-        (tags-todo "WATCH"
+        (tags-todo "watch"
                    ((org-agenda-overriding-header "Things to Watch")
                     (org-agenda-skip-function 'bh/skip-project-tasks)
                     (org-agenda-sorting-strategy
@@ -4609,7 +4609,7 @@ Instead of project related capture templates, I use the same template for all ta
 ("Cr" ".. & read"
  entry
  (file "~/sync/refile.org")
- "* TODO %a  :READLIST:
+ "* TODO %a  :read:
 :PROPERTIES:
 :CREATED: %U
 <<org-capture-template-properties>>
