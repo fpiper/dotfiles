@@ -4292,10 +4292,14 @@ A small function to toggle the encryption state of the current entry.
              (entry (bibtex-parse-entry t))
              (key (reftex-get-bib-field "=key=" entry))
              (pdf (funcall org-ref-get-pdf-filename-function key)))
+        (message "%s" pdf)
         (if (file-exists-p pdf)
             (org-open-link-from-string (format "[[file:%s]]" pdf))
-          (dired (file-name-directory pdf))
-          (ding))))))
+          ;; try to get pdf
+          (or (let ((doi-utils-open-pdf-after-download t))
+                (doi-utils-get-bibtex-entry-pdf))
+              (progn (dired (file-name-directory pdf))
+                     (ding))))))))
 #+end_src
 ***** Capturing entries
 I store my bibtex references in an org file together with my notes. In
@@ -4346,6 +4350,93 @@ Here's a function to easily copy a doi from the results of =crossref-lookup=.
 (use-package biblio
   :bind (:map biblio-selection-mode-map
               ("d" . fpi/biblio-get-doi)))
+#+end_src
+***** org-protocol conversion
+Capturing new entries with org-protocol is convenient. To convert the result of  [[id:28704dfb-7647-43ac-b96f-5967383d1188][my capture templates]] to a valid entry, we have to extract the doi.
+#+begin_src emacs-lisp
+(defun fpi/ieee-to-doi (url)
+  "Get doi from an ieeexplore.ieee.org page."
+  (let* ((meta (with-current-buffer (url-retrieve-synchronously url)
+                (goto-char 1)
+                (search-forward "global.document.metadata=")
+                (kill-sexp)
+                (pop kill-ring)))
+         (json (json-read-from-string meta)))
+         (alist-get 'doi json)))
+#+end_src
+Other keys which IEEE returns are:
+#+begin_example
+(mapcar (lambda (l) (car l)) json)
+(userInfo authors isbn articleNumber dbTime metrics purchaseOptions getProgramTermsAccepted sections formulaStrippedArticleTitle allowComments pdfUrl keywords abstract pubLink doiLink rightsLink pdfPath startPage endPage publicationTitle displayPublicationTitle doi issueLink isGetArticle isGetAddressInfoCaptured isMarketingOptIn applyOUPFilter pubTopics publisher isOUP isFreeDocument isSAE isNow isCustomDenial conferenceDate isDynamicHtml isStandard displayDocTitle isNotDynamicOrStatic isPromo htmlAbstractLink xploreDocumentType chronOrPublicationDate isConference isOpenAccess persistentLink isEarlyAccess htmlLink publicationDate isJournal isBook isBookWithoutChapters isChapter isStaticHtml isMorganClaypool isProduct isEphemera accessionNumber dateOfInsertion isACM isSMPTE startPage openAccessFlag ephemeraFlag title confLoc accessionNumber html_flag ml_html_flag sourcePdf content_type mlTime chronDate xplore-pub-id pdfPath isNumber rightsLinkFlag dateOfInsertion contentType publicationDate publicationNumber citationCount xplore-issue articleId publicationTitle sections onlineDate conferenceDate publicationYear subType _value lastupdate mediaPath endPage displayPublicationTitle doi)
+#+end_example
+Combining this with other functions allows us to do the whole conversion. In the future the citation information can be directly from extracted from the retrieved webpage instead of over the doi.
+#+begin_src emacs-lisp
+(defun fpi/convert-capture-bib ()
+  "Convert current org-protocol ieee capture to bib."
+  (interactive)
+  (let ((rep (fpi/get-capture-bib-replacement)))
+    (kill-region (point-min) (point-max))
+    (insert rep)
+    ))
+(defun fpi/get-capture-bib-replacement ()
+  (save-excursion
+    (goto-char (point-min))
+    (org-next-link)
+    (let* ((link (org-element-context))
+           (url (concat (org-element-property :type link)
+                        ":"
+                        (org-element-property :path link))))
+      (fpi/add-org-from-doi
+       (fpi/ieee-to-doi url)))))
+
+(defun fpi/format-org-roam-from-doi (&optional doi)
+  "Get bibtex entry from doi and format for org-roam. Also downloads the
+pdf if available."
+  (let* ((doi (or doi (read-string "Enter doi: ")))
+         (content (replace-regexp-in-string "\n$" "" (doi-utils-doi-to-bibtex-string doi)))
+         (cleaned (with-temp-buffer
+                    (insert content)
+                    (org-ref-clean-bibtex-entry)
+                    (org-bibtex-read)
+                    (buffer-substring (point-min) (point-max))))
+         (parsed (reftex-parse-bibtex-entry cleaned))
+         (key (org-ref-reftex-get-bib-field "&key" parsed))
+         (first (when (string-match "^\\(.*?\\)_" key) (match-string 1 key)))
+         (title (org-ref-reftex-get-bib-field "title" parsed)))
+    (setq fpi//capture-bibtex-key key)
+    (with-temp-buffer
+      (org-mode)
+      (insert (format "#+TITLE: %s: %s\n" first title))
+      (insert (format "#+ROAM_KEY: cite:%s\n\n" key))
+      ;; (org-bibtex-write)
+      (goto-char (point-max))
+      (insert "#+BEGIN_SRC bibtex\n")
+      (insert cleaned)
+      (insert "\n#+END_SRC\n")
+      (list key
+            (buffer-substring (point-min) (point-max))))))
+
+(defun fpi/create-org-roam-from-doi (&optional doi)
+  (interactive)
+  (let* ((resp (fpi/format-org-roam-from-doi doi))
+         (key (car resp))
+         (content (cadr resp)))
+    (find-file (expand-file-name (format "Lit/%s.org" key) org-roam-directory))
+    (org-mode)
+    (insert content)))
+
+(defun fpi/create-org-roam-from-protocol-capture ()
+  "Create a org-roam entry from an org-protocol capture buffer."
+  (interactive)
+  (save-excursion
+    (goto-char (point-min))
+    (org-next-link)
+    (let* ((link (org-element-context))
+           (url (concat (org-element-property :type link)
+                        ":"
+                        (org-element-property :path link))))
+      (fpi/create-org-roam-from-doi
+       (fpi/ieee-to-doi url)))))
 #+end_src
 *** Toggle drawer visibility
 #+begin_src emacs-lisp
