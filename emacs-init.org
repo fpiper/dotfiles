@@ -2892,6 +2892,9 @@ better performance.
                 (ibuffer-do-sort-by-alphabetic)))))
 #+end_src
 ** Window configuration
+:PROPERTIES:
+:ID:       99f1af26-1383-43c1-8408-9a13c495925e
+:END:
 =fit-window-to-buffer= automatically shrinks the current buffer based
 on the amount of displayed text.
 #+begin_src emacs-lisp
@@ -2912,7 +2915,8 @@ on the amount of displayed text.
   :bind
   (:map global-map ("C-x C-3" . split-window-left))
   (:map global-map ("C-x C-2" . split-window-above))
-  (:map fpi-map ("s" . fit-window-to-buffer)))
+  <<window-bindings>>
+  )
 #+end_src
 *** Window rules
 #+begin_src emacs-lisp :noweb-ref window
@@ -5586,6 +5590,24 @@ These settings are also from the above blog post, but mainly manually set what =
 (org-hide-emphasis-markers t)
 (org-cycle-separator-lines 1)
 #+end_src
+
+While I generally use ~fit-window-to-buffer~ (bound to =C-z s=) to fit a buffer to its content width (see [[id:99f1af26-1383-43c1-8408-9a13c495925e][Window configuration]]), buffers in =prose-mode= can reduced to ~olivetti-body-width~ if it is an integer.
+#+begin_src emacs-lisp
+(defun fpi/fit-window-to-buffer (&optional WINDOW MAX-HEIGHT MIN-HEIGHT MAX-WIDTH MIN-WIDTH PRESERVE-SIZE)
+  "Wrapper around `fit-window-to-buffer' which considers `olivetti-mode'.
+
+If `olivetti-body-width' is a number fit the window width to it instead of the actual line width."
+  (interactive)
+  (let ((max-width (when (and olivetti-mode (numberp olivetti-body-width))
+                     (round (* 1.03 olivetti-body-width)))))
+    (fit-window-to-buffer (selected-window) nil nil max-width nil)
+    ))
+#+end_src
+
+#+begin_src emacs-lisp :tangle no :noweb-ref fpi-bindings
+(define-key 'fpi-map (kbd "s") 'fpi/fit-window-to-buffer)
+#+end_src
+
 * Wrapping up
 
 Some stuff that is run after everything else.
