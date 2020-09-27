@@ -3500,6 +3500,20 @@ Use imagemagick and standalone class for latex preview.
   (org-clock-persistence-insinuate)
   )
 #+end_src
+Even with the history clocking into the correct item is sometimes difficult. So why not clock in any refile target:
+#+begin_src emacs-lisp
+(defun fpi/org-clock-in-heading (&optional prompt)
+  (interactive)
+  (let* ((location (org-refile-get-location (or prompt "Clock in on")))
+         (file (cadr location))
+         (marker (car (last location))))
+    (save-excursion
+      (save-restriction
+        (find-file file)
+        (goto-char marker)
+        (org-clock-in)
+        (current-buffer)))))
+#+end_src
 **** Durations
 #+begin_src emacs-lisp
 (use-package org-duration
