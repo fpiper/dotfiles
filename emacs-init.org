@@ -3319,7 +3319,6 @@ I use a org version with some custom patches. Rather than using something like =
   (org-ellipsis " ")
   (org-outline-path-complete-in-steps nil)
   (org-log-into-drawer "NOTES")
-  (org-clock-into-drawer "LOGBOOK")
   (org-tags-column 0)
   (org-tags-exclude-from-inheritance '(
    <<org-custom-no-inheritance-tags>>
@@ -3400,14 +3399,9 @@ I use a org version with some custom patches. Rather than using something like =
 (use-package org-id
   :custom (org-id-link-to-org-use-id 'create-if-interactive-and-no-custom-id)
   <<org-id-custom>>)
-(use-package org-clock
-  :custom
-  (org-clock-out-remove-zero-time-clocks t)
-  (org-clock-persist 'history)
-  (org-clock-history-length 30)
-  :init
-  (org-clock-persistence-insinuate)
-  )
+#+end_src
+
+#+begin_src emacs-lisp
 (use-package org-src
   :custom
   (org-src-window-setup 'other-window)
@@ -3490,6 +3484,28 @@ Use imagemagick and standalone class for latex preview.
 #+begin_src emacs-lisp
 (use-package org-num
   :delight)
+#+end_src
+*** Timekeeping & Clocking
+- Remove clocks with zero time.
+- Save a clocking history of the list 50 clocked items.
+- Clock into the =LOGBOOK= drawer (as opposed to log entries going into ~org-log-into-drawer~)
+#+begin_src emacs-lisp
+(use-package org-clock
+  :custom
+  (org-clock-out-remove-zero-time-clocks t)
+  (org-clock-persist 'history)
+  (org-clock-history-length 50)
+  (org-clock-into-drawer "LOGBOOK")
+  :init
+  (org-clock-persistence-insinuate)
+  )
+#+end_src
+**** Durations
+#+begin_src emacs-lisp
+(use-package org-duration
+  :after org
+  :custom
+  (org-duration-format '(("h" . t) ("min" . t) (special . h:mm))))
 #+end_src
 *** Task organization
 Much of my current task workflow is largely inspired by [[http://doc.rix.si/cce/cce-org.html][Ryan Rix's]] and [[http://doc.norang.ca/org-mode.html][Bernt
@@ -4170,13 +4186,6 @@ This function is handy to use in header arguments to create names based on the c
   (let ((pre (or pre ""))
         (post (or post "")))
     (format "%s%s%s" pre (nth 4 (org-heading-components)) post)))
-#+end_src
-*** Durations
-#+begin_src emacs-lisp
-(use-package org-duration
-  :after org
-  :custom
-  (org-duration-format '(("h" . t) ("min" . t) (special . h:mm))))
 #+end_src
 *** ox-reveal
 #+BEGIN_SRC emacs-lisp
