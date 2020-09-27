@@ -3103,7 +3103,9 @@ area.
 *** Matlab
 #+begin_src emacs-lisp
 (use-package matlab
-  :straight matlab-mode)
+  :straight matlab-mode
+  :config
+  (unbind-key "M-s" matlab-mode-map))
 #+end_src
 ** Org mode
 Org is the mode you never need to leave, if you do not want to. My org
