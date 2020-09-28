@@ -58,6 +58,10 @@ RSS/Atom Feeds asynchronously.
 (add-to-list 'gnus-secondary-select-methods '(nntp "localhost" 4321))
 <<secondary-select-methods>>
 #+end_src
+
+#+begin_src emacs-lisp
+(setq nnimap-use-namespaces t)
+#+end_src
 ** Options
 *** General
 **** Startup
@@ -229,6 +233,21 @@ Use the [[info:gnus#The Gnus Registry][Gnus Registry]]. This is required to use 
 #+begin_src emacs-lisp
 (gnus-registry-initialize)
 #+end_src
+Remove some groups from being saved to the registry
+#+begin_src emacs-lisp
+(setq gnus-registry-split-strategy 'majority)
+(setq gnus-registry-ignored-groups
+      '(("^nnreddit" t)
+        ("^nntp" t)
+        ("delayed$" t)
+        ("drafts$" t)
+        ("queue$" t)
+        ("INBOX$" t)
+        ("^nnmairix:" t)
+        ("^nnir:" t)
+        ("archive" t)
+        ))
+#+end_src
 #+begin_src emacs-lisp :tangle no :noweb-ref secondary-select-methods
 (add-to-list 'gnus-secondary-select-methods '(nngnorb "Gnorb server"))
 #+end_src
@@ -359,6 +378,7 @@ Better thread display (from [[https://www.emacswiki.org/emacs/GnusFormatting][em
 Disable indenting a topic. I always do it by accident.
 #+begin_src emacs-lisp
 (use-package gnus-topic
+  :delight
   :config
   (defun fpi/gnus-topic-toggle-topic ()
     "Toggle display of the topic."
