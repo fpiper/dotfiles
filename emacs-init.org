@@ -5121,6 +5121,7 @@ I use =msmtp= to send mail.
   (message-sendmail-f-is-evil nil)
   (message-kill-buffer-on-exit t)
   (message-forward-as-mime t)
+  (message-fill-column nil) ;; to disable auto-fill-mode
   :hook (message-mode . footnote-mode))
 (use-package sendmail
   :custom
