@@ -5135,7 +5135,10 @@ I use =msmtp= to send mail.
 (use-package mm-decode
   :config
   (use-package spice-mode
-    :straight t)
+    :straight t
+    :config
+    (add-to-list 'auto-mode-alist '("\\.cir$" . spice-mode))
+    (add-to-list 'auto-mode-alist '("\\.scs$" . spice-mode)))
   (defun mm-display-spice-inline (handle)
   "Show an spice mode text from HANDLE inline."
   (mm-display-inline-fontify handle 'spice-mode))
