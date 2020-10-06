@@ -237,7 +237,8 @@ Remove some groups from being saved to the registry
 #+begin_src emacs-lisp
 (setq gnus-registry-split-strategy 'majority)
 (setq gnus-registry-ignored-groups
-      '(("^nnreddit" t)
+      '(("^nnrss" t)
+        ("^nnreddit" t)
         ("^nntp" t)
         ("delayed$" t)
         ("drafts$" t)
