@@ -2374,10 +2374,12 @@ There are some great ressources on [[https://git-annex.branchable.com/][git-anne
   :straight t
   :config
   <<git-annex-config>>
+  :after (dired))
+(use-package git-annex
   :bind
   (:map git-annex-dired-map
         <<git-annex-dired-bindings>>)
-  :after (dired))
+  )
 #+end_src
 **** Actions to lock/unlock files
 #+begin_src emacs-lisp :tangle no :noweb-ref git-annex-dired-bindings
