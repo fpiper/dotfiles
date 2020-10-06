@@ -3732,7 +3732,7 @@ Make gnorb consider the same refile targets as org.
 
 Resize inline images to 400px but respect width specifications in attribute lines.
 #+begin_src emacs-lisp :noweb-ref org-custom :tangle no
-(org-image-actual-width '(400))
+(org-image-actual-width '(600))
 #+end_src
 Also display remote images by downloading them.
 #+begin_src emacs-lisp :noweb-ref org-custom :tangle no
@@ -5675,6 +5675,9 @@ temporary buffer is created.
   (electric-quote-mode -1))
 #+end_src
 ** Writing Setup
+:PROPERTIES:
+:ID:       9746c4dd-52d9-47fa-943b-7aa58601f22b
+:END:
 I gather all settings related to writing in a minor mode.
 #+begin_src emacs-lisp
 (define-minor-mode prose-mode
