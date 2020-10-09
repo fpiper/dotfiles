@@ -3821,6 +3821,7 @@ Set some prettify symbols for org mode.
 (add-hook 'org-mode-hook 'fpi/add-org-prettify-symbols)
 #+end_src
 *** org-roam
+Org-roam mainly provides a display of backlinks to the current file. This allows the creation of a one-subject-per-file Zettelkasten.
 #+begin_src emacs-lisp
 (use-package org-roam
   :straight t
@@ -3829,18 +3830,56 @@ Set some prettify symbols for org mode.
   (after-init . org-roam-mode)
   :custom
   (org-roam-directory "~/git/projects/zettel/")
+  (org-roam-tag-sources '(prop last-directory))
+  (org-roam-buffer-width 0.2)
+  (org-roam-graph-exclude-matcher "index.org")
+  (org-roam-graph-viewer
+   (lambda (file)
+     (let ((org-roam-graph-viewer "/mnt/c/Program Files/Mozilla Firefox/firefox.exe"))
+       (org-roam-graph--open (concat "file://///wsl$/Debian" file)))))
+  (org-roam-capture-templates
+   '(("d" "default" plain #'org-roam-capture--get-point "%?" :file-name "%<%Y%m%d%H%M%S>-${slug}" :head "#+title: ${title}
+" :unnarrowed t)
+     ("b" "bib" plain #'org-roam-capture--get-point
+      "%(fpi/org-roam-get-last-content)"
+      :file-name "Lit/%(fpi/org-roam-get-key \"${title}\")"
+      :head ""
+      :unnarowed t)))
+  (org-roam-capture-ref-templates
+   '(("r" "ref" plain #'org-roam-capture--get-point "%?" :file-name "Ref/${slug}" :head "#+title: ${title}\n#+ROAM_KEY: ${ref}\n " :unnarrowed t)))
   :bind (:map org-roam-mode-map
               (("C-c n l" . org-roam)
+               ("C-c n u" . org-roam-unlinked-references)
                ("C-c n f" . org-roam-find-file)
-               ("C-c n g" . org-roam-show-graph))
+               ("C-c n g" . org-roam-graph)
+               ("C-c n d" . org-roam-doctor)
+               ("C-c n G" . fpi/org-roam-graph-with-exclude)
+               ("C-c n t g" . fpi/org-roam-toggle-graph-executable)
+               ("C-c n x" . org-roam-jump-to-index)
+               )
               :map org-mode-map
               (("C-c n i" . org-roam-insert)))
-  :config (defun org-roam--roam-file-link-face (path)
-            "Return `org-link'"
-            'org-link)
-  )
+  :config
+  (defun org-roam--file-link-face (path)
+    "Return `org-link'"
+    'org-link)
+  (defun fpi/org-roam-toggle-graph-executable ()
+    (interactive)
+    (setq org-roam-graph-executable (if (equal org-roam-graph-executable "dot")
+                                        "neato"
+                                      "dot"))
+    (message "Set org-roam graphing tool to %s" org-roam-graph-executable))
+  (defun fpi/org-roam-graph-with-exclude (&optional arg file node-query)
+    (interactive "P")
+    (let ((org-roam-graph-exclude-matcher (completing-read "Exclude matcher to use: " nil)))
+      (org-roam-graph arg file node-query)))
+)
 #+end_src
-Fix for hanging emacs. The original function calls file-exist-p which opens a slow tramp connection.
+Overwriting ~org-roam--file-link-face~ is a crude fix for hanging emacs. The original function calls file-exist-p which opens a slow tramp connection.
+**** org-roam-protocol
+#+begin_src emacs-lisp
+(use-package org-roam-protocol)
+#+end_src
 **** org-roam-bibtex
 #+begin_src emacs-lisp :tangle no
 (use-package org-roam-bibtex
@@ -4428,6 +4467,31 @@ pdf if available."
       (insert "\n#+END_SRC\n")
       (list key
             (buffer-substring (point-min) (point-max))))))
+
+(defun fpi/org-roam-format-from-doi (&optional doi)
+  (let* ((doi (or doi (read-string "Enter doi: "))))
+    (setq fpi/org-roam-last-captured-doi doi)
+    (fpi/format-org-roam-from-doi doi)))
+
+(defvar fpi/org-roam-last-content nil)
+(defvar fpi/org-roam-last-key nil)
+(defun fpi/org-roam-get-key (doi)
+  (let* ((resp (fpi/format-org-roam-from-doi doi))
+         (key (car resp))
+         (content (cadr resp)))
+    (setq fpi/org-roam-last-content content)
+    key))
+(defun fpi/org-roam-get-last-content ()
+  fpi/org-roam-last-content)
+(defun fpi/org-roam-get-last-key ()
+  fpi/org-roam-last-key)
+(defun fpi/org-roam-get-content (doi)
+  (let* ((resp (fpi/format-org-roam-from-doi doi))
+         (key (car resp))
+         (content (cadr resp)))
+    (setq fpi/org-roam-last-content content)
+    (setq fpi/org-roam-last-key key)
+    content))
 
 (defun fpi/create-org-roam-from-doi (&optional doi)
   (interactive)
