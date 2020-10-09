@@ -3881,13 +3881,24 @@ Overwriting ~org-roam--file-link-face~ is a crude fix for hanging emacs. The ori
 (use-package org-roam-protocol)
 #+end_src
 **** org-roam-bibtex
-#+begin_src emacs-lisp :tangle no
+#+begin_src emacs-lisp
 (use-package org-roam-bibtex
   :straight t
+  :delight
   :hook (org-roam-mode . org-roam-bibtex-mode)
   :bind (:map org-mode-map
-         (("C-c n a" . orb-note-actions))))
+              (("C-c n a" . orb-note-actions)))
+  :after bibtex
+  :config
+  (defun bibtex-autokey-get-year ()
+    "Return year field contents as a string obeying `bibtex-autokey-year-length'."
+    (let* ((yearfield (bibtex-autokey-get-field "year"))
+           (yearfield (when (equal yearfield "")
+                        (substring (bibtex-autokey-get-field "date") 0 4))))
+      (substring yearfield (max 0 (- (length yearfield)
+                                     bibtex-autokey-year-length))))))
 #+end_src
+Rewrite of ~bibtex-autokey-get-year~ is a crude way to get bibtex to recognize =date= fields as year.
 *** Org-edna
 :PROPERTIES:
 :ID:       fd3936c7-9fc5-42d0-990d-32024e23b22f
@@ -4316,10 +4327,11 @@ A small function to toggle the encryption state of the current entry.
   (bibtex-autokey-titlewords 3)
   (bibtex-autokey-titlewords-stretch 1)
   (bibtex-autokey-titleword-length 5)
+  (bibtex-completion-library-path "~/git/projects/personal/Lit")
   :config
   (bibtex-set-dialect 'BibTeX))
 
-(setq bibtex-completion-bibliography "~/git/projects/zettel/Lit/bib.bib")
+(setq bibtex-completion-bibliography "~/git/projects/personal/bib.bib")
 (setq bibtex-completion-notes-path "~/git/projects/zettel/Lit")
 (setq bibtex-completion-notes-extension ".org")
 
