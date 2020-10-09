@@ -3225,6 +3225,16 @@ Switch projects and subprojects from NEXT back to TODO"
   )
 #+end_src
 #+begin_src emacs-lisp
+(use-package ob-spice
+  :straight (:host github :repo "fpiper/ob-spice"
+                   :branch "master"))
+#+end_src
+
+#+begin_src emacs-lisp
+(use-package ob-spectre
+  :load-path "~/git/projects/ob-spectre")
+#+end_src
+#+begin_src emacs-lisp
 (use-package ob
   :config  (org-babel-do-load-languages
             'org-babel-load-languages
@@ -3236,6 +3246,7 @@ Switch projects and subprojects from NEXT back to TODO"
               (gnuplot . t)
               (dot . t)
               (spice . t)
+              (spectre . t)
               (C . t)
               (calc . t)
               (latex . t)
