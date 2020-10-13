@@ -23,7 +23,7 @@
   - [[#dired][Dired]]
   - [[#tramp][Tramp]]
   - [[#git][Git]]
-  - [[#projectile][Projectile]]
+  - [[#projects][Projects]]
   - [[#working-with-buffers][Working with buffers]]
   - [[#window-configuration][Window configuration]]
   - [[#file-encryption][File encryption]]
@@ -2816,9 +2816,26 @@ some safe local variable values.
 (git-auto-commit-mode . t)
 (gac-debounce-interval . 600)
 #+end_src
-** Projectile
-
-#+BEGIN_SRC emacs-lisp
+** Projects
+*** project.el
+#+begin_src emacs-lisp
+(use-package project
+  :init
+  (defun fpi/project-magit ()
+    (interactive)
+    (magit-status (project-root (project-current t))))
+  :custom
+  (project-switch-commands
+   '((?f "Find file" project-find-file)
+     (?g "Find regexp" project-find-regexp)
+     (?d "Dired" project-dired)
+     (?m "Magit" fpi/project-magit)
+     (?v "VC-Dir" project-vc-dir)
+     (?e "Eshell" project-eshell))))
+#+end_src
+*** Projectile
+Projectile should be fully replaceable with =project.el=. Though some packages may still use projectile as dependency..
+#+BEGIN_SRC emacs-lisp :tangle no
 (use-package projectile
   :straight t
   :delight '(:eval (concat " " (projectile-project-name)))
