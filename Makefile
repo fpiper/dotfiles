@@ -1,11 +1,12 @@
 dst_readme := tangle.sh merge.sh pull.sh link.sh dots.sh
 
-.PHONY: merge update dev install link tangle fetch pull clean
+.PHONY: update merge dev install link tangle fetch pull clean
+
+update: pull merge dev
+	git rebase dev+ work+
 
 merge: tangle/merge.sh
 	tangle/merge.sh
-
-update: pull dev
 
 dev:
 	git fetch
