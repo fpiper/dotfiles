@@ -4213,7 +4213,8 @@ To be compatible with [[https://github.com/sprig/org-capture-extension][this chr
         "* %? [[%:link][%:description]]
 :PROPERTIES:
 :CREATED: %U
-:END:")
+:END:
+#+ROAM_KEY: %:link")
 #+end_src
 ***** Old templates
 Templates I no longer use, but may be interesting.
