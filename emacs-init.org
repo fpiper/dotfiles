@@ -3397,8 +3397,15 @@ I use a org version with some custom patches. Rather than using something like =
   :straight t
   :hook (org-load . org-pdftools-setup-link))
 (use-package org-id
-  :custom (org-id-link-to-org-use-id 'create-if-interactive-and-no-custom-id)
+  :custom
+  (org-id-link-to-org-use-id 'create-if-interactive-and-no-custom-id)
   <<org-id-custom>>)
+#+end_src
+
+I prefer to use timestamp based ID's as they are
+#+begin_src emacs-lisp :tangle no :noweb-ref org-id-custom
+(org-id-method 'ts)
+(org-id-ts-format "%FT%T%z")
 #+end_src
 
 #+begin_src emacs-lisp
@@ -4464,10 +4471,18 @@ Org Edna
 (use-package org-attach
   :custom
   (org-attach-use-inheritance nil)
+  (org-attach-preferred-new-method 'id)
+  (org-attach-store-link-p t)
   :config
   (defun fpi/org-attach-id-folder-format (id)
     id)
-  (add-to-list 'org-attach-id-to-path-function-list 'fpi/org-attach-id-folder-format))
+  (defun fpi/org-attach-id-ts-folder-format (id)
+    "Timestamp id converter to ids generated in the \"%FT%T%z\" format."
+    (format "%s/%s"
+	    (substring id 0 7)
+	    (substring id 8)))
+  (add-to-list 'org-attach-id-to-path-function-list 'fpi/org-attach-id-folder-format)
+  (add-to-list 'org-attach-id-to-path-function-list 'fpi/org-attach-id-ts-folder-format))
 #+end_src
 =org-attach-git= auto-commits changes to attachments if the directory
 is a git repository. I want every attachments to be saved using
