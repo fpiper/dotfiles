@@ -4062,6 +4062,11 @@ Gives an overview of time spent on defined budgets this week. Great to track if 
       "%50ITEM(Task) %5Effort(Effort){:} %5CLOCKSUM %3PRIORITY %20DEADLINE %20SCHEDULED %20TIMESTAMP %TODO %CATEGORY %TAGS")
 #+end_src
 **** Clocking
+I try to clock without any gap
+#+begin_src emacs-lisp :tangle no :noweb-ref org-agenda-custom
+(org-agenda-clock-consistency-checks '(:max-duration "10:00" :min-duration 0 :max-gap "0:00" :gap-ok-around ("4:00") :default-face ((:background "DarkRed") (:foreground "white")) :overlap-face nil :gap-face nil :no-end-time-face nil :long-face nil :short-face nil))
+
+#+end_src
 ***** Combine adjacent clock lines
 #+begin_src emacs-lisp
 (defun fpi/org-clock-join-last-clock ()
