@@ -3684,10 +3684,31 @@ Simple day agenda with =INPROGRESS= tasks
 ("h" "Current Hotlist" tags "TODO={NEXT\\|INPROGRESS}"
  ((org-agenda-overriding-header "Current Hotlist")
   (org-agenda-skip-function (function fpi/org-agenda-skip-all-not-hot))
+  (org-agenda-sorting-strategy
+   '(priority-down category-keep user-defined-down))
+  (org-agenda-cmp-user-defined #'fpi/org-agenda-compare-hotness)
+  (org-agenda-prefix-format " %i {%(fpi/org-hotness)} %-12:c")
   ;; (org-agenda-prefix-format " %-3i %-12:c%30b %s")
   ))
 #+end_src
 #+begin_src emacs-lisp :tangle no :noweb-ref org-agenda-config
+(defun fpi/org-agenda-compare-hotness (a b)
+  "Compare level of hot headlines over entries A and B."
+  (let ((ha (fpi/org-agenda-hotness a))
+        (hb (fpi/org-agenda-hotness b)))
+    (cond
+     ((> ha hb) +1)
+     ((< ha hb) -1)
+     (t nil))))
+(defun fpi/org-agenda-hotness (entry)
+  "Return level of hot headlines over ENTRY."
+  (org-agenda-with-point-at-orig-entry entry (fpi/org-hotness)))
+(defun fpi/org-hotness ()
+  "Return level of hot headlines over current entry."
+  (let* ((tags (my-org-current-tags (fpi/org-project-depth 10)))
+         (l1 (length tags))
+         (l2 (length (remove "HOT" tags))))
+    (- l1 l2)))
 (defun fpi/org-agenda-skip-all-not-hot ()
   "Skip all not hot entries."
   (when (not (member "HOT" (my-org-current-tags (fpi/org-project-depth 10))))
