@@ -3599,12 +3599,26 @@ Gives an overview of time spent on defined budgets this week. Great to track if 
   :straight (:host github :repo "fpiper/org-time-budgets"
                    :branch "develop"
                    :no-byte-compile t)
-  :custom
-  (org-time-budgets '((:title "Work" :match "+work-nowork" :budget "40:00" :blocks (workday week))
+  :config
+  (setq fpi/dense-time-budgets
+        '((:title "Work" :match "+work-nowork" :budget "40:00" :blocks (workday week))
+          (:title "Personal" :match "+nowork-nonprod" :budget "5:00" :blocks (nil week))))
+  (setq fpi/wide-time-budgets
+        '((:title "Work" :match "+work-nowork" :budget "40:00" :blocks (workday week))
                       (:title "├Research" :match "+work+research" :budget "24:00" :blocks (nil week))
                       (:title "├Teaching" :match "+work+teaching" :budget "8:00" :blocks (nil week))
                       (:title "╰Reading" :match "+work+read" :budget "5:00" :blocks (workday week))
-                      (:title "Personal" :match "+nowork-nonprod" :budget "5:00" :blocks (nil week)))))
+                      (:title "Personal" :match "+nowork-nonprod" :budget "5:00" :blocks (nil week))))
+  (setq org-time-budgets fpi/wide-time-budgets)
+  (defun fpi/toggle-time-budgets ()
+    "Toggle between dense and wide time budgets."
+    (interactive)
+    (if (eq org-time-budgets fpi/wide-time-budgets)
+        (progn
+            (setq org-time-budgets fpi/dense-time-budgets)
+            (message "Set dense time budgets"))
+      (setq org-time-budgets fpi/wide-time-budgets)
+      (message "Set wide time budgets"))))
 #+end_src
 **** Column view
 #+begin_src emacs-lisp
