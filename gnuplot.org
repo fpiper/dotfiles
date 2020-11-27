@@ -26,6 +26,11 @@ set style data lp
 
 set macros
 #+end_src
+
+Here is a handy function to define colors with individual rgb integers instead of the hex notation. Example usage: ~plot x w l lc rgb rgb(255,80,0)~. Alternatively gnuplot also supports hsv colors with ~hsv2rgb(h,s,v)~.
+#+begin_src gnuplot
+rgb(r,g,b) = 65536 * int(r) + 256 * int(g) + int(b)
+#+end_src
 * Interactive Label Placement
 [[http://www.gnuplotting.org/interactive-label-placing/][Source]]. I adapted the =label_loop= function to newer gnuplot syntax &
 added functionality for multiple arguments. The function call to
