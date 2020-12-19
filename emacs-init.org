@@ -3163,9 +3163,17 @@ Hansen's]] configs.
 - Align tags left :: Fixes problems with line breaking on small
   window width.
 
+I use a org version with some custom patches. Rather than using something like =el-patch=, I host my version on github for now and update it every so often. This recipe for org is used in all coming =straight.el= calls.
+#+begin_src emacs-lisp :noweb-ref org-recipe :tangle no
+(org-plus-contrib :host github :repo "fpiper/org-mode" :branch "develop"
+                              ;;:local-repo "org" :files (:defaults "contrib/lisp/*.el")
+                              )
+#+end_src
+
 #+begin_src emacs-lisp
 (use-package org
-  :straight (org-plus-contrib :host github :repo "fpiper/org-mode" :branch "develop" :local-repo "org" :files (:defaults "contrib/lisp/*.el"))
+  :straight
+  <<org-recipe>>
   :delight (org-cdlatex-mode)
   :bind
   (("C-c c" . org-capture)
@@ -3678,7 +3686,8 @@ print the list.
 #+begin_src emacs-lisp
 (use-package org-checklist
   :after org
-  :straight (org-plus-contrib))
+  :straight
+  <<org-recipe>>)
 #+end_src
 *** Handling web urls
 **** org-web-tools
@@ -3909,7 +3918,8 @@ Org-roam mainly provides a display of backlinks to the current file. This allows
 Overwriting ~org-roam--file-link-face~ is a crude fix for hanging emacs. The original function calls file-exist-p which opens a slow tramp connection.
 **** org-roam-protocol
 #+begin_src emacs-lisp
-(use-package org-roam-protocol)
+(use-package org-roam-protocol
+  :after org-roam)
 #+end_src
 **** org-roam-bibtex
 #+begin_src emacs-lisp
@@ -4304,7 +4314,8 @@ CLOSED: %\\1
 #+begin_src emacs-lisp
 (use-package org-expiry
   :after org
-  :straight (org-plus-contrib)
+  :straight
+  <<org-recipe>>
   :custom
   (org-expiry-handler-function 'org-expiry-archive-subtree)
   (org-expiry-inactive-timestamps t)
