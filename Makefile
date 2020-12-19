@@ -33,4 +33,5 @@ pull: tangle/pull.sh
 
 .SILENT: $(addprefix tangle/,$(dst_readme))
 $(addprefix tangle/,$(dst_readme)) &: README.org
+	mkdir tangle
 	emacs --batch --eval "(and (require 'org) (org-babel-tangle-file \"README.org\"))" &> /dev/null
