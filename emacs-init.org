@@ -5811,10 +5811,13 @@ temporary buffer is created.
 (use-package electric
   :init
   (setq electric-pair-inhibit-predicate 'electric-pair-conservative-inhibit)
-  (setq electric-pair-pairs '((34 . 34)
-                              (8216 . 8217)
-                              (8220 . 8221)
-                              (171 . 187)))
+  (setq electric-pair-pairs '((?\" . ?\")
+                              (?‘ . ?’)
+                              (?“ . ?”)
+                              (?« . ?»)
+                              (?„ . ?“)
+                              (?‚ . ?‘)
+                              ))
   (setq electric-pair-skip-self 'electric-pair-default-skip-self)
   (setq electric-quote-context-sensitive t)
   (setq electric-quote-paragraph t)
