@@ -3740,6 +3740,15 @@ Similar to %b in `org-agenda-prefix-format'."
          (l1 (length tags))
          (l2 (length (remove "HOT" tags))))
     (- l1 l2)))
+(defun fpi/org-agenda-skip-all-not-hot-and-active ()
+  "Skip all not hot entries and not active entries."
+  (when (not (and
+         (member "HOT" (my-org-current-tags (fpi/org-project-depth 10)))
+         (org-with-wide-buffer
+          (fpi/org-goto-parent-project 10)
+          (fpi/is-active-project-p))))
+    (or (outline-next-heading)
+        (goto-char (point-max)))))
 (defun fpi/org-agenda-skip-all-not-hot ()
   "Skip all not hot entries."
   (when (not (member "HOT" (my-org-current-tags (fpi/org-project-depth 10))))
@@ -3763,25 +3772,21 @@ Similar to %b in `org-agenda-prefix-format'."
         should-skip))))
 (defun fpi/org-project-depth (depth)
   "Return number of subheadings before reaching top project."
-  (let ((current (org-current-level))
-        (top (save-excursion
-               (fpi/org-goto-top-project depth)
-               (org-current-level))))
-    (- current top)
-    ))
+  (org-with-wide-buffer (fpi/org-goto-top-project depth)))
 (defun fpi/org-goto-top-project (depth)
   "Go to the top project of heading under point"
   (save-restriction
     (widen)
-    (let ((top (point)))
+    (let (top
+          (count -1))
       (with-demoted-errors
-          (while (and (> depth 0)
-                      (progn
-                        (setq depth (1- depth))
-                        (not (org-up-element))))
-            (when (fpi/is-not-done-project-p)
-              (setq top (point)))))
-      (goto-char top))))
+          (while (and (> depth 1)
+                      (not (equal top (point))))
+            (setq depth (1- depth))
+            (setq top (point))
+            (fpi/org-goto-parent-project depth)
+            (setq count (1+ count))))
+      count)))
 (defun fpi/is-part-of-project-p (depth)
   "Return t if any parent heading is a project."
   (< 0 (fpi/org-project-depth depth)))
@@ -3789,15 +3794,20 @@ Similar to %b in `org-agenda-prefix-format'."
   "Return t if parent heading is a not done project."
   (save-excursion
     (save-restriction
-    (widen)
-    (and (not (org-up-element))
-         (fpi/is-not-done-project-p)))))
+      (widen)
+      (and (not (org-up-element))
+           (fpi/is-not-done-project-p)))))
 (defun fpi/is-not-done-project-p ()
   "Return t if current heading is a not done project."
   (save-restriction
     (widen)
     (let ((todo (org-get-todo-state)))
       (member todo org-project-keywords))))
+(defun fpi/is-active-project-p ()
+  "Return t if current heading is an active project."
+  (save-restriction
+    (widen)
+    (equal "ACTIVE" (org-get-todo-state))))
 #+end_src
 To narrow the agenda to the currently selected project this function from [[https://github.com/mm--/dot-emacs/blob/master/jmm-org-config.org][Josh's emacs config]] is useful.
 #+begin_src emacs-lisp :tangle no :noweb-ref org-agenda-config
