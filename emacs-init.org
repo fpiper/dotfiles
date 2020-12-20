@@ -4622,7 +4622,7 @@ For interruptions. These are saved in a global refile file and to be sorted to t
 ("i" "Interrupt"
  entry
  (file "~/sync/refile.org")
- "** Interrupt: %?
+ "** %?
 :PROPERTIES:
 :CREATED: %U
 :SOURCE: %a
