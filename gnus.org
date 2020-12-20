@@ -411,6 +411,11 @@ See [[info:gnus#Window Layout][info:gnus#Window Layout]].
 #+begin_src emacs-lisp
 (setq gnus-use-full-window nil)
 #+end_src
+**** Article Display
+#+begin_src emacs-lisp
+(use-package gnus-art
+  :hook (gnus-article-mode . prose-mode))
+#+end_src
 **** Modeline indicator
 From the [[https://www.emacswiki.org/emacs/GnusNotify][emacswiki Gnus Notify]].
 #+begin_quote
