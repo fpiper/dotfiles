@@ -5776,6 +5776,15 @@ Instead of =$= use =⏎= to indicate newlines
                                                    [187 9]
                                                    [92 9]))))
 #+end_src
+** Notifications
+#+begin_src emacs-lisp
+(use-package sauron
+  :straight t)
+(use-package alert
+  :straight t)
+(use-package org-alert
+  :straight t)
+#+end_src
 ** Undo
 
 Emacs undo mechanic can be confusing. =undo-tree= is a great package
