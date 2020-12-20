@@ -3731,7 +3731,7 @@ Similar to %b in `org-agenda-prefix-format'."
      ((> ha hb) +1)
      ((< ha hb) -1)
      (t nil))))
-(defun fpi/org-agenda-hotness (entry)
+(defun fpi/org-agenda-hotness (&optional entry)
   "Return level of hot headlines over ENTRY."
   (org-agenda-with-point-at-orig-entry entry (fpi/org-hotness)))
 (defun fpi/org-hotness ()
