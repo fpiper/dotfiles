@@ -3687,11 +3687,42 @@ Simple day agenda with =INPROGRESS= tasks
   (org-agenda-sorting-strategy
    '(priority-down category-keep user-defined-down))
   (org-agenda-cmp-user-defined #'fpi/org-agenda-compare-hotness)
-  (org-agenda-prefix-format " %i {%(fpi/org-hotness)} %-12:c")
+  (org-agenda-prefix-format "%-12:c %-45(fpi/org-breadcrumbs)")
   ;; (org-agenda-prefix-format " %-3i %-12:c%30b %s")
   ))
 #+end_src
 #+begin_src emacs-lisp :tangle no :noweb-ref org-agenda-config
+(defun fpi/org-breadcrumbs ()
+  "Return projects over current entry.
+
+Similar to %b in `org-agenda-prefix-format'."
+  (org-with-wide-buffer
+   (let ((depth (fpi/org-project-depth 10))
+         result)
+     (while (< (length result) depth)
+       (fpi/org-goto-parent-project 10)
+       (add-to-list 'result
+                    (org-trim
+	             (org-link-display-format
+	              (replace-regexp-in-string
+	               "\\[[0-9]+%\\]\\|\\[[0-9]+/[0-9]+\\]" ""
+                       (nth 4 (org-heading-components)) ;; get entry title
+                       )))))
+     (if result
+         (reduce
+          (lambda (a b) (format "%s/%s" a b))
+          (mapcar (lambda (s) (format "%.12s" s)) result)
+          )
+       "")
+     )))
+(defun fpi/org-goto-parent-project (depth)
+  "Goto first project over current entry."
+  (when (fpi/parent-is-not-done-project-p)
+    (org-up-heading-safe))
+   (while (and (> depth 0)
+               (not (fpi/is-not-done-project-p))
+     (org-up-heading-safe))
+   ))
 (defun fpi/org-agenda-compare-hotness (a b)
   "Compare level of hot headlines over entries A and B."
   (let ((ha (fpi/org-agenda-hotness a))
