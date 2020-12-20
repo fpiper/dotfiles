@@ -3986,6 +3986,10 @@ Based on https://github.com/psamim/dotfiles/blob/master/doom/config.el#L73.
 ("w" . "Week agendas")
 ("ww" "Standard week agenda"
  ((agenda "" ((org-agenda-span 'week)))))
+("wt" "This Week's agenda (starting on last Monday)"
+ ((agenda "" ((org-agenda-span 'week)
+              (org-agenda-start-day "-mon")))
+  (tags-todo "+work")))
 ("wn" "Next Week's agenda"
  ((agenda "" ((org-agenda-span 'week)
               (org-agenda-start-day "mon")))
