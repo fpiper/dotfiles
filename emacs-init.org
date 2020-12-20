@@ -5266,6 +5266,28 @@ I use =msmtp= to send mail.
   (add-to-list 'mm-inline-media-tests '("application/x-wine-extension-cir" mm-display-spice-inline identity))
   (add-to-list 'mm-inlined-types "application/x-wine-extension-cir"))
 #+end_src
+**** S/MIME
+Mail signing and encrypting with S/MIME needs a =gpgsm= setup and =smime.el=.
+
+One can either use =EasyPG= or =OpenSSL= as external implementations.
+#+begin_src emacs-lisp :tangle no
+(mml-smime-use 'epg)
+#+end_src
+
+#+begin_src emacs-lisp :tangle no
+(mml-default-encrypt-method "smime")
+(mml-default-sign-method "smime")
+#+end_src
+
+
+
+#+begin_src emacs-lisp :tangle no
+(use-package smime
+  :custom
+  (smime-CA-directory "~/certs/trusted")
+  (smime-certificate-directory "~/certs")
+  )
+#+end_src
 *** MUA/Notmuch
 
 After using =mu4e= as my mail user agent for a while I switched to
