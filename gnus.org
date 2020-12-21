@@ -4,7 +4,14 @@
 ln -siv $(pwd)/tangle/gnus.el ~/.gnus.el
 #+end_src
 
-Load private settings
+I use =nextcloud= to synchronize gnus state files across devices. Alternatively one may use [[info:gnus#The Gnus Cloud][info:gnus#Gnus Cloud]]. Here i symlink the relevant files/directories to my synchronization directory.
+#+begin_src shell :results silent :tangle tangle/symlink.sh :shebang "#!/bin/bash"
+ln -siv ~/sync/gnus/News ~/News
+ln -siv ~/sync/gnus/.newsrc.eld ~/.newsrc.eld
+ln -siv ~/sync/gnus/.gnus.registry.eieio ~/.gnus.registry.eieio
+#+end_src
+
+Load private settings.
 #+begin_src emacs-lisp
 (setq secret-file (expand-file-name "emacs-private.el.gpg"
 				    user-emacs-directory))
