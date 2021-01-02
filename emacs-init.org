@@ -4,7 +4,6 @@
 - [[#overview][Overview]]
   - [[#about-this-document][About this document]]
 - [[#base-settings][Base settings]]
-  - [[#setup-load-path][Setup load path]]
   - [[#meta-packages][Meta packages]]
   - [[#gui-interface][GUI Interface]]
   - [[#font][Font]]
@@ -198,11 +197,6 @@ Notable configs:
 - [[http://doc.norang.ca/org-mode.html][Bernt Hansen]]
 
 * Base settings
-** Setup load path
-Folder for additional lisp files I may want to load.
-#+BEGIN_SRC emacs-lisp
-(add-to-list 'load-path "~/.emacs.d/lisp")
-#+END_SRC
 ** Meta packages
 Packages that don't do anything by themselves, but can be used to help
 with other package definition and customization.
