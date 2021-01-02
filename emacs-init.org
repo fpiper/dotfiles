@@ -36,7 +36,7 @@
   - [[#shell][Shell]]
   - [[#grep][Grep]]
   - [[#proced][Proced]]
-  - [[#pass][Pass]]
+  - [[#passwords][Passwords]]
   - [[#ledger][Ledger]]
   - [[#plotting-data][Plotting data]]
   - [[#html-renderer][HTML renderer]]
@@ -4973,7 +4973,13 @@ Built-in process monitor.
   (proced-descend t)
   (proced-filter 'user))
 #+END_SRC
-** Pass
+** Passwords
+*** [[info:auth#Top][auth-source]]
+#+begin_src emacs-lisp
+(use-package auth-source
+  :custom (auth-source-save-behavior nil))
+#+end_src
+*** Pass
 Emacs interface & mode for the password manager [[https://www.passwordstore.org/][pass/password-store]].
 The emacs =pass= package provides a nice buffer listing all stored
 passwords files and also a good mode to edit them. The
@@ -4999,7 +5005,7 @@ prefix to my custom keymap.
               (call-interactively 'password-store-copy)))
   :bind (:map fpi-map ("p" . fpi/password-store-copy-pass-or-field)))
 #+end_src
-*** auth-password-store/auth-source-pass
+**** auth-password-store/auth-source-pass
 A password-store backend for the Emacs [[info:auth#Top][auth-source]] library which
 normally uses the =~/.authinfo= file. For correct setup of
 password-store files see [[https://rkm.id.au/2015/07/07/integrating-password-store-with-emacs/#fnr.1][here]] and in its [[https://github.com/DamienCassou/auth-password-store][github repo]]. For remote hosts
