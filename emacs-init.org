@@ -6,6 +6,9 @@
 - [[#base-settings][Base settings]]
   - [[#meta-packages][Meta packages]]
   - [[#gui-interface][GUI Interface]]
+  - [[#devices][Devices]]
+  - [[#server][Server]]
+  - [[#exwm][Exwm]]
   - [[#font][Font]]
   - [[#theme--faces][Theme & Faces]]
   - [[#user-info][User info]]
@@ -361,6 +364,51 @@ it calls ~force-mode-line-update~.
   (hide-mode-line-mode . redraw-display)
   (help-mode . hide-mode-line-mode))
 (global-set-key (kbd "C-c m") 'hide-mode-line-mode)
+#+end_src
+** Devices
+To support different settings on different devices storing some device information seems useful.
+#+begin_src emacs-lisp
+(setq fpi/current-device (system-name))
+(setq fpi/devices
+      '(("pan"
+         (:type desktop
+                :wm exwm))
+        ("xcarb"
+         (:type mobile))
+        ))
+(defun fpi/device-info (device prop)
+  "Return property PROP of DEVICE as stored in `fpi/devices'."
+  (let ((info (cadr (assoc device fpi/devices))))
+    (plist-get info prop)))
+(defun fpi/current-device-info (prop)
+  "Return property PROP of current device."
+  (let ((info (cadr (assoc fpi/current-device fpi/devices))))
+    (plist-get info prop)))
+#+end_src
+Now we can easily extract info on the current device.
+#+begin_src emacs-lisp :tangle no :exports both :results replace
+(fpi/device-info "pan" :type)
+#+end_src
+
+#+RESULTS:
+: desktop
+
+** Server
+#+begin_src emacs-lisp :tangle no
+(use-package server
+  :config
+  (unless (server-running-p) (server-start)))
+#+end_src
+** Exwm
+The previous sections cover all basic settings which may be useful when loading =exwm=.
+My =exwm= configurations are in [[file:init-exwm.org][init-exwm.org]] and we can load the tangled version here. In the future I may convert it into a standalone package.
+#+begin_src emacs-lisp
+(when (eq (fpi/current-device-info :wm) 'exwm)
+  (load (concat user-emacs-directory "init-exwm.el"))
+#+end_src
+Also enable =exwm=. This does nothing if =emacs= is not started
+#+begin_src emacs-lisp
+  (exwm-enable))
 #+end_src
 ** Font
 I am still not quite sure on my choice of font.
