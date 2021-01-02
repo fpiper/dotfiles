@@ -4083,6 +4083,13 @@ To get the title from the url in =kill-ring= I use [[id:dc4129ff-6d76-4f12-926f-
 :END:
 %i")
 #+END_SRC
+***** Clock
+#+begin_src emacs-lisp :tangle no :noweb-ref org-capture-templates
+("c" "Clock"
+ plain
+ (file "~/sync/refile.org")
+ "%(fpi/org-clock-in-heading)")
+#+end_src
 ***** Interrupts
 For interruptions. These are saved in a global refile file and to be sorted to their appropriate place.
 #+BEGIN_SRC emacs-lisp :tangle no :noweb-ref org-capture-templates
@@ -4159,8 +4166,8 @@ Instead of project related capture templates, I use the same template for all ta
 #+END_SRC
 ***** Interesting stuff I have to look at later
 #+BEGIN_SRC emacs-lisp :tangle no :noweb-ref org-capture-templates
-("c" "Checkout")
-("cr" ".. & read"
+("C" "Checkout")
+("Cr" ".. & read"
  entry
  (file "~/sync/refile.org")
  "* TODO %a  :READLIST:
