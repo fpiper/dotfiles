@@ -66,11 +66,13 @@ This files contains all the elisp code normally placed in the .emacs
 file. It and the =init.el= file are then symlinked to my =~/.emacs.d/=
 directory. Instead of symlinking the files could also be directly
 tangled to =~/.emacs.d/=.
-#+BEGIN_SRC shell :results silent :tangle tangle/symlink.sh :shebang "#!/bin/bash"
+#+BEGIN_SRC shell :results silent :tangle tangle/symlink.sh :shebang "#!/bin/bash" :noweb yes
 ln -siv $(pwd)/emacs-init.org ~/.emacs.d/
 ln -siv $(pwd)/tangle/emacs-init.el ~/.emacs.d/
+ln -siv $(pwd)/tangle/init-exwm.el ~/.emacs.d/
 ln -siv $(pwd)/emacs-private.el.gpg ~/.emacs.d/
 ln -siv $(pwd)/tangle/init.el ~/.emacs.d/
+<<symlinks>>
 #+END_SRC
 
 An often seen setup is to use ~org-babel-load-file~ in =init.el= to
@@ -5286,6 +5288,10 @@ For now I use this bad code.
  'gnus-summary-mode-hook
  (lambda ()
     (define-key gnus-summary-mode-map (kbd ";") 'bbdb-mua-edit-field)))
+#+end_src
+To synchronize the database across devices I symlink it to my central synchronization directory:
+#+begin_src shell :noweb-ref symlinks :tangle no
+ln -siv ~/sync/bbdb/bbdb ~/.emacs.d/1
 #+end_src
 ** Compile
 Fix ansi colors in compile buffers. From [[https://endlessparentheses.com/ansi-colors-in-the-compilation-buffer-output.html][endlessparentheses]].
