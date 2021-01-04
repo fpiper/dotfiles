@@ -55,19 +55,36 @@ Noweb the primary server settings together.
         ))
 #+end_src
 
-Setup a secondary imap server and a local nntp server I use to fetch
-RSS/Atom Feeds asynchronously.
+To avoid confusion I enable namespaces for imap groups.
 #+begin_src emacs-lisp
+(setq nnimap-use-namespaces t)
+#+end_src
+*** Secondary servers
+#+begin_src emacs-lisp
+<<secondary-select-methods>>
+#+end_src
+**** Personal mailbox
+#+begin_src emacs-lisp :tangle no :noweb-ref secondary-select-methods
 (add-to-list 'gnus-secondary-select-methods `(nnimap ,@private/personal-imap-info
                                                      (nnimap-stream ssl)
                                                      (nnir-search-engine imap)
                                                      (nnimap-inbox "INBOX")))
+#+end_src
+**** RSS/Atom over nntp
+Setup a secondary imap server and a local nntp server I use to fetch
+RSS/Atom Feeds asynchronously.
+#+begin_src emacs-lisp :tangle no :noweb-ref secondary-select-methods
 (add-to-list 'gnus-secondary-select-methods '(nntp "localhost" 4321))
-<<secondary-select-methods>>
 #+end_src
 
-#+begin_src emacs-lisp
-(setq nnimap-use-namespaces t)
+**** Harddrive Maildir
+This is still WIP, because the =nnmaildir= backend sucks.
+#+begin_src emacs-lisp :tangle no
+(add-to-list 'gnus-secondary-select-methods
+             '(nnmaildir "Local Maildir"
+                         (directory "~/.nnmaildir")
+                         (gnus-search-engine gnus-search-notmuch
+                                             (config-file "~/.notmuch-config"))))
 #+end_src
 ** Options
 *** General
