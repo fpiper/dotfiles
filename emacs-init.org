@@ -56,6 +56,7 @@
   - [[#rainbow-mode][Rainbow mode]]
   - [[#parentheses][Parentheses]]
   - [[#whitespace][Whitespace]]
+  - [[#notifications][Notifications]]
   - [[#undo][Undo]]
   - [[#electric-stuff][Electric stuff]]
   - [[#writing-setup][Writing Setup]]
@@ -5723,7 +5724,9 @@ Instead of =$= use =⏎= to indicate newlines
 ** Notifications
 #+begin_src emacs-lisp
 (use-package sauron
-  :straight t)
+  :straight t
+  :custom
+  (sauron-separate-frame (not (eq (fpi/current-device-info :wm) 'exwm))))
 (use-package alert
   :straight t)
 (use-package org-alert
