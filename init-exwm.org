@@ -1,19 +1,59 @@
 #+PROPERTY: header-args:emacs-lisp :results silent
-,#+PROPERTY: header-args:emacs-lisp :tangle tangle/init-exwm.el
+#+PROPERTY: header-args:emacs-lisp :tangle tangle/init-exwm.el
 
-When stating the client from .xinitrc, `save-buffer-kill-terminal' will
+* Starting EXWM
+Either start exwm in =.xinitrc= or if using a display manager setup a desktop file similar to this:
+#+HEADER: :tangle /sudo::/usr/share/xsessions/exwm.desktop
+#+begin_src conf
+[Desktop Entry]
+Name=EXWM
+Comment=Emacs X Window Manager
+TryExec=exwm-start
+Exec=exwm-start
+Type=Application
+#+end_src
+With the =exwm-start= script:
+#+HEADER: :tangle /sudo::/usr/local/bin/exwm-start
+#+begin_src shell :tangle-mode (identity #o755)
+#!/usr/bin/env sh
+
+export VISUAL=emacsclient
+export EDITOR="$VISUAL"
+
+# exec dbus-launch --exit-with-session emacs --eval "(progn (load \"/home/fpi/git/projects/dotfiles/tangle/init-exwm.el\") (exwm-enable))"
+# exec dbus-launch --exit-with-session emacs
+gpg-agent --daemon
+export SSH_AUTH_SOCK=$(gpgconf --list-dirs agent-ssh-socket)
+
+exec dbus-launch --exit-with-session /home/fpi/.local/bin/emacs
+#+end_src
+* EXWM config
+#+begin_src emacs-lisp
+(use-package exwm
+  :straight t)
+#+end_src
+When starting the client from .xinitrc, `save-buffer-kill-terminal' will
 force-kill Emacs before it can run through `kill-emacs-hook'.
 #+BEGIN_SRC emacs-lisp
 (global-set-key (kbd "C-x C-c") 'save-buffers-kill-emacs)
 #+END_SRC
 
-
-
 set keyboard
 #+BEGIN_SRC emacs-lisp
 (shell-command "setxkbmap -layout \"de(neo),us,ru,de\"")
 #+END_SRC
-* functions
+
+** Monitor setup
+#+BEGIN_SRC emacs-lisp
+(use-package exwm-randr
+  :config
+  (setq exwm-randr-workspace-output-plist '(0 "DP1" 1 "DisplayPort-5"))
+  ;; (when (equal system-name "pan")
+  ;;   (start-process-shell-command "xrandr" nil "xrandr --output DisplayPort-0 --off --output DisplayPort-1 --off --output DisplayPort-2 --off --output HDMI-A-0 --off --output DisplayPort-3 --mode 2560x1440 --pos 0x612 --rotate normal --output DisplayPort-4 --off --output DisplayPort-5 --mode 2560x1440 --pos 2560x0 --rotate right --output DisplayPort-6 --off")
+  ;;   (exwm-workspace-add))
+  (exwm-randr-enable))
+#+END_SRC
+** functions
 #+BEGIN_SRC emacs-lisp
 (defun ambrevar/switch-to-last-buffer ()
   "Switch to last open buffer in current window."
@@ -72,7 +112,7 @@ configuration was previously save, restore that configuration."
     (setq single-window--last-configuration (current-window-configuration))
     (delete-other-windows)))
 #+END_SRC
-** Window swapping
+*** Window swapping
 #+BEGIN_SRC emacs-lisp
 (defun ambrevar/swap-windows (&optional w1 w2)
   "If 2 windows are up, swap them.
@@ -119,7 +159,7 @@ If W2 is a window too, swap both."
   (interactive)
   (ambrevar/swap-windows (window-in-direction 'right)))
 #+END_SRC
-** Volume & Brightness
+*** Volume & Brightness
 #+BEGIN_SRC emacs-lisp
 (defun exwm-brightness (incdec)
   (shell-command (concat "xbacklight " incdec "10"))
@@ -151,13 +191,13 @@ If W2 is a window too, swap both."
    :urgency 'low
    :timeout 550))
 #+END_SRC
-** XF86 Multimedia keys
+*** XF86 Multimedia keys
 #+BEGIN_SRC emacs-lisp
 (defun exwm-xf86audio (cmd)
   ;; Control Spotify
   (shell-command (concat "dbus-send --type=method_call --dest=org.mpris.MediaPlayer2.spotify /org/mpris/MediaPlayer2 org.mpris.MediaPlayer2.Player." cmd)))
 #+END_SRC
-** Browser switching
+*** Browser switching
 #+BEGIN_SRC emacs-lisp
 (defun fpi/helm-exwm-switch (class &optional program other-window)
   "Switch to some EXWM windows belonging to CLASS.
@@ -198,11 +238,12 @@ See `helm-exwm-switch'."
 				"firefox"))
 			browse-url-generic-program))
 #+END_SRC
-* config
+** config
 Time & Battery display
 #+BEGIN_SRC emacs-lisp
 (display-time)
-(display-battery-mode)
+(when (eq (fpi/current-device-info :type) 'mobile)
+  (display-battery-mode))
 #+END_SRC
 Rename buffer to window title.\\
 Spotify's title does not include "spotify" while playing music so just
@@ -229,7 +270,8 @@ Non-floating resizing with mouse
 #+END_SRC
 System tray
 #+BEGIN_SRC emacs-lisp
-(require 'exwm-systemtray)
+(use-package exwm-systemtray
+  :straight exwm)
 (exwm-systemtray-enable)
 (setq exwm-systemtray-height 16)
 #+END_SRC
@@ -243,7 +285,7 @@ List all buffers
 (setq exwm-workspace-show-all-buffers t)
 (setq exwm-layout-show-all-buffers t)
 #+END_SRC
-** Helm
+*** Helm
 #+BEGIN_SRC emacs-lisp :results silent
 (with-eval-after-load 'helm
   ;; Need `with-eval-after-load' here since 'helm-map is not defined in 'helm-config.
@@ -259,11 +301,12 @@ List all buffers
   ;;(exwm-input-set-key (kbd "s-G") 'ambrevar/helm-grep-git-all-or-ag)
   )
 
-(use-package helm-exwm)
+(use-package helm-exwm
+  :straight t)
 (exwm-input-set-key (kbd "s-w") #'fpi/helm-exwm-switch-browser)
 (exwm-input-set-key (kbd "s-W") #'helm-exwm-switch-browser-other-window)
 #+END_SRC
-** Keys
+*** Keys
 Global bindings
 #+BEGIN_SRC emacs-lisp
 (exwm-input-set-key (kbd "s-K") #'exwm-reset)
@@ -313,7 +356,7 @@ XF86 Multimedia Keys
 (exwm-input--set-key [XF86AudioNext] (lambda () (interactive) (exwm-xf86audio "Next")))
 (exwm-input--set-key [XF86AudioPrev] (lambda () (interactive) (exwm-xf86audio "Previous")))
 #+END_SRC
-*** Local bindings
+**** Local bindings
 #+BEGIN_SRC emacs-lisp
 (push ?\s-  exwm-input-prefix-keys)
 (define-key exwm-mode-map (kbd "s-SPC") #'exwm-floating-toggle-floating)
@@ -328,7 +371,7 @@ Allow access to my personal keymap.
 (push ?\C-z exwm-input-prefix-keys)
 #+END_SRC
 
-*** Simulation keys
+**** Simulation keys
 #+BEGIN_SRC emacs-lisp
 (setq exwm-input-simulation-keys
       '(([?\C-b] . [left])
@@ -342,14 +385,7 @@ Allow access to my personal keymap.
         ([?\C-d] . [delete])))
         ;;([?\C-k] . [S-end delete]))) ; doesn't work in tilix
 #+END_SRC
-** Multiple monitors
-#+BEGIN_SRC emacs-lisp
-(require 'exwm-randr)
-(setq exwm-randr-workspace-output-plist
-      '(0 "DP1" 1 "HDMI1" 2 "HDMI2" 3 "eDP1"))
-(exwm-randr-enable)
-#+END_SRC
-** Configure helm-raise-command
+*** Configure helm-raise-command
 ~(shell-command "emacsclient -e ...")~ does not work. Advice
 ~helm-run-or-raise~ instead and overshadow ~shell-command~.
 
@@ -372,7 +408,7 @@ For now ~helm-run-or-raise~ is redefined after helm is loaded in
 ;; (setq helm-raise-command "emacsclient -e '(fpi/switch-to-proc-buffer \"%s\")'")
 (setq helm-raise-command t)
 #+end_src
-** Screenshots
+*** Screenshots
 UncleDave has a nice exwm configuration in his [[https://github.com/daedreth/UncleDavesEmacs/blob/master/config.org][config]]. These snippets
 are taken from there.
 
@@ -380,7 +416,7 @@ A nice alternative for screenshots in org-mode is ~org-screenshot.el~.
 It uses ~scrot~ to take screenshots of windows and insert a link the
 image into the current org buffer.
 
-*** Screenshotting the entire screen
+**** Screenshotting the entire screen
 #+BEGIN_SRC emacs-lisp
   (defun daedreth/take-screenshot ()
     "Takes a fullscreen screenshot of the current workspace"
@@ -398,7 +434,7 @@ image into the current org buffer.
   (global-set-key (kbd "<print>") 'daedreth/take-screenshot)
 #+END_SRC
 
-*** Screenshotting a region
+**** Screenshotting a region
 #+BEGIN_SRC emacs-lisp
 (defun daedreth/take-screenshot-region ()
   "Takes a screenshot of a region selected by the user."
