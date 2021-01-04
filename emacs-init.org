@@ -3939,6 +3939,7 @@ Org-roam mainly provides a display of backlinks to the current file. This allows
                ("C-c n G" . fpi/org-roam-graph-with-exclude)
                ("C-c n t g" . fpi/org-roam-toggle-graph-executable)
                ("C-c n x" . org-roam-jump-to-index)
+               <<org-roam-bindings>>
                )
               :map org-mode-map
               (("C-c n i" . org-roam-insert)))
@@ -3956,9 +3957,25 @@ Org-roam mainly provides a display of backlinks to the current file. This allows
     (interactive "P")
     (let ((org-roam-graph-exclude-matcher (completing-read "Exclude matcher to use: " nil)))
       (org-roam-graph arg file node-query)))
-)
+  <<org-roam-config>>
+  )
 #+end_src
 Overwriting ~org-roam--file-link-face~ is a crude fix for hanging emacs. The original function calls file-exist-p which opens a slow tramp connection.
+
+The idea of ~fpi/org-roam-todo~ is from a post by [[https://oremacs.com/2020/12/31/happy-new-year/][aboabo]]. It lists all open todos in zettelkasten entries and is a (faster) alternative to running an todo agenda with ~org-agenda-files~ set to ~org-roam-directory~.
+#+begin_src emacs-lisp :tangle no :noweb-ref org-roam-config
+(defun fpi/org-roam-todo ()
+  (interactive)
+  (setq unread-command-events
+          (listify-key-sequence (kbd "C-c C-o M->")))
+  (counsel-rg "^\\*+ \\(NEXT\\|TODO\\)" org-roam-directory "--sort modified"))
+#+end_src
+
+#+begin_src emacs-lisp :tangle no :noweb-ref org-roam-bindings
+("C-c n t" . fpi/org-roam-todo)
+#+end_src
+
+
 **** org-roam-protocol
 #+begin_src emacs-lisp
 (use-package org-roam-protocol
