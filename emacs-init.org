@@ -393,7 +393,6 @@ Now we can easily extract info on the current device.
 
 #+RESULTS:
 : desktop
-
 ** Server
 #+begin_src emacs-lisp :tangle no
 (use-package server
@@ -407,7 +406,7 @@ My =exwm= configurations are in [[file:init-exwm.org][init-exwm.org]] and we can
 (when (eq (fpi/current-device-info :wm) 'exwm)
   (load (concat user-emacs-directory "init-exwm.el"))
 #+end_src
-Also enable =exwm=. This does nothing if =emacs= is not started
+Also enable =exwm=. This does nothing if =emacs= is not started as window manager.
 #+begin_src emacs-lisp
   (exwm-enable))
 #+end_src
