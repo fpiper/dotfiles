@@ -47,6 +47,7 @@
   - [[#footnote-mode][Footnote Mode]]
   - [[#bbdb][BBDB]]
   - [[#compile][Compile]]
+  - [[#speed-reading][Speed reading]]
   - [[#context-aware-hydra][Context aware hydra]]
   - [[#minor-utilities][Minor utilities]]
 - [[#language-settings][Language settings]]
@@ -5382,6 +5383,12 @@ Fix ansi colors in compile buffers. From [[https://endlessparentheses.com/ansi-c
      compilation-filter-start (point))))
   :hook (compilation-filter . endless/colorize-compilation))
 #+END_src
+** Speed reading
+=spray= offers an interface similar to the [[https://ds300.github.io/jetzt/][jetzt]] browser based speed reader.
+#+begin_src emacs-lisp
+(use-package spray
+  :straight (:host nil :repo "https://git.sr.ht/~iank/spray/"))
+#+end_src
 ** Context aware hydra
 :PROPERTIES:
 :ID:       22750e48-aaee-4f60-bdce-1d511ebe3375
