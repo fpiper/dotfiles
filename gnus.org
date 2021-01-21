@@ -370,6 +370,10 @@ Unicode reply symbol
 #+begin_src emacs-lisp
 (setq gnus-summary-to-prefix "→ ")
 #+end_src
+Rename the group buffer to something more memorable. This is not intended to be customized. So some bugs may occur. So far it only seems important to set it before starting gnus the first time. So e.g. set it in your main emacs =init.el=.
+#+begin_src emacs-lisp
+(setq gnus-group-buffer "*Gnus*")
+#+end_src
 **** On threads
 Gather loose threads, whose parent is currently not displayed, under a
 dummy article. I find the default ~'adopt~ to be too confusing.
