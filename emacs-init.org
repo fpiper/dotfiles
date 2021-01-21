@@ -5338,6 +5338,13 @@ For now I use this bad code.
       (goto-char (point-max))
       (or (bolp) (newline)))))
 #+END_SRC
+*** Gnus
+The customization for gnus is located in [[file:gnus.org][gnus.org]] and loaded from there upon startup.
+
+I change the group buffer to something more memorable. This needs to be set before gnus is started and therefore only setting it in gnus.org is not sufficient.
+#+begin_src emacs-lisp
+(setq gnus-group-buffer "*Gnus*")
+#+end_src
 ** Footnote Mode
 #+begin_src emacs-lisp
 (use-package footnote
