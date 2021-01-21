@@ -403,7 +403,8 @@ Now we can easily extract info on the current device.
 The previous sections cover all basic settings which may be useful when loading =exwm=.
 My =exwm= configurations are in [[file:init-exwm.org][init-exwm.org]] and we can load the tangled version here. In the future I may convert it into a standalone package.
 #+begin_src emacs-lisp
-(when (eq (fpi/current-device-info :wm) 'exwm)
+(when (and (equal (getenv "DESKTOP_SESSION") "exwm")
+           (eq window-system 'x))
   (load (concat user-emacs-directory "init-exwm.el"))
 #+end_src
 Also enable =exwm=. This does nothing if =emacs= is not started as window manager.
