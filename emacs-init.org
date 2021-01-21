@@ -3972,8 +3972,9 @@ The idea of ~fpi/org-roam-todo~ is from a post by [[https://oremacs.com/2020/12/
   (counsel-rg "^\\*+ \\(NEXT\\|TODO\\)" org-roam-directory "--sort modified"))
 #+end_src
 
+As =C-c n t= is already taken as prefix for roam related toggle commands, use =o= (mnemonic: “open”) instead.
 #+begin_src emacs-lisp :tangle no :noweb-ref org-roam-bindings
-("C-c n t" . fpi/org-roam-todo)
+("C-c n o" . fpi/org-roam-todo)
 #+end_src
 
 
