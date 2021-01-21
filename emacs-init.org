@@ -12,6 +12,7 @@
   - [[#font][Font]]
   - [[#theme--faces][Theme & Faces]]
   - [[#user-info][User info]]
+  - [[#garbage-collection][Garbage collection]]
   - [[#desktop-module][Desktop module]]
   - [[#customize][Customize]]
   - [[#file-and-input-history][File and input history]]
@@ -1670,7 +1671,15 @@ Set ~user-full-name~ and ~user-mail-address~. These are set in
 (setq user-full-name private/user-full-name
       user-mail-address private/user-mail-address)
 #+end_src
-
+** Garbage collection
+Give a message when Emacs does garbage collection and increase the thresholds for triggering it.
+#+begin_src emacs-lisp
+(use-package emacs
+  :custom
+  (garbage-collection-messages t)
+  (gc-cons-threshold 800000000)
+  (gc-cons-percentage 0.3))
+#+end_src
 ** Desktop module
 This saves the state emacs was in.
 #+begin_src emacs-lisp
