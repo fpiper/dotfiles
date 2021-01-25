@@ -2798,7 +2798,13 @@ Only highlight the changes within a line, not the whole line.
 #+begin_src emacs-lisp
 (use-package forge
   :after magit
-  :straight t)
+  :straight t
+  :config
+  <<forge-config>>)
+#+end_src
+Non-standard forges need to be added to ~forge-alist~ manually.
+#+begin_src emacs-lisp :tangle no :noweb-ref forge-config
+(append forge-alist private/magit-forges)
 #+end_src
 **** gitflow
 Add support for [[https://nvie.com/posts/a-successful-git-branching-model/][gitflow]].
