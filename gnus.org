@@ -171,8 +171,20 @@ Background fetching for gnus. See the manual and [[https://www.emacswiki.org/ema
 (gnus-demon-add-handler 'gnus-demon-scan-news-4 130 1)
 (gnus-demon-add-handler 'gnus-demon-scan-news-5 140 1)
 #+end_src
-**** Adaptive scoring
-See [[info:gnus#Adaptive Scoring][info:gnus#Adaptive Scoring]] and this [[https://notes.whatthefuck.computer/1417593600.0-note.html][blog post]] by Ryan Rix.
+**** Scoring
+To define different scoring files for different groups I set [[info:gnus#Home Score File][home score files]] based on the group name.
+#+begin_src emacs-lisp
+(setq gnus-home-score-file
+      '(("^nnimap" "nnimap.SCORE") ;; w/ author scoring
+        ("gmane" "nntp_gmane.SCORE") ;; w/ author scoring
+        ("^nntp\\+localhost" "nntp_global.SCORE") ;; w/o author scoring
+        ))
+(setq gnus-home-adapt-file
+      '(("^nnimap" "nnimap.ADAPT")
+        ("gmane" "nntp_gmane.ADAPT")
+        ("^nntp\\+localhost" "nntp_global.ADAPT")))
+#+end_src
+For information about adaptive scoring see [[info:gnus#Adaptive Scoring][info:gnus#Adaptive Scoring]] and this [[https://notes.whatthefuck.computer/1417593600.0-note.html][blog post]] by Ryan Rix.
 ***** Score File Setup
 #+begin_src emacs-lisp
 (setq gnus-use-adaptive-scoring '(word line))
@@ -190,19 +202,7 @@ See [[info:gnus#Adaptive Scoring][info:gnus#Adaptive Scoring]] and this [[https:
       )
 ;; (setq gnus-adaptive-word-score-alist gnus-default-adaptive-word-score-alist)
 #+end_src
-****** Using different (adaptive) scoring files for different groups
-To define different adaptive scoring files for different groups I set [[info:gnus#Home Score File][home score files]] based on the group name.
-#+begin_src emacs-lisp
-(setq gnus-home-score-file
-      '(("^nnimap" "nnimap.SCORE") ;; w/ author scoring
-        ("gmane" "nntp_gmane.SCORE") ;; w/ author scoring
-        ("^nntp\\+localhost" "nntp_global.SCORE") ;; w/o author scoring
-        ))
-(setq gnus-home-adapt-file
-      '(("^nnimap" "nnimap.ADAPT")
-        ("gmane" "nntp_gmane.ADAPT")
-        ("^nntp\\+localhost" "nntp_global.ADAPT")))
-#+end_src
+****** Scoring rules
 Scoring based on the =from= header does not make sense for rss feeds with only one author or newsgroups with unset author. These files therefore contain my default adaptive scoring rules with or without =from= scoring.
 #+NAME: gnus-adaptive-scoring-w-from
 #+begin_src emacs-lisp :tangle no :eval never
@@ -245,7 +245,7 @@ Slow scoring decay prevents huge scores from building up. Only run on =.ADAPT= s
       gnus-score-decay-constant 1
       gnus-score-decay-scale 0.01)
 #+end_src
-****** Ignored Words
+***** Ignored Words
 Do not score on some common german words. I extracted these from my score file after a few weeks of using scoring.
 #+begin_src emacs-lisp
 (setq gnus-ignored-adaptive-words
