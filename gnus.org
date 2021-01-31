@@ -185,6 +185,11 @@ To define different scoring files for different groups I set [[info:gnus#Home Sc
         ("^nntp\\+localhost" "nntp_global.ADAPT")))
 #+end_src
 For information about adaptive scoring see [[info:gnus#Adaptive Scoring][info:gnus#Adaptive Scoring]] and this [[https://notes.whatthefuck.computer/1417593600.0-note.html][blog post]] by Ryan Rix.
+
+Temporary scores by default expire after 7 days. I want a slightly longer threshold.
+#+begin_src emacs-lisp
+(setq gnus-score-expiry-days 14)
+#+end_src
 ***** Score File Setup
 #+begin_src emacs-lisp
 (setq gnus-use-adaptive-scoring '(word line))
