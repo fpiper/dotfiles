@@ -1680,7 +1680,7 @@ Give a message when Emacs does garbage collection and increase the thresholds fo
 (use-package emacs
   :custom
   (garbage-collection-messages t)
-  (gc-cons-threshold 800000000)
+  (gc-cons-threshold 80000000)
   (gc-cons-percentage 0.3))
 #+end_src
 ** Desktop module
