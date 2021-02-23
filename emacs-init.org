@@ -3208,6 +3208,12 @@ area.
   :config
   (unbind-key "M-s" matlab-mode-map))
 #+end_src
+*** Rust
+#+begin_src emacs-lisp
+(use-package rustic
+  :straight t
+  :after org)
+#+end_src
 ** Org mode
 Org is the mode you never need to leave, if you do not want to. My org
 TODO and clocking setup is largely inspired by [[http://doc.rix.si/cce/cce-org.html][Ryan Rix's]] and [[http://doc.norang.ca/org-mode.html][Bernt
