@@ -5125,6 +5125,11 @@ To open and hide a shell quickly I use =shell-pop=.
   :custom
   (shell-pop-shell-type (quote ("eshell" "*eshell*" (lambda nil (eshell))))))
 #+end_src
+Vterm is the emacs terminal emulator, which is closest to standard terminal emulators.
+#+begin_src emacs-lisp
+(use-package vterm
+  :straight t)
+#+end_src
 ** Grep
 #+begin_src emacs-lisp
 (use-package grep
