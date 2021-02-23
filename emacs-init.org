@@ -4525,7 +4525,7 @@ Org Edna
     ("L" (jmm/org-edna-link "todo!(NEXT)"))
     ("n" (jmm/org-edna-set-trigger-and-point "next-sibling todo!(NEXT)"))
     ("N" (jmm/org-edna-set-trigger-and-point "next-sibling todo!(NEXT) chain!(\"TRIGGER\")"))
-    ("P" (jmm/org-edna-set-trigger-and-point "next-sibling todo!(NEXT) chain!(\"TRIGGER\") if siblings then parent todo!(DONE) endif"))
+    ("P" (jmm/org-edna-set-trigger-and-point "if next-sibling todo-state?(HOLD) then else next-sibling todo!(NEXT) endif next-sibling chain!(\"TRIGGER\") if siblings then parent todo!(DONE) endif"))
     ("p" (jmm/org-edna-set-trigger-and-point "parent todo!(DONE)"))
     ("q" nil)))
 #+end_src
