@@ -655,6 +655,17 @@ Meant to be used at some early initialisation stage, such as with
   ;; The "C-c f" is used elsewhere.
   :bind ("C-c F" . prot/font-fonts-dwim))
 #+end_src
+*** Emoji
+For undefined characters in the default font, we can set a fallback font using [[info:emacs#Fontsets][fontsets]].
+
+Here we set it to use the google icons as fallback.
+#+begin_src emacs-lisp
+(set-fontset-font "fontset-default" 'unicode "Noto Color Emoji")
+#+end_src
+Alternatively we could use =OpenMoji= or other icon sets.
+#+begin_src emacs-lisp :tangle no
+(set-fontset-font "fontset-default" 'unicode "OpenMoji")
+#+end_src
 ** Theme & Faces
 =hc-zenburn= is the theme I chose for a long time. Lately I started to
 appreciate light themes more. [[https://gitlab.com/protesilaos/modus-themes][modus-operandi]] is an interesting light
