@@ -3171,6 +3171,21 @@ does not have it. So =auctex= has to deliver this dependency instead.
           '("circuitikz" "\\begin{circuitikz}\nAUTOLABEL\n?\n\\end{circuitikz}" nil))))
 #+end_src
 ** Programming languages
+*** Utilities
+Various utilities which ease programming in some languages.
+#+begin_src emacs-lisp
+(use-package yasnippet
+  :straight t)
+(use-package yasnippet-snippets
+  :straight t)
+(use-package company
+  :straight t)
+#+end_src
+
+#+begin_src emacs-lisp
+(use-package lsp-mode
+  :straight t)
+#+end_src
 *** Emacs lisp
 =Speed of thought= makes writing lisp so easy. No more snippets
 needed.
