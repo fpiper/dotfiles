@@ -5058,7 +5058,31 @@ creation.
            (deft-default-extension "org")
            (deft-use-filename-as-title nil)
            (deft-recursive t)
-           (deft-use-filter-string-for-filename t)))
+           (deft-use-filter-string-for-filename t)
+           <<deft-custom>>))
+#+end_src
+Most org files start with meta information on lines starting with ~#+~, but also sometimes ~:PROPERTIES:~ drawers. We can exclude these lines from the preview content =Deft= displays with regular expressions. I first noticed this setting in [[https://github.com/hsinhaoyu/.emacs.d/blob/master/config.org][this config by hsin-hao yu]]. Define ~deft-strip-summary-regexp~ to match a group of expressions.
+#+begin_src emacs-lisp :tangle no :noweb-ref deft-custom
+(deft-strip-summary-regexp
+  (rx (group (or
+              space
+              <<deft-strip-summary-regexps>>
+              ))))
+#+end_src
+
+Match ~#+~ based meta lines.
+#+begin_src emacs-lisp :tangle no :noweb-ref deft-strip-summary-regexps
+(seq bol "#+" (+ (any alpha ?_)) ?: (* any) eol)
+#+end_src
+Match all drawer lines, including the content.
+#+begin_src emacs-lisp :tangle no :noweb-ref deft-strip-summary-regexps
+(seq bol ?: (*? (not ?:)) ?: (*? (or any "\n")) ":END:")
+#+end_src
+Match some formatted standard additional information at the start of files.
+#+begin_src emacs-lisp :tangle no :noweb-ref deft-strip-summary-regexps
+(seq bol "- tags ::" (* any) eol)
+(seq bol "- links ::" (* any) eol)
+(seq bol "- source ::" (* any) eol)
 #+end_src
 
 [[https://github.com/EFLS/zetteldeft][Zetteldeft]] provides further functions to search and link between
