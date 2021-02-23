@@ -5839,7 +5839,10 @@ Instead of =$= use =⏎= to indicate newlines
 (use-package sauron
   :straight t
   :custom
-  (sauron-separate-frame (not (eq (fpi/current-device-info :wm) 'exwm))))
+  (sauron-separate-frame (not (eq (fpi/current-device-info :wm) 'exwm)))
+  (sauron-notifications-urgency-to-priority-plist '(:low 2 :normal 4 :critical 5 :otherwise 2))
+  :config
+  (add-to-list 'sauron-modules 'sauron-dbus))
 (use-package alert
   :straight t)
 (use-package org-alert
