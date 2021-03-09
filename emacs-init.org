@@ -4011,6 +4011,8 @@ As =C-c n t= is already taken as prefix for roam related toggle commands, use =o
   :bind (:map org-mode-map
               (("C-c n a" . orb-note-actions)))
   :after bibtex
+  :custom
+  <<orb-custom>>
   :config
   (defun bibtex-autokey-get-year ()
     "Return year field contents as a string obeying `bibtex-autokey-year-length'."
@@ -4018,9 +4020,37 @@ As =C-c n t= is already taken as prefix for roam related toggle commands, use =o
            (yearfield (when (equal yearfield "")
                         (substring (bibtex-autokey-get-field "date") 0 4))))
       (substring yearfield (max 0 (- (length yearfield)
-                                     bibtex-autokey-year-length))))))
+                                     bibtex-autokey-year-length)))))
+  <<orb-config>>)
 #+end_src
 Rewrite of ~bibtex-autokey-get-year~ is a crude way to get bibtex to recognize =date= fields as year.
+
+Upon showing the notes of an entry with org-ref an appropriate org-roam note file is automatically created using ~orb-edit-notes~. Here I customize the template for my use.
+#+begin_src emacs-lisp :tangle no :noweb-ref orb-custom
+(orb-templates
+ '(("r" "ref" plain #'org-roam-capture--get-point
+    "\n%?\n\n#+BEGIN_SRC bibtex\n%(fpi/orb-capture--get-bibtex-entry)\n#+END_SRC"
+    :file-name "${citekey}" :head "#+TITLE: %(fpi/orb-capture--get-first-citekey): ${title}\n#+ROAM_KEY: ${ref}
+" :unnarrowed t))
+)
+#+END_SRC
+Here are the functions used.
+#+BEGIN_SRC emacs-lisp :tangle no :noweb-ref orb-config
+(defun fpi/orb-capture--get-bibtex-entry ()
+  "Return bibtex entry for the roam citekey in current buffer"
+  (save-excursion
+    (goto-char (point-min))
+    (when (re-search-forward "^#\\+ROAM_KEY: cite:\\(.*?\\)[\s\n]")
+      (let ((key (match-string 1)))
+        (org-ref-get-bibtex-entry key)))))
+(defun fpi/orb-capture--get-first-citekey ()
+  "Return first part of the roam citekey in current buffer"
+  (save-excursion
+    (goto-char (point-min))
+    (when (re-search-forward "^#\\+ROAM_KEY: cite:\\(.*?\\)[\s\n]")
+      (let ((key (match-string 1)))
+        (when (string-match "^\\(.*?\\)_" key) (match-string 1 key))))))
+#+end_src
 *** Org-edna
 :PROPERTIES:
 :ID:       fd3936c7-9fc5-42d0-990d-32024e23b22f
