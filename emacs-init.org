@@ -4565,6 +4565,9 @@ A small function to toggle the encryption state of the current entry.
               (progn (dired (file-name-directory pdf))
                      (ding))))))))
 #+end_src
+#+begin_src emacs-lisp :noweb-ref fpi-bindings :tangle no
+(define-key fpi-map "r" #'org-ref-helm-insert-cite-link)
+#+end_src
 ***** Capturing entries
 I store my bibtex references in an org file together with my notes. In
 addition to saving the meta information in properties using the same
