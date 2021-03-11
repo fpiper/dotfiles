@@ -25,7 +25,9 @@ export EDITOR="$VISUAL"
 gpg-agent --daemon
 export SSH_AUTH_SOCK=$(gpgconf --list-dirs agent-ssh-socket)
 
-exec dbus-launch --exit-with-session /home/fpi/.local/bin/emacs
+# exec dbus-launch --exit-with-session /home/fpi/.local/bin/emacs
+export DBUS_SESSION_BUS_ADDRESS=unix:path=/run/user/1000/bus
+exec /home/fpi/.local/bin/emacs
 #+end_src
 * EXWM config
 #+begin_src emacs-lisp
