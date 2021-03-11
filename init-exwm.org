@@ -49,7 +49,8 @@ set keyboard
 #+BEGIN_SRC emacs-lisp
 (use-package exwm-randr
   :config
-  (setq exwm-randr-workspace-output-plist '(0 "DP1" 1 "DisplayPort-5"))
+  (setq exwm-randr-workspace-output-plist
+        (when (equal fpi/current-device "pan") '(0 "DisplayPort-3" 1 "DisplayPort-5")))
   ;; (when (equal system-name "pan")
   ;;   (start-process-shell-command "xrandr" nil "xrandr --output DisplayPort-0 --off --output DisplayPort-1 --off --output DisplayPort-2 --off --output HDMI-A-0 --off --output DisplayPort-3 --mode 2560x1440 --pos 0x612 --rotate normal --output DisplayPort-4 --off --output DisplayPort-5 --mode 2560x1440 --pos 2560x0 --rotate right --output DisplayPort-6 --off")
   ;;   (exwm-workspace-add))
@@ -319,7 +320,6 @@ Global bindings
 (exwm-input-set-key (kbd "s-r") #'windmove-up)
 (exwm-input-set-key (kbd "s-t") #'windmove-right)
 
-(exwm-input-set-key (kbd "M-s") #'ace-jump-word-mode)
 (exwm-input-set-key (kbd "s-B") #'ibuffer-list-buffers)
 (exwm-input-set-key (kbd "s-X") #'kill-this-buffer)
 
@@ -332,7 +332,8 @@ Global bindings
 (exwm-input-set-key (kbd "s-T") 'ambrevar/swap-windows-right)
 
 (exwm-input-set-key (kbd "s-<tab>") #'ambrevar/switch-to-last-buffer)
-(exwm-input-set-key (kbd "s-<return>") (lambda ()
+(exwm-input-set-key (kbd "s-<return>") #'vterm)
+(exwm-input-set-key (kbd "S-s-<return>") (lambda ()
 					 (interactive)
 					 (start-process "term" nil "tilix")))
 (exwm-input-set-key (kbd "s-h") 'bury-buffer)
