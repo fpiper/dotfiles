@@ -35,6 +35,7 @@
   - [[#pdfs][PDFs]]
   - [[#latex][Latex]]
   - [[#programming-languages][Programming languages]]
+  - [[#cad][CAD]]
   - [[#org-mode][Org mode]]
   - [[#deft][Deft]]
   - [[#shell][Shell]]
@@ -3224,6 +3225,12 @@ area.
 (use-package rustic
   :straight t
   :after org)
+#+end_src
+** CAD
+[[https://www.openscad.org/][OpenSCAD]] is a programmable CAD Modeller.
+#+begin_src emacs-lisp
+(use-package scad-mode
+  :straight t)
 #+end_src
 ** Org mode
 Org is the mode you never need to leave, if you do not want to. My org
