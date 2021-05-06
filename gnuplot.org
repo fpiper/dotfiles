@@ -5,37 +5,91 @@ First create a symlink to the desired config location.
 #+begin_src shell :results silent :tangle tangle/symlink.sh :shebang "#!/bin/bash"
 ln -siv $(pwd)/tangle/.gnuplot ~/
 #+end_src
-* Main configuration
+* General Configuration
+Start off by resetting most settings.
 #+begin_src gnuplot
 reset
+#+end_src
 
-set style line 1 lc rgb '#cb1a0e' pt 1 ps 1 lt 1 lw 2 # --- red
-set style line 2 lc rgb '#5e9c36' pt 6 ps 1 lt 1 lw 2 # --- green
-set style line 3 lc 3 pt 1 ps 1 lt 1 lw 2 # --- blue
-set style line 4 lc 7 pt 6 ps 1 lt 1 lw 2 # --- black
-set style line 5 lc 9 pt 1 ps 1 lt 1 lw 2 # --- grey
-set style line 6 lc 4 pt 1 ps 1 lt 1 lw 2 # --- pink
-set style line 11 lc rgb '#808080' lt 1
-set border 3 back ls 11
-set tics nomirror
-set style line 12 lc rgb '#808080' lt 0 lw 1
-set grid back ls 12
-
-set style increment user
+Plot data using linepoints and make solid regions transparent.
+#+begin_src gnuplot
 set style data lp
+set style fill transparent solid 0.4 noborder
+#+end_src
 
+Enable macros and make gnuplot interpret =NaN= as missing data.
+#+begin_src gnuplot
 set macros
+set datafile missing NaN
+#+end_src
+
+A macro to easily reset gnuplot and also reload my settings.
+#+begin_src gnuplot
+init="load '~/.gnuplot'"
 #+end_src
 
 Here is a handy function to define colors with individual rgb integers instead of the hex notation. Example usage: ~plot x w l lc rgb rgb(255,80,0)~. Alternatively gnuplot also supports hsv colors with ~hsv2rgb(h,s,v)~.
 #+begin_src gnuplot
 rgb(r,g,b) = 65536 * int(r) + 256 * int(g) + int(b)
 #+end_src
+
+When setting the column using a variable you can not use the shorthand syntax ~$2~. Instead setup a function so I only have to write ~c(i)~ instead of ~column(i)~.
+#+begin_src gnuplot
+c(a)=column(a)
+#+end_src
+
+A collection of functions that can calculate a running average.
+#+begin_src gnuplot
+# running averages
+samples(x,n) = $0>(n-1) ? n : ($0+1)
+init(x)=(back1=back2=back3=back4=back5=back6=back7=back8=back9=back10=back11=back12=sum=0)
+avg1(x)=(back1=x,back1)
+avg2(x)=(back2=back1,(avg1(x)+back2)/samples($0,2))
+avg3(x)=(back3=back2,(samples($0,2)*avg2(x)+back3)/samples($0,3))
+avg4(x)=(back4=back3,(samples($0,3)*avg3(x)+back4)/samples($0,4))
+avg5(x)=(back5=back4,(samples($0,4)*avg4(x)+back5)/samples($0,5))
+avg6(x)=(back6=back5,(samples($0,5)*avg5(x)+back6)/samples($0,6))
+avg7(x)=(back7=back6,(samples($0,6)*avg6(x)+back7)/samples($0,7))
+avg8(x)=(back8=back7,(samples($0,7)*avg7(x)+back8)/samples($0,8))
+avg9(x)=(back9=back8,(samples($0,8)*avg8(x)+back9)/samples($0,9))
+avg10(x)=(back10=back9,(samples($0,9)*avg9(x)+back10)/samples($0,10))
+avg11(x)=(back11=back10,(samples($0,10)*avg10(x)+back11)/samples($0,11))
+avg12(x)=(back12=back11,(samples($0,11)*avg11(x)+back12)/samples($0,12))
+#+end_src
+* Colors
+=podo= is a good standard colorblind friendly colorsequence.
+#+begin_src gnuplot
+# use colorblind friendly colorsequence
+set colorsequence podo
+#+end_src
+
+I just reorder the =podo= colors, mainly to make black not the default color.
+#+begin_src gnuplot
+# use colorsequence podo but reorder some colors
+set linetype 1 lc rgb "#0072b2" lw 2 pt 1 ps default
+set linetype 2 lc rgb "#d55e00" lw 2 pt 2 ps default
+set linetype 3 lc rgb "#009e73" lw 2 pt 3 ps default
+set linetype 4 lc rgb "#cc79a7" lw 2 pt 4 ps default
+set linetype 5 lc rgb "#56b4e9" lw 2 pt 5 ps default
+set linetype 6 lc rgb "#e69f00" lw 2 pt 6 ps default
+set linetype 7 lc rgb "#f0e442" lw 2 pt 7 ps default
+set linetype 8 lc rgb "black"   lw 2 pt 8 ps default
+#+end_src
+* Grid, Border, Tics
+I store the default grid, border and tics settings in the =gbt= variable. So I can easily reset these with the macro call ~@gbt~. The =gbt(col)= function also allows setting grid and border to some other color, but needs to be called using eval, e.g. ~eval(gbt("black"))~.
+#+begin_src gnuplot
+# grid border tics settings
+# call @gbt for defaults
+# call eval(gbt("color")) to use color instead of default
+gbt(col)=sprintf("set tics nomirror; set border 3 back lc '%s'; set grid back lw 1 lc '%s'",col,col)
+gbt="set tics nomirror; set border 3 back lc 'gray50'; set grid back lw 1 lc 'gray50'"
+@gbt
+#+end_src
 * Interactive Label Placement
 [[http://www.gnuplotting.org/interactive-label-placing/][Source]]. I adapted the =label_loop= function to newer gnuplot syntax &
 added functionality for multiple arguments. The function call to
-=label_loop= is stored inside a string and can then be executeds as a
-macro like this: src_gnuplot{@iLabel "label1" "label2"}.
+=label_loop= is stored inside a string and can then be executed as a
+macro like this: ~@iLabel "label1" "label2"~
 
 #+begin_src gnuplot
 iLabel = "call '~/git/projects/dotfiles/tangle/label_loop.gp "
