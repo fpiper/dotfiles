@@ -1,8 +1,32 @@
 #+PROPERTY: header-args:conf :tangle tangle/.ledgerrc :results silent
 
 #+begin_src conf
---file ~/.personal/f/ledger/main.ledger
+--file ~/git/projects/ledger/main.ledger
 #+end_src
-#+begin_src shell :tangle tangle/symlink.sh :shebang "#!/bin/bash"
+#+begin_src shell :tangle tangle/symlink.sh :shebang "#!/bin/bash" :results silent
 ln -siv $(pwd)/tangle/.ledgerrc ~/
+ln -siv $(pwd)/tangle/report ~/.local/bin/
+#+end_src
+
+The =report= script can be used for simple plotting of ledger output using gnuplot. This is taken directly from the ledger git repo.
+#+begin_src shell :tangle tangle/report :shebang "#!/usr/bin/env sh"
+# This script facilities plotting of a ledger register report.  If you
+# use OS/X, and have AquaTerm installed, you will probably want to set
+# LEDGER_TERM to "aqua".
+#
+# Examples of use:
+#
+#   report -j -M reg food            # plot monthly food costs
+#   report -J reg checking           # plot checking account balance
+
+if [ -z "$LEDGER_TERM" ]; then
+  LEDGER_TERM="wxt persist"
+fi
+
+(cat <<EOF; ledger "$@") | gnuplot
+  set terminal $LEDGER_TERM
+  set xdata time
+  set timefmt "%Y-%m-%d"
+  plot "-" using 1:2 with linespoints
+EOF
 #+end_src
