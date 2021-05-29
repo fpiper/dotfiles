@@ -36,6 +36,7 @@
   - [[#latex][Latex]]
   - [[#programming-languages][Programming languages]]
   - [[#cad][CAD]]
+  - [[#calc][Calc]]
   - [[#org-mode][Org mode]]
   - [[#deft][Deft]]
   - [[#shell][Shell]]
@@ -3231,6 +3232,13 @@ area.
 #+begin_src emacs-lisp
 (use-package scad-mode
   :straight t)
+#+end_src
+** Calc
+#+begin_src emacs-lisp
+(use-package calc
+  :custom
+  (calc-lu-field-reference "1 V")
+  (calc-lu-power-reference "1 mW"))
 #+end_src
 ** Org mode
 Org is the mode you never need to leave, if you do not want to. My org
