@@ -5766,6 +5766,13 @@ Saves to a temp file and puts the filename in the kill ring."
 #+begin_src emacs-lisp
 (use-package redtick
   :straight t
+  :custom
+  ((redtick-sound-volume "20")
+   (redtick-play-sound t)
+   (redtick-work-interval (* 60 20))
+   (redtick-rest-interval (* 60 5))
+   (redtick--workbar-interval (/ redtick-work-interval 8.0))
+   (redtick--restbar-interval (/ redtick-rest-interval 8.0)))
   :config (redtick-mode 1))
 #+end_src
 * Language settings
