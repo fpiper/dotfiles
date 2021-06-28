@@ -52,6 +52,7 @@
   - [[#compile][Compile]]
   - [[#speed-reading][Speed reading]]
   - [[#context-aware-hydra][Context aware hydra]]
+  - [[#ssh-tunnels][SSH tunnels]]
   - [[#minor-utilities][Minor utilities]]
 - [[#language-settings][Language settings]]
   - [[#spellcheck][Spellcheck]]
@@ -5737,6 +5738,19 @@ _q_ quit       _r_ remove result  _e_ examplify region
   ("/" ibuffer-filter-disable "disable")
   ("b" hydra-ibuffer-main/body "back" :color blue))
 #+END_SRC
+** SSH tunnels
+#+begin_src emacs-lisp
+(use-package ssh-tunnels
+  :straight t
+  :custom (ssh-tunnels-configurations
+           (cons `(:name "nntp"
+                         :local-port 4321
+                         :remote-port 4321
+                         :login ,private/ssh-host-nntp
+                         :host "localhost")
+                 private/ssh-tunnels))
+  :config (auto-ssh-tunnels-mode 1))
+#+end_src
 ** Minor utilities
 *** Screenshots / -casts
 [[https://gitlab.com/ambrevar/emacs-gif-screencast][Here]] is a guide to creating emacs gif screencasts.
