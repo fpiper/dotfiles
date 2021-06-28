@@ -4493,6 +4493,15 @@ CLOSED: %\\1
 ;;       (buffer-string))))
 #+end_src
 (org-read-date nil nil ".")
+*** org-mime
+Set ~:preserve-breaks~ to keep line breaks in the html output. =org-mime-export-options= supports the same options as documented in =org-export-options-alist=.
+#+begin_src emacs-lisp
+(use-package org-mime
+  :straight t
+  :custom ((org-mime-export-options
+            '(:with-latex dvipng
+                          :preserve-breaks t))))
+#+end_src
 *** Ricing
 #+begin_src emacs-lisp
 (setq line-spacing 0.1)
