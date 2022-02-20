@@ -85,6 +85,18 @@ gbt(col)=sprintf("set tics nomirror; set border 3 back lc '%s'; set grid back lw
 gbt="set tics nomirror; set border 3 back lc 'gray50'; set grid back lw 1 lc 'gray50'"
 @gbt
 #+end_src
+* A4 plots
+See [[https://milianw.de/blog/how-to-generate-proper-din-a4-sized-plots-with-gnuplot.html][How to generate proper DIN A4 sized plots with Gnuplot - Milian Wolff]].
+
+#+begin_src gnuplot
+a4="set size ratio 0.71; set terminal postscript enhanced landscape;"
+#+end_src
+Also set output to a =.ps= file. After that:
+#+begin_src bash :eval never
+ps2ps -sPAGESIZE=a4 yourfilename.ps new_dina4_file.ps
+#+end_src
+To finish either use something like =ps2pdf= or view the =.ps= file with =ghostview=.
+
 * Interactive Label Placement
 [[http://www.gnuplotting.org/interactive-label-placing/][Source]]. I adapted the =label_loop= function to newer gnuplot syntax &
 added functionality for multiple arguments. The function call to
