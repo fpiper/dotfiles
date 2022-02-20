@@ -43,6 +43,7 @@ A collection of functions that can calculate a running average.
 # running averages
 samples(x,n) = $0>(n-1) ? n : ($0+1)
 init(x)=(back1=back2=back3=back4=back5=back6=back7=back8=back9=back10=back11=back12=sum=0)
+if(init(0)){} # what is the best way to run functions without showing output?
 avg1(x)=(back1=x,back1)
 avg2(x)=(back2=back1,(avg1(x)+back2)/samples($0,2))
 avg3(x)=(back3=back2,(samples($0,2)*avg2(x)+back3)/samples($0,3))
