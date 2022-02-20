@@ -383,8 +383,8 @@ To support different settings on different devices storing some device informati
         ("xcarb"
          (:type mobile))
         ("DESKTOP-PM1PPEC"
-         (:type mobile)
-         (:os win10))
+         (:type mobile
+                :os win10))
         ))
 (defun fpi/device-info (device prop)
   "Return property PROP of DEVICE as stored in `fpi/devices'."
