@@ -381,7 +381,10 @@ To support different settings on different devices storing some device informati
 #+begin_src emacs-lisp
 (setq fpi/current-device (system-name))
 (setq fpi/devices
-      '(("pan"
+      '(("peter"
+         (:type desktop
+                :os win10))
+        ("pan"
          (:type desktop
                 :wm exwm))
         ("xcarb"
@@ -5314,15 +5317,6 @@ Support for HTML code blocks with proper syntax highlighting. See [[https://gith
       (advice-add 'eww-display-html :around
                   'eww-display-html--override-shr-external-rendering-functions))))
 #+END_SRC
-** Auto-Insert
-#+begin_src emacs-lisp
-(use-package autoinsert
-  :config
-    (define-auto-insert '("\\.sh\\'" . "Shell script skeleton")
-    '(""
-      "#!/usr/bin/env bash" \n \n))
-    (auto-insert-mode 1))
-#+end_src
 ** Email
 For the setup of external mail specific programs see [[file:mail.org]].
 *** Sending mail
