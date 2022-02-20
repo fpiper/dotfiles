@@ -1,3 +1,4 @@
+# -*- coding: utf-8-unix -*-
 #+PROPERTY: header-args:emacs-lisp :tangle tangle/emacs-init.el :results silent :noweb yes
 * Contents :QUOTE:TOC_2_gh:
 #+BEGIN_QUOTE
