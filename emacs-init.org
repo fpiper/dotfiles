@@ -5363,24 +5363,35 @@ I use =msmtp= to send mail.
 **** S/MIME
 Mail signing and encrypting with S/MIME needs a =gpgsm= setup and =smime.el=.
 
-One can either use =EasyPG= or =OpenSSL= as external implementations.
-#+begin_src emacs-lisp :tangle no
-(mml-smime-use 'epg)
+One can either use =EasyPG= or =OpenSSL= as external implementations. Still need to document these settings and packages better..
+#+begin_src emacs-lisp
+(use-package epg
+  :custom (epg-pinentry-mode nil))
+(use-package mml-sec
+  :custom
+  (mml-default-encrypt-method "smime")
+  (mml-default-sign-method "smime")
+  (mml-secure-cache-passphrase nil)
+  (mml-secure-passphrase-cache-expiry 16)
+  )
+(use-package mml-smime
+  :custom
+  (mml-smime-use 'epg)
+  (mml-secure-smime-sign-with-sender t)
+)
 #+end_src
-
-#+begin_src emacs-lisp :tangle no
-(mml-default-encrypt-method "smime")
-(mml-default-sign-method "smime")
-#+end_src
-
-
 
 #+begin_src emacs-lisp :tangle no
 (use-package smime
   :custom
   (smime-CA-directory "~/certs/trusted")
   (smime-certificate-directory "~/certs")
+  (smime-keys private/smime-keys)
   )
+#+end_src
+
+#+begin_src emacs-lisp :tangle no
+(setq mm-sign-option 'guided)
 #+end_src
 *** MUA/Notmuch
 
