@@ -3077,7 +3077,9 @@ over =windmove=, as it does not interfere with org keybindings.
 
 #+begin_src emacs-lisp
 (use-package epa
-  :custom (epa-pinentry-mode 'loopback))
+  :custom (epa-pinentry-mode (if (equal (fpi/current-device-info :os) 'win10)
+                                 nil
+                               'loopback)))
 (use-package pinentry
   :straight t
   :config (pinentry-start)
@@ -3214,6 +3216,11 @@ Various utilities which ease programming in some languages.
   :straight t)
 #+end_src
 *** Emacs lisp
+Remap ~eval-last-sexp~ to a pretty print version. Then you can use =C-0 C-x C-e= to insert the values of the last sexp. Use ~pp-macroexpand-last-sexp~ to print a macro expanded version of the last sexp (but not eval it).
+#+begin_src emacs-lisp
+(global-set-key [remap eval-last-sexp] 'pp-eval-last-sexp)
+#+end_src
+
 =Speed of thought= makes writing lisp so easy. No more snippets
 needed.
 #+begin_src emacs-lisp
