@@ -240,6 +240,10 @@ with other package definition and customization.
 
 #+BEGIN_SRC emacs-lisp
 (setq straight-profiles `((nil . ,(expand-file-name "package-versions.el" "~/git/projects/dotfiles"))))
+(setq straight-recipe-overrides
+      '(nil . (
+               <<straight-recipe-overrides>>
+               )))
 #+END_SRC
 **** straight.el documentation excerpts
 :PROPERTIES:
@@ -2441,16 +2445,21 @@ of src_shell{getconf "PATH"}. See [[elisp:(describe-variable
 ** Git
 *** Git annex
 There are some great ressources on [[https://git-annex.branchable.com/][git-annex]] integration in emacs in [[https://github.com/mm--/dot-emacs/blob/master/jmm-emacs.org][Josh's config]]. Most of my configuration is copied from there.
+#+begin_src emacs-lisp :noweb-ref straight-recipe-overrides :tangle no :eval never
+(git-annex :type git :flavor melpa :host github :repo "jwiegley/git-annex-el")
+#+end_src
 #+begin_src emacs-lisp
 (use-package git-annex
-  :straight t
+  :straight (:host github :repo "fpiper/git-annex-el" :branch "master")
   :config
   <<git-annex-config>>
-  :after (dired))
-(use-package git-annex
+  :after (dired)
   :bind
   (:map git-annex-dired-map
         <<git-annex-dired-bindings>>)
+  (:map dired-mode-map
+        <<git-annex-dired-map-bindings>>
+        )
   )
 #+end_src
 **** Actions to lock/unlock files
@@ -2554,7 +2563,7 @@ When you use this in combination with ~dired-do-kill-lines~ (by default bound to
    "available file"))
 #+END_SRC
 **** Mark git-annex files with git-annex-matching-options
-#+BEGIN_SRC emacs-lisp :tangle no :noweb-ref dired-bindings
+#+BEGIN_SRC emacs-lisp :tangle no :noweb-ref git-annex-dired-map-bindings
 ("% a" . jmm/dired-mark-files-git-annex-matching)
 #+END_SRC
 
