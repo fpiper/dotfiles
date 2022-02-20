@@ -5746,7 +5746,7 @@ _q_ quit       _r_ remove result  _e_ examplify region
            (cons `(:name "nntp"
                          :local-port 4321
                          :remote-port 4321
-                         :login ,private/ssh-host-nntp
+                         :login ,private/ssh-login-nntp
                          :host "localhost")
                  private/ssh-tunnels))
   :config (auto-ssh-tunnels-mode 1))
