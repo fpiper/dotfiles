@@ -94,6 +94,11 @@ Load only groups with level < 2 for faster startup.
 (setq gnus-activate-level 2)
 #+end_src
 **** Message related
+Bcc self to archive sent messages & ensure proper sending
+#+begin_src emacs-lisp
+(setq message-default-mail-headers
+       (format "Bcc: %s\n" user-mail-address))
+#+end_src
 Sent mails are read.
 #+begin_src emacs-lisp
 (setq gnus-gcc-mark-as-read t)
@@ -139,6 +144,11 @@ Setup for fancy mail splitting. Also see the parameters in ~gnus-select-method~.
 
 (setq nnmail-cache-accepted-message-ids t)
 (setq nnmail-message-id-cache-length 10000)
+#+end_src
+**** Search
+Use gnus search language. See [[info:gnus#Search Queries][gnus#Search Queries]] for info.
+#+begin_src emacs-lisp
+(setq gnus-search-use-parsed-queries t)
 #+end_src
 **** Demon
 Background fetching for gnus. See the manual and [[https://www.emacswiki.org/emacs/GnusDemon][emacswiki]].
@@ -616,10 +626,6 @@ contains new messages"))
 ;;; gnus-notify.el ends here
 #+end_src
 *** Misc
-Workaround for bug with ~gnus-cloud-method~ and ~custom-variable-recalc-variable~ upon reloading the =spacemacs-*= theme.
-#+begin_src emacs-lisp
-(setq server "nnimap:imsmail")
-#+end_src
 **** nnreddit
 #+begin_src emacs-lisp
 (use-package nnreddit
