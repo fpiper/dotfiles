@@ -1685,8 +1685,8 @@ When switching between monitors with different resolution, scaling the
     (message "Default height: %s" new)))
 #+end_src
 #+begin_src emacs-lisp :tangle no :noweb-ref fpi-bindings
-(define-key 'fpi-map (kbd "+") 'fpi/scale-default-face)
-(define-key 'fpi-map (kbd "-") (lambda () (interactive) (fpi/scale-default-face t)))
+(fpi/define-key fpi-map (kbd "+") #'fpi/scale-default-face "Zoom")
+(fpi/define-key fpi-map (kbd "-") (lambda () (interactive) (fpi/scale-default-face t)) "Unzoom")
 #+end_src
 ** User info
 Set ~user-full-name~ and ~user-mail-address~. These are set in
@@ -1805,40 +1805,48 @@ Some settings could be harmful to emacs and the underlying system. Therefore man
 Unfortunately =C-c [a-z]= is not always a safe place for user-defined
 key bindings. I use a special keymap to aggregate common functions. I
 rebind the =C-z= binding for this.
+
+Here is a helper macro to define keys including keymap prompts as described [[https://www.olivertaylor.net/emacs/keymap-prompt.html][here]]. This macro has a signature very similar to the regular ~define-key~ function.
+#+begin_src emacs-lisp
+(defmacro fpi/define-key (map key func &optional desc)
+  "Define KEY in MAP with FUNC. Optionally provide DESC."
+  (if desc
+      `(define-key ,map ,key (cons ,desc ,func))
+    `(define-key ,map ,key ,func)))
+#+end_src
+
 *** Toggle map to toggle common options
 This was inspired from [[http://endlessparentheses.com/the-toggle-map-and-wizardry.html][this post]] and I bind it to a key on my personal keymap.
 #+BEGIN_SRC emacs-lisp :results silent
-(define-prefix-command 'fpi/toggle-map)
-(define-key fpi/toggle-map "c" #'column-number-mode)
+(define-prefix-command 'fpi/toggle-map nil "Toggle")
+(fpi/define-key fpi/toggle-map "c" #'column-number-mode "Column")
 ;;(define-key fpi/toggle-map "d" #'toggle-debug-on-error)
-(define-key fpi/toggle-map "f" #'auto-fill-mode)
-(define-key fpi/toggle-map "l" #'scroll-lock-mode)
-(define-key fpi/toggle-map "s" #'flyspell-mode)
-(define-key fpi/toggle-map "t" #'toggle-truncate-lines)
-(define-key fpi/toggle-map "q" #'toggle-debug-on-quit)
-(define-key fpi/toggle-map "r" #'dired-toggle-read-only)
-(autoload 'dired-toggle-read-only "dired" nil t)
-(define-key fpi/toggle-map "v" #'visible-mode)
-(define-key fpi/toggle-map "w" #'whitespace-mode)
-(define-key fpi/toggle-map "W" #'whitespace-toggle-options)
+(fpi/define-key fpi/toggle-map "f" #'auto-fill-mode "Fill")
+(fpi/define-key fpi/toggle-map "l" #'scroll-lock-mode "Lock scrolling")
+(fpi/define-key fpi/toggle-map "s" #'flyspell-mode "Spelling")
+(fpi/define-key fpi/toggle-map "t" #'toggle-truncate-lines "Truncate lines")
+(fpi/define-key fpi/toggle-map "q" #'toggle-debug-on-quit "Quit trigger debug")
+(fpi/define-key fpi/toggle-map "r" #'dired-toggle-read-only "Read only")
+(autoload 'dired-toggle-read-only "dired" nil t )
+(fpi/define-key fpi/toggle-map "v" #'visible-mode "Visible")
+(fpi/define-key fpi/toggle-map "w" #'whitespace-mode "Whitespace")
+(fpi/define-key fpi/toggle-map "W" #'whitespace-toggle-options "Whitespace Options")
 #+END_SRC
 *** fpi-map
 #+BEGIN_SRC emacs-lisp :noweb yes
-(define-prefix-command 'fpi-map)
+(define-prefix-command 'fpi-map nil "fpi-map")
 (unbind-key (kbd "C-z"))
 (global-set-key (kbd "C-z") 'fpi-map)
 
-;;(define-key fpi-map (kbd "1") 'org-global-cycle)
-(define-key fpi-map (kbd "a") 'org-agenda-show-agenda-and-todo)
-(define-key fpi-map (kbd "b") 'bury-buffer)
-(define-key fpi-map (kbd "c") 'compile)
+(fpi/define-key fpi-map (kbd "a") #'org-agenda-show-agenda-and-todo "Agenda")
+(fpi/define-key fpi-map (kbd "b") #'bury-buffer "Bury")
+(fpi/define-key fpi-map (kbd "c") #'compile "Compile")
 ;;(define-key fpi-map (kbd "u") 'multiple-cursors-hydra/body)
-(define-key fpi-map (kbd "e") 'elfeed)
-(define-key fpi-map (kbd "h") 'dfeich/context-hydra-launcher)
-(define-key fpi-map (kbd "m") 'notmuch)
-(define-key fpi-map (kbd "t") fpi/toggle-map)
-(define-key fpi-map (kbd "n") 'sauron-toggle-hide-show)
-(define-key fpi-map (kbd "j") (lambda () (interactive) (find-file org-journal-file)))
+(fpi/define-key fpi-map (kbd "h") #'dfeich/context-hydra-launcher "Hydra")
+;; (define-key fpi-map (kbd "m") 'notmuch)
+(fpi/define-key fpi-map (kbd "t") #'fpi/toggle-map "Toggle")
+(fpi/define-key fpi-map (kbd "n") #'sauron-toggle-hide-show "Notifications")
+(fpi/define-key fpi-map (kbd "j") (lambda () (interactive) (find-file org-journal-file)) "Journal")
 
 <<fpi-bindings>>
 #+END_SRC
@@ -2861,7 +2869,6 @@ navigate and revert hunks directly from the buffer. Use =g= to open
 #+begin_src emacs-lisp
 (use-package diff-hl
   :straight t
-  :bind (:map fpi-map ("g" . hydra-diff-hl/body))
   :init (global-diff-hl-mode 1)
   :config (defhydra hydra-diff-hl (:body-pre (diff-hl-mode 1)
                                              :hint nil)
@@ -2889,6 +2896,10 @@ navigate and revert hunks directly from the buffer. Use =g= to open
   ("Q" (diff-hl-mode -1)
        :color blue))
 )
+#+end_src
+
+#+begin_src emacs-lisp :noweb-ref fpi-bindings :tangle no
+(fpi/define-key fpi-map "g" #'hydra-diff-hl/body "Git diff")
 #+end_src
 *** git-auto-commit
 Mode to automatically commit on file save. Ensure that automatic
@@ -4185,7 +4196,7 @@ This provides functions to get webpage title or content for org mode links.
   :straight t)
 #+end_src
 #+begin_src emacs-lisp :noweb-ref fpi-bindings :tangle no
-(define-key fpi-map "l" #'org-web-tools-insert-link-for-url)
+(fpi/define-key fpi-map "l" #'org-web-tools-insert-link-for-url "Link (org)")
 #+end_src
 
 *** Gnorb
@@ -4917,7 +4928,7 @@ A small function to toggle the encryption state of the current entry.
          (if (looking-at-p "-----BEGIN PGP MESSAGE-----")
              (org-decrypt-entry)
            (org-encrypt-entry))))))
-  (define-key fpi/toggle-map "e" #'fpi/org-toggle-crypt-entry))
+  (fpi/define-key fpi/toggle-map "e" #'fpi/org-toggle-crypt-entry "Encrypt"))
 #+end_src
 *** Reference management
 **** Bibtex
@@ -4966,7 +4977,7 @@ A small function to toggle the encryption state of the current entry.
                      (ding))))))))
 #+end_src
 #+begin_src emacs-lisp :noweb-ref fpi-bindings :tangle no
-(define-key fpi-map "r" #'org-ref-helm-insert-cite-link)
+(fpi/define-key fpi-map "r" #'org-ref-helm-insert-cite-link "Ref")
 #+end_src
 ***** Capturing entries
 I store my bibtex references in an org file together with my notes. In
@@ -5165,7 +5176,7 @@ pdf if available."
   (if fpi/org-meta-heading-info-store
       (mw-org-show-meta-info-lines)
     (mw-org-hide-meta-heading-info)))
-(define-key fpi/toggle-map "m" #'fpi/org-toggle-meta-info-lines)
+(fpi/define-key fpi/toggle-map "m" #'fpi/org-toggle-meta-info-lines "Metalines (org)")
 #+end_src
 *** Table of contents in org
 #+begin_src emacs-lisp
@@ -5228,8 +5239,10 @@ _g_: Go to active clock _b_: Break           _P_: Insert BBDB      _c_: Capture 
   ("t" bh/org-todo) ;; neccessary?
   ("w" bh/widen) ;; neccessary?
   ("z" cce/note-to-clock))
+#+end_src
 
-(define-key fpi-map (kbd "f") 'hydra-workflow/body)
+#+begin_src emacs-lisp :noweb-ref fpi-bindings :tangle no
+(fpi/define-key fpi-map (kbd "f") 'hydra-workflow/body "Flow")
 #+end_src
 Basic flow:
 1. Start your work by clocking in with ~bh/punch-in~. This sets a
@@ -5515,23 +5528,27 @@ custom link format.
 #+begin_src emacs-lisp
 (use-package zetteldeft
   :straight t
-  :bind (:map fpi-map (("d d" . deft)
-                       ("d D" . zetteldeft-deft-new-search)
-                       ("d R" . deft-refresh)
-                       ("d s" . zetteldeft-search-at-point)
-                       ("d c" . zetteldeft-search-current-id)
-                       ("d f" . zetteldeft-follow-link)
-                       ("d F" . zetteldeft-avy-file-search-ace-window)
-                       ("d l" . zetteldeft-avy-link-search)
-                       ("d t" . zetteldeft-avy-tag-search)
-                       ("d T" . zetteldeft-tag-buffer)
-                       ("d i" . zetteldeft-find-file-id-insert)
-                       ("d I" . zetteldeft-find-file-full-title-insert)
-                       ("d o" . zetteldeft-find-file)
-                       ("d n" . zetteldeft-new-file)
-                       ("d N" . zetteldeft-new-file-and-link)
-                       ("d r" . zetteldeft-file-rename)
-                       ("d x" . zetteldeft-count-words))))
+  ;; :bind (:map fpi-map (("d d" . deft)
+  ;;                      ("d D" . zetteldeft-deft-new-search)
+  ;;                      ("d R" . deft-refresh)
+  ;;                      ("d s" . zetteldeft-search-at-point)
+  ;;                      ("d c" . zetteldeft-search-current-id)
+  ;;                      ("d f" . zetteldeft-follow-link)
+  ;;                      ("d F" . zetteldeft-avy-file-search-ace-window)
+  ;;                      ("d l" . zetteldeft-avy-link-search)
+  ;;                      ("d t" . zetteldeft-avy-tag-search)
+  ;;                      ("d T" . zetteldeft-tag-buffer)
+  ;;                      ("d i" . zetteldeft-find-file-id-insert)
+  ;;                      ("d I" . zetteldeft-find-file-full-title-insert)
+  ;;                      ("d o" . zetteldeft-find-file)
+  ;;                      ("d n" . zetteldeft-new-file)
+  ;;                      ("d N" . zetteldeft-new-file-and-link)
+  ;;                      ("d r" . zetteldeft-file-rename)
+  ;;                      ("d x" . zetteldeft-count-words)))
+  )
+#+end_src
+#+begin_src emacs-lisp :noweb-ref fpi-bindings :tangle no
+(fpi/define-key fpi-map "dd" #'deft "Deft")
 #+end_src
 
 ** Shell
@@ -5597,8 +5614,11 @@ prefix to my custom keymap.
             (interactive "P")
             (if arg
                 (call-interactively 'password-store-copy-field)
-              (call-interactively 'password-store-copy)))
-  :bind (:map fpi-map ("p" . fpi/password-store-copy-pass-or-field)))
+              (call-interactively 'password-store-copy))))
+#+end_src
+
+#+begin_src emacs-lisp :noweb-ref fpi-bindings :tangle no
+(fpi/define-key fpi-map "p" #'fpi/password-store-copy-pass-or-field "Pass")
 #+end_src
 **** auth-password-store/auth-source-pass
 A password-store backend for the Emacs [[info:auth#Top][auth-source]] library which
@@ -6414,7 +6434,7 @@ The mode is enabled for all =text-mode= based buffers by default.
 #+end_src
 Also set an easy keybinding to toggle it manually.
 #+begin_src emacs-lisp :noweb-ref fpi-bindings :tangle no
-(define-key fpi/toggle-map "p" #'prose-mode)
+(fpi/define-key fpi/toggle-map "p" #'prose-mode "Prose")
 #+end_src
 
 Olivetti mode is used to center text in the buffer. This somehow helps with writing.
@@ -6454,7 +6474,7 @@ If `olivetti-body-width' is a number fit the window width to it instead of the a
 #+end_src
 
 #+begin_src emacs-lisp :tangle no :noweb-ref fpi-bindings
-(define-key 'fpi-map (kbd "s") 'fpi/fit-window-to-buffer)
+(fpi/define-key 'fpi-map (kbd "s") 'fpi/fit-window-to-buffer "Size window to buffer")
 #+end_src
 
 * Wrapping up
