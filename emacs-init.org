@@ -4360,62 +4360,59 @@ Set some prettify symbols for org mode.
 #+end_src
 *** org-roam
 Org-roam mainly provides a display of backlinks to the current file. This allows the creation of a one-subject-per-file Zettelkasten.
-#+begin_src emacs-lisp
+#+begin_src emacs-lisp :tangle tangle/emacs-init.el :noweb yes :results silent
 (use-package org-roam
-  :straight t
-  :delight
-  :hook
-  (after-init . org-roam-mode)
+  :straight (:no-byte-compile t)
   :custom
-  (org-roam-directory "~/git/projects/zettel/")
-  (org-roam-tag-sources '(prop last-directory))
-  (org-roam-buffer-width 0.2)
-  (org-roam-graph-exclude-matcher "index.org")
-  (org-roam-graph-viewer
-   (lambda (file)
-     (let ((org-roam-graph-viewer "/mnt/c/Program Files/Mozilla Firefox/firefox.exe"))
-       (org-roam-graph--open (concat "file://///wsl$/Debian" file)))))
+  (org-roam-directory "~/git/projects/zettel")
+  (org-roam-v2-ack t)
+  (org-roam-mode-section-functions
+   '(org-roam-backlinks-section
+     org-roam-reflinks-section
+     org-roam-unlinked-references-section))
   (org-roam-capture-templates
-   '(("d" "default" plain #'org-roam-capture--get-point "%?" :file-name "%<%Y%m%d%H%M%S>-${slug}" :head "#+title: ${title}
-" :unnarrowed t)
-     ("b" "bib" plain #'org-roam-capture--get-point
-      "%(fpi/org-roam-get-last-content)"
-      :file-name "Lit/%(fpi/org-roam-get-key \"${title}\")"
-      :head ""
-      :unnarowed t)))
-  (org-roam-capture-ref-templates
-   '(("r" "ref" plain #'org-roam-capture--get-point "%?" :file-name "Ref/${slug}" :head "#+title: ${title}\n#+ROAM_KEY: ${ref}\n " :unnarrowed t)))
-  :bind (:map org-roam-mode-map
-              (("C-c n l" . org-roam)
-               ("C-c n u" . org-roam-unlinked-references)
-               ("C-c n f" . org-roam-find-file)
-               ("C-c n g" . org-roam-graph)
-               ("C-c n d" . org-roam-doctor)
-               ("C-c n G" . fpi/org-roam-graph-with-exclude)
-               ("C-c n t g" . fpi/org-roam-toggle-graph-executable)
-               ("C-c n x" . org-roam-jump-to-index)
-               <<org-roam-bindings>>
-               )
-              :map org-mode-map
-              (("C-c n i" . org-roam-insert)))
+   (quote
+    <<org-roam-capture-templates()>>
+    ))
   :config
-  (defun org-roam--file-link-face (path)
-    "Return `org-link'"
-    'org-link)
-  (defun fpi/org-roam-toggle-graph-executable ()
-    (interactive)
-    (setq org-roam-graph-executable (if (equal org-roam-graph-executable "dot")
-                                        "neato"
-                                      "dot"))
-    (message "Set org-roam graphing tool to %s" org-roam-graph-executable))
-  (defun fpi/org-roam-graph-with-exclude (&optional arg file node-query)
-    (interactive "P")
-    (let ((org-roam-graph-exclude-matcher (completing-read "Exclude matcher to use: " nil)))
-      (org-roam-graph arg file node-query)))
-  <<org-roam-config>>
-  )
+  (org-roam-db-autosync-mode 1)
+  (add-to-list 'display-buffer-alist
+               '("\\*org-roam\\*"
+                 (display-buffer-in-direction)
+                 (direction . below)
+                 (window-height . 0.3)))
+  :bind
+  (:map org-roam-mode-map
+        (
+         <<org-roam-bindings>>
+         )
+        :map org-mode-map
+        (
+         <<org-roam-bindings>>
+         )))
 #+end_src
-Overwriting ~org-roam--file-link-face~ is a crude fix for hanging emacs. The original function calls file-exist-p which opens a slow tramp connection.
+
+#+begin_src emacs-lisp :tangle no :noweb-ref org-roam-bindings
+("C-c n f" . org-roam-node-find)
+("C-c n i" . org-roam-node-insert)
+("C-c n t" . org-roam-buffer-toggle)
+("C-c n c" . org-roam-capture)
+#+end_src
+#+begin_src emacs-lisp :noweb-ref fpi-bindings :tangle no
+(fpi/define-key fpi-map "r" #'org-roam-node-find "Roam")
+#+end_src
+
+#+begin_src emacs-lisp
+(use-package org-roam-ui
+  :straight (:host github :repo "org-roam/org-roam-ui" :branch "main" :files ("*.el" "out"))
+  :after org-roam
+  :custom
+  (org-roam-ui-browser-function #'browse-url-generic))
+#+end_src
+
+#+begin_src emacs-lisp :tangle no :noweb-ref org-roam-bindings
+("C-c n u" . org-roam-ui-mode)
+#+end_src
 
 The idea of ~fpi/org-roam-todo~ is from a post by [[https://oremacs.com/2020/12/31/happy-new-year/][aboabo]]. It lists all open todos in zettelkasten entries and is a (faster) alternative to running an todo agenda with ~org-agenda-files~ set to ~org-roam-directory~.
 #+begin_src emacs-lisp :tangle no :noweb-ref org-roam-config
@@ -4426,12 +4423,73 @@ The idea of ~fpi/org-roam-todo~ is from a post by [[https://oremacs.com/2020/12/
   (counsel-rg "^\\*+ \\(NEXT\\|TODO\\)" org-roam-directory "--sort modified"))
 #+end_src
 
-As =C-c n t= is already taken as prefix for roam related toggle commands, use =o= (mnemonic: “open”) instead.
+As =C-c n t= is already taken, use =o= (mnemonic: “open”) instead.
 #+begin_src emacs-lisp :tangle no :noweb-ref org-roam-bindings
 ("C-c n o" . fpi/org-roam-todo)
 #+end_src
 
+- [ ] ntrdn
+**** org-roam capture templates
+Here we define some capture templates for roam files. Using variables in the source block header we can define the template contents in quote blocks below.
 
+#+HEADER: :var default=org-roam-template-default ref=org-roam-template-ref
+#+HEADER: :var entities=org-roam-template-entities work=org-roam-template-work
+#+HEADER: :var personal=org-roam-template-personal private=org-roam-template-private
+#+NAME: org-roam-capture-templates
+#+begin_src emacs-lisp :tangle no :noweb yes :results code silent
+`(
+  ("d" "Default (avoid this)" plain "%?"
+   :target (file+head "%<%Y%m%d%H%M%S>-${slug}.org" ,default)
+   :unnarrowed t)
+  ("l" "Link/Reference" plain "%?"
+   :target (file+head "ref/${slug}.org" ,ref)
+   :unnarrowed t)
+  ("e" "Entity (Person, Company, …)" plain "%?"
+   :target (file+head "Entities/${slug}.org" ,entities)
+   :unnarrowed t)
+  ("w" "Work related zettel" plain "%?"
+   :target (file+head "Work/%<%Y%m%d%H%M%S>-${slug}.org" ,work)
+   :unnarrowed t)
+  ("p" "Personal/Non-work related zettel" plain "%?"
+   :target (file+head "Personal/%<%Y%m%d%H%M%S>-${slug}.org" ,personal)
+   :unnarrowed t)
+    ("P" "Private zettel" plain "%?"
+   :target (file+head "Personal/Private/%<%Y%m%d%H%M%S>-${slug}.org" ,private)
+   :unnarrowed t)
+  )
+#+end_src
+
+As capture templates get more complex storing the template itself in a separate file – or org-babel source block – can be helpful. Above are my (all very similar) template definitions; below the template contents.
+
+#+NAME: org-roam-template-default
+#+begin_quote
+#+title: ${title}
+#+end_quote
+#+NAME: org-roam-template-ref
+#+begin_quote
+#+title: ${title}
+#+ROAM_KEY: ${ref}
+#+end_quote
+#+NAME: org-roam-template-entities
+#+begin_quote
+#+FILETAGS: entity
+#+title: ${title}
+#+end_quote
+#+NAME: org-roam-template-work
+#+begin_quote
+#+FILETAGS: work
+#+title: ${title}
+#+end_quote
+#+NAME: org-roam-template-personal
+#+begin_quote
+#+FILETAGS: personal
+#+title: ${title}
+#+end_quote
+#+NAME: org-roam-template-private
+#+begin_quote
+#+FILETAGS: personal private
+#+title: ${title}
+#+end_quote
 **** org-roam-protocol
 #+begin_src emacs-lisp
 (use-package org-roam-protocol
@@ -5483,7 +5541,7 @@ creation.
   :custom ((deft-directory "~/git/projects/zettel")
            (deft-extensions '("org"))
            (deft-default-extension "org")
-           (deft-use-filename-as-title nil)
+           (deft-use-filename-as-title t)
            (deft-recursive t)
            (deft-use-filter-string-for-filename t)
            <<deft-custom>>))
