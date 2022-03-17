@@ -3492,7 +3492,7 @@ Here is a list of nice ones: ◉, ○, ►, •. The default ones are ~'("◉" "
 #+begin_src emacs-lisp
 (use-package org-bullets
   :straight t
-  :custom (org-bullets-bullet-list '("✧"))
+  :custom (org-bullets-bullet-list '(" "))
   :config (add-hook 'org-mode-hook (lambda () (org-bullets-mode 1))))
 #+end_src
 Use imagemagick and standalone class for latex preview.
@@ -3508,7 +3508,9 @@ Use imagemagick and standalone class for latex preview.
 #+end_src
 #+begin_src emacs-lisp
 (use-package org-num
-  :delight)
+  :delight
+  :after org
+  :hook (org-mode . org-num-mode))
 #+end_src
 *** Timekeeping & Clocking
 - Remove clocks with zero time.
