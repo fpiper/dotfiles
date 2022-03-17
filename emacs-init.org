@@ -4599,9 +4599,11 @@ Also exclude =ATTACH= from the inherited tags
 #+end_src
 *** Org-Capture
 #+BEGIN_SRC emacs-lisp
+(setq org-journal-file (format "~/sync/journal/%s.org" (nth 2 (calendar-current-date))))
 (use-package org-capture
+  :after org
   :custom
-  ((org-journal-file (format "~/sync/journal/%s.org" (nth 2 (calendar-current-date))))
+  (
    (org-capture-templates
     `(
 <<org-capture-templates>>))
