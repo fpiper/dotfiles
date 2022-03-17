@@ -4957,37 +4957,18 @@ A small function to toggle the encryption state of the current entry.
 (setq bibtex-completion-notes-extension ".org")
 
 #+end_src
-**** org-ref
+**** Org Cite
+=org-ref= was replaced by =orgcite= which is built into =org=.
 #+begin_src emacs-lisp
-(use-package org-ref
-  :straight t
-  :bind (:map org-mode-map (("C-c n p" . fpi/open-bibtex-pdf-or-directory)))
+(use-package oc
+  :after org
   :custom
-  (org-ref-bibliography-notes nil)
-  (org-ref-notes-function 'org-ref-notes-function-many-files)
-  (org-ref-notes-directory "~/git/projects/zettel/Lit")
-  (org-ref-default-bibliography '("~/git/projects/personal/bib.bib"))
-  (org-ref-pdf-directory "~/git/projects/personal/Lit/")
-  :config
-  (defun fpi/open-bibtex-pdf-or-directory ()
-    (interactive)
-    (save-excursion
-      (bibtex-beginning-of-entry)
-      (let* ((bibtex-expand-strings t)
-             (entry (bibtex-parse-entry t))
-             (key (reftex-get-bib-field "=key=" entry))
-             (pdf (funcall org-ref-get-pdf-filename-function key)))
-        (message "%s" pdf)
-        (if (file-exists-p pdf)
-            (org-open-link-from-string (format "[[file:%s]]" pdf))
-          ;; try to get pdf
-          (or (let ((doi-utils-open-pdf-after-download t))
-                (doi-utils-get-bibtex-entry-pdf))
-              (progn (dired (file-name-directory pdf))
-                     (ding))))))))
-#+end_src
-#+begin_src emacs-lisp :noweb-ref fpi-bindings :tangle no
-(fpi/define-key fpi-map "r" #'org-ref-helm-insert-cite-link "Ref")
+  (org-cite-global-bibliography (if (equal fpi/current-device "DESKTOP-PM1PPEC")
+                                    '("~/git/projects/personal/bib.bib"
+                                      "~/win/Zotero/00_Unsorted.bib"
+                                      "~/win/Zotero/01_Annotated.bib"
+                                      "~/win/Zotero/99_AllZotero.bib")
+                                  '("~/git/projects/personal/bib.bib"))))
 #+end_src
 ***** Capturing entries
 I store my bibtex references in an org file together with my notes. In
