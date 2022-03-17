@@ -3305,11 +3305,11 @@ Hansen's]] configs.
 - Align tags left :: Fixes problems with line breaking on small
   window width.
 
-I use a org version with some custom patches. Rather than using something like =el-patch=, I host my version on github for now and update it every so often. This recipe for org is used in all coming =straight.el= calls.
+I use a org version with some custom patches. Rather than using something like =el-patch=, I host my version on github for now and update it every so often.
 #+begin_src emacs-lisp :noweb-ref org-recipe :tangle no
-(org-plus-contrib :host github :repo "fpiper/org-mode" :branch "develop"
-                              ;;:local-repo "org" :files (:defaults "contrib/lisp/*.el")
-                              )
+(org :host github :repo "fpiper/org-mode" :branch "develop"
+     ;;:local-repo "org" :files (:defaults "contrib/lisp/*.el")
+     )
 #+end_src
 
 #+begin_src emacs-lisp
@@ -4192,8 +4192,7 @@ print the list.
 #+begin_src emacs-lisp
 (use-package org-checklist
   :after org
-  :straight
-  <<org-recipe>>)
+  :straight (org-contrib))
 #+end_src
 *** Handling web urls
 **** org-web-tools
@@ -4886,7 +4885,7 @@ CLOSED: %\\1
 (use-package org-expiry
   :after org
   :straight
-  <<org-recipe>>
+  (org-contrib)
   :custom
   (org-expiry-handler-function 'org-expiry-archive-subtree)
   (org-expiry-inactive-timestamps t)
