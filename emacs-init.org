@@ -3423,7 +3423,7 @@ I use a org version with some custom patches. Rather than using something like =
 I prefer to use timestamp based ID's as they are
 #+begin_src emacs-lisp :tangle no :noweb-ref org-id-custom
 (org-id-method 'ts)
-(org-id-ts-format "%FT%T%z")
+(org-id-ts-format "%FT%T%z.%6N")
 #+end_src
 
 #+begin_src emacs-lisp
@@ -3505,6 +3505,14 @@ Use imagemagick and standalone class for latex preview.
 [PACKAGES]
 [DEFAULT-PACKAGES]
 \\pagestyle{empty}             % do not remove")
+#+end_src
+
+Also let us define some more default latex packages.
+#+begin_src emacs-lisp :noweb-ref org-config :tangle no
+(add-to-list 'org-latex-packages-alist '("" "uniinput"))
+(add-to-list 'org-latex-packages-alist '("" "siunitx"))
+(add-to-list 'org-latex-packages-alist '("" "tikz"))
+(add-to-list 'org-latex-packages-alist '("" "circuitikz"))
 #+end_src
 #+begin_src emacs-lisp
 (use-package org-num
