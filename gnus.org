@@ -65,11 +65,18 @@ To avoid confusion I enable namespaces for imap groups.
 #+end_src
 **** Personal mailbox
 #+begin_src emacs-lisp :tangle no :noweb-ref secondary-select-methods
-(add-to-list 'gnus-secondary-select-methods `(nnimap ,@private/personal-imap-info
-                                                     (nnimap-stream ssl)
-                                                     (nnir-search-engine imap)
-                                                     (nnimap-inbox "INBOX")))
+(mapc
+ (lambda (info)
+   (add-to-list
+    'gnus-secondary-select-methods
+    `(nnimap
+      ,@info
+      (nnimap-stream ssl)
+      (nnir-search-engine imap)
+      (nnimap-inbox "INBOX"))))
+ private/personal-imap-info)
 #+end_src
+
 **** RSS/Atom over nntp
 Setup a secondary imap server and a local nntp server I use to fetch
 RSS/Atom Feeds asynchronously.
@@ -185,12 +192,14 @@ Background fetching for gnus. See the manual and [[https://www.emacswiki.org/ema
 To define different scoring files for different groups I set [[info:gnus#Home Score File][home score files]] based on the group name.
 #+begin_src emacs-lisp
 (setq gnus-home-score-file
-      '(("^nnimap" "nnimap.SCORE") ;; w/ author scoring
+      '(("misc@" "nntp_gmane.SCORE")
+        ("^nnimap" "nnimap.SCORE") ;; w/ author scoring
         ("gmane" "nntp_gmane.SCORE") ;; w/ author scoring
         ("^nntp\\+localhost" "nntp_global.SCORE") ;; w/o author scoring
         ))
 (setq gnus-home-adapt-file
-      '(("^nnimap" "nnimap.ADAPT")
+      '(("misc@" "nntp_gmane.SCORE")
+        ("^nnimap" "nnimap.ADAPT")
         ("gmane" "nntp_gmane.ADAPT")
         ("^nntp\\+localhost" "nntp_global.ADAPT")))
 #+end_src
@@ -317,7 +326,7 @@ Commands to interact with the gnus cloud are prefixed with =~= in the group buff
 #+begin_src emacs-lisp :noweb yes
 (use-package gnus-cloud
   :custom
-  (gnus-cloud-method (concat "nnimap:" (car private/personal-imap-info)))
+  (gnus-cloud-method (concat "nnimap:" (caar private/personal-imap-info)))
   (gnus-cloud-synced-files '("~/.authinfo.gpg"
                              ;; "~/.gnus.registry.eieio"
                              ;; (:directory "~/News" :match ".*.\\(SCORE\\|ADAPT\\)")
