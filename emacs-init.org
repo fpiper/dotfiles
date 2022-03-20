@@ -4306,6 +4306,84 @@ This function is handy to use in header arguments to create names based on the c
         (post (or post "")))
     (format "%s%s%s" pre (nth 4 (org-heading-components)) post)))
 #+end_src
+
+We can also create unique names based on the source block content and header information.
+#+begin_src emacs-lisp
+(defun fpi/org-babel-get-src-block-hash (&optional block)
+  "Return a hash based on src block content and header.
+
+This function tries to not take any file positions into account
+and always return the same hash given the same source code and
+same header arguments.
+
+`org-babel-sha1-hash' may provide the same feature, but I
+discovered that function only after writing this."
+  (save-mark-and-excursion
+    (if block (org-babel-goto-named-src-block block))
+    (let* ((info (org-babel-get-src-block-info t))
+           (body (nth 1 info))
+           (header (nth 2 info))
+           (hashstring (format "%s%s" body header)))
+      (md5 hashstring))))
+
+(setq fpi/org-babel-outfile-directory "/tmp/babel")
+(make-directory fpi/org-babel-outfile-directory t)
+
+(defun fpi/org-babel-src-block-temp-file (&optional suffix prefix directory block)
+  "Return a unique filename based on src block content and header.
+
+This function is intended as an alternative to
+`org-babel-temp-file' to provide unique and constant output
+filenames. Optionally provide SUFFIX or PREFIX of the filename
+and the file DIRECTORY. If SUFFIX or PREFIX is a list its content
+will be concatenated. Default directory is
+`org-babel-temporary-directory'. Optionally provide a source
+block name BLOCK.
+ "
+  ;; FIXME Way to create really unique names. In case same code can produce different outputs (e.g. based on time, file context)
+  (let ((hash (fpi/org-babel-get-src-block-hash block))
+        (directory (or
+                    directory
+                    fpi/org-babel-outfile-directory))
+        (suffix (if (listp suffix)
+                    (mapconcat (lambda (x)
+                                 (cond ;; FIXME possible to handle all cases without cond?
+                                  ((symbolp x) (symbol-name x))
+                                  ((numberp x) (number-to-string x))
+                                  (t x)
+                                  )) suffix "")
+                  suffix))
+        (prefix (if (listp prefix)
+                    (mapconcat (lambda (x)
+                                 (cond ;; FIXME possible to handle all cases without cond?
+                                  ((symbolp x) (symbol-name x))
+                                  ((numberp x) (number-to-string x))
+                                  (t x)
+                                  )) prefix "")
+                  prefix))
+        (prefix (or prefix ""))
+        )
+    (expand-file-name (format "%s%s%s" prefix hash suffix) directory)
+    ))
+(defalias 'fpi/ob-name #'fpi/org-babel-src-block-temp-file)
+#+end_src
+
+Now wen can set something like ~:file (fpi/ob-name ".png")~ on all source blocks where we do not care about the output file name.
+
+Some tests for ~fpi/ob-name~:
+#+begin_src emacs-lisp :results value replace :tangle no :exports both
+(list
+ (fpi/ob-name)
+ (fpi/ob-name "-SUFFIX")
+ (fpi/ob-name nil "PREFIX-")
+ (fpi/ob-name "-SUFFIX" "PREFIX-")
+ (fpi/ob-name '("-SUF" 42 FIX))
+ )
+#+end_src
+
+#+RESULTS:
+| /tmp/babel-gwZcjh/291f3f60f3e5d467584a3b5bda4d7b05 | /tmp/babel-gwZcjh/291f3f60f3e5d467584a3b5bda4d7b05-SUFFIX | /tmp/babel-gwZcjh/PREFIX-291f3f60f3e5d467584a3b5bda4d7b05 | /tmp/babel-gwZcjh/PREFIX-291f3f60f3e5d467584a3b5bda4d7b05-SUFFIX | /tmp/babel-gwZcjh/291f3f60f3e5d467584a3b5bda4d7b05-SUF42FIX |
+
 *** ox-reveal
 #+BEGIN_SRC emacs-lisp
 (use-package ox-reveal
