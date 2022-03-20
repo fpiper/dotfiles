@@ -4362,7 +4362,11 @@ Set some prettify symbols for org mode.
 Org-roam mainly provides a display of backlinks to the current file. This allows the creation of a one-subject-per-file Zettelkasten.
 #+begin_src emacs-lisp :tangle tangle/emacs-init.el :noweb yes :results silent
 (use-package org-roam
-  :straight (:no-byte-compile t)
+  :straight (:host github
+                   :repo "org-roam/org-roam"
+                   :files (:defaults "extensions/*")
+                   :no-byte-compile t)
+  :after magit
   :custom
   (org-roam-directory "~/git/projects/zettel")
   (org-roam-v2-ack t)
@@ -4428,7 +4432,6 @@ As =C-c n t= is already taken, use =o= (mnemonic: “open”) instead.
 ("C-c n o" . fpi/org-roam-todo)
 #+end_src
 
-- [ ] ntrdn
 **** org-roam capture templates
 Here we define some capture templates for roam files. Using variables in the source block header we can define the template contents in quote blocks below.
 
@@ -4439,22 +4442,22 @@ Here we define some capture templates for roam files. Using variables in the sou
 #+begin_src emacs-lisp :tangle no :noweb yes :results code silent
 `(
   ("d" "Default (avoid this)" plain "%?"
-   :target (file+head "%<%Y%m%d%H%M%S>-${slug}.org" ,default)
+   :if-new (file+head "%<%Y%m%d%H%M%S>-${slug}.org" ,default)
    :unnarrowed t)
   ("l" "Link/Reference" plain "%?"
-   :target (file+head "ref/${slug}.org" ,ref)
+   :if-new (file+head "Ref/${slug}.org" ,ref)
    :unnarrowed t)
   ("e" "Entity (Person, Company, …)" plain "%?"
-   :target (file+head "Entities/${slug}.org" ,entities)
+   :if-new (file+head "Entities/${slug}.org" ,entities)
    :unnarrowed t)
   ("w" "Work related zettel" plain "%?"
-   :target (file+head "Work/%<%Y%m%d%H%M%S>-${slug}.org" ,work)
+   :if-new (file+head "Work/%<%Y%m%d%H%M%S>-${slug}.org" ,work)
    :unnarrowed t)
   ("p" "Personal/Non-work related zettel" plain "%?"
-   :target (file+head "Personal/%<%Y%m%d%H%M%S>-${slug}.org" ,personal)
+   :if-new (file+head "Personal/%<%Y%m%d%H%M%S>-${slug}.org" ,personal)
    :unnarrowed t)
     ("P" "Private zettel" plain "%?"
-   :target (file+head "Personal/Private/%<%Y%m%d%H%M%S>-${slug}.org" ,private)
+   :if-new (file+head "Personal/Private/%<%Y%m%d%H%M%S>-${slug}.org" ,private)
    :unnarrowed t)
   )
 #+end_src
@@ -4467,8 +4470,10 @@ As capture templates get more complex storing the template itself in a separate 
 #+end_quote
 #+NAME: org-roam-template-ref
 #+begin_quote
+:PROPERTIES:
+:ROAM_REFS: ${ref}
+:END:
 #+title: ${title}
-#+ROAM_KEY: ${ref}
 #+end_quote
 #+NAME: org-roam-template-entities
 #+begin_quote
@@ -4493,7 +4498,16 @@ As capture templates get more complex storing the template itself in a separate 
 **** org-roam-protocol
 #+begin_src emacs-lisp
 (use-package org-roam-protocol
-  :after org-roam)
+  :after org-roam
+  :custom (org-roam-capture-ref-templates
+           '(("zr" "roam ref" plain "%?"
+              :if-new (file+head "Ref/${slug}.org"
+                                 "#+title: ${title}")
+              :unnarrowed t)
+             ("zf" "roam fleeting ref" plain "%?"
+              :if-new (file+head "Fleeting/${slug}.org"
+                                 "#+title: ${title}")
+              :unnarrowed t))))
 #+end_src
 **** org-roam-bibtex
 #+begin_src emacs-lisp
@@ -4865,8 +4879,10 @@ To be compatible with [[https://github.com/sprig/org-capture-extension][this chr
         "* %? [[%:link][%:description]]
 :PROPERTIES:
 :CREATED: %U
+:ID: %(org-id-new)
+:ROAM_REFS: %:link
 :END:
-#+ROAM_KEY: %:link")
+")
 #+end_src
 ***** Old templates
 Templates I no longer use, but may be interesting.
