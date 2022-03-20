@@ -57,6 +57,12 @@ avg10(x)=(back10=back9,(samples($0,9)*avg9(x)+back10)/samples($0,10))
 avg11(x)=(back11=back10,(samples($0,10)*avg10(x)+back11)/samples($0,11))
 avg12(x)=(back12=back11,(samples($0,11)*avg11(x)+back12)/samples($0,12))
 #+end_src
+
+And some derivatives functions.
+#+begin_src gnuplot
+d(y) = ($0 == 0) ? (y1 = y, 1/0) : (y2 = y1, y1 = y, y1-y2)
+d2(x,y) = ($0 == 0) ? (x1 = x, y1 = y, 1/0) : (x2 = x1, x1 = x, y2 = y1, y1 = y, (y1-y2)/(x1-x2))
+#+end_src
 * Colors
 =podo= is a good standard colorblind friendly colorsequence.
 #+begin_src gnuplot
