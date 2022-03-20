@@ -4836,7 +4836,7 @@ Instead of project related capture templates, I use the same template for all ta
 :ID:       28704dfb-7647-43ac-b96f-5967383d1188
 :END:
 Org-protocol is an easy way to capture stuff from outside emacs.
-#+begin_src emacs-lisp
+#+begin_src emacs-lisp :tangle tangle/emacs-init.el :eval yes :results silent
 (use-package org-protocol)
 #+end_src
 To install the handler for =org-protocol://= URIs under linux you probably need a =.desktop= file similar to the one below. Place it under =~/.local/share/applications= and run src_shell{update-desktop-database}.
