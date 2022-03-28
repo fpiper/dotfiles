@@ -3508,8 +3508,9 @@ Use imagemagick and standalone class for latex preview.
 
 Also let us define some more default latex packages.
 #+begin_src emacs-lisp :noweb-ref org-config :tangle no
-(add-to-list 'org-latex-packages-alist '("" "uniinput"))
+(add-to-list 'org-latex-packages-alist '("mathletters" "ucs"))
 (add-to-list 'org-latex-packages-alist '("" "siunitx"))
+(add-to-list 'org-latex-packages-alist '("" "personal"))
 (add-to-list 'org-latex-packages-alist '("" "tikz"))
 (add-to-list 'org-latex-packages-alist '("" "circuitikz"))
 #+end_src
