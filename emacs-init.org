@@ -170,9 +170,8 @@ A similar behaviour can be achieved using [[https://github.com/AGWA/git-crypt][g
 details regarding my emacs configuration in =emacs-private.el.gpg= and
 load this file here.
 #+begin_src emacs-lisp
-(setq secret-file (expand-file-name "emacs-private.el.gpg"
-                                    user-emacs-directory))
-(load secret-file)
+(mapc (lambda (file) (load file))
+      (directory-files default-directory t "emacs-.*el.gpg"))
 #+end_src
 
 This is the content of =init.el=. Notice the ~:tangle tangle/init.el~
