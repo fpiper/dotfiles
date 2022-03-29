@@ -1,5 +1,5 @@
 # -*- coding: utf-8-unix -*-
-#+PROPERTY: header-args:emacs-lisp :tangle tangle/emacs-init.el :results silent :noweb yes
+#+PROPERTY: header-args:emacs-lisp :tangle tangle/emacs-10-init.el :results silent :noweb yes
 * Contents :QUOTE:TOC_2_gh:
 #+BEGIN_QUOTE
 - [[#overview][Overview]]
@@ -77,10 +77,10 @@ directory. Instead of symlinking the files could also be directly
 tangled to =~/.emacs.d/=.
 #+BEGIN_SRC shell :results silent :tangle tangle/symlink.sh :shebang "#!/bin/bash" :noweb yes
 ln -siv $(pwd)/emacs-init.org ~/.emacs.d/
-ln -siv $(pwd)/tangle/emacs-init.el ~/.emacs.d/
-ln -siv $(pwd)/tangle/init-exwm.el ~/.emacs.d/
-ln -siv $(pwd)/emacs-private.el.gpg ~/.emacs.d/
 ln -siv $(pwd)/tangle/init.el ~/.emacs.d/
+ln -siv $(pwd)/tangle/emacs-10-init.el ~/.emacs.d/
+ln -siv $(pwd)/tangle/init-exwm.el ~/.emacs.d/
+ls emacs-*.el.gpg | xargs -I FILE ln -siv $(pwd)/FILE ~/.emacs.d
 <<symlinks>>
 #+END_SRC
 
@@ -190,7 +190,8 @@ header argument in the source code.
          (append default-frame-alist '((inhibit-double-buffering . t))))
 (setq posframe-inhibit-double-buffering t)
 
-(load (expand-file-name "emacs-init.el" user-emacs-directory))
+(mapc (lambda (file) (load file))
+      (directory-files user-emacs-directory t "^emacs-.*el\\(.gpg\\)\\{0,1\\}"))
 #+end_src
 
 I always wanted to reorganize my old init file with >5000 lines, but
@@ -1385,7 +1386,7 @@ This call now creates a custom theme based on the settings in the sections
 #+end_src
 
 Now we just have to link the tangled themes to the ~load-path~
-#+BEGIN_SRC shell :results silent :tangle tangle/symlink.sh :shebang "#!/bin/bash"
+#+BEGIN_SRC shell :results silent :noweb-ref symlinks :tangle no
 ln -siv $(pwd)/tangle/spacemacs-dark-customizations-theme.el ~/.emacs.d/
 ln -siv $(pwd)/tangle/spacemacs-light-customizations-theme.el ~/.emacs.d/
 #+END_SRC
@@ -4438,7 +4439,7 @@ Set some prettify symbols for org mode.
 #+end_src
 *** org-roam
 Org-roam mainly provides a display of backlinks to the current file. This allows the creation of a one-subject-per-file Zettelkasten.
-#+begin_src emacs-lisp :tangle tangle/emacs-init.el :noweb yes :results silent
+#+begin_src emacs-lisp :tangle tangle/emacs-10-init.el :noweb yes :results silent
 (use-package org-roam
   :straight (:host github
                    :repo "org-roam/org-roam"
@@ -4914,7 +4915,7 @@ Instead of project related capture templates, I use the same template for all ta
 :ID:       28704dfb-7647-43ac-b96f-5967383d1188
 :END:
 Org-protocol is an easy way to capture stuff from outside emacs.
-#+begin_src emacs-lisp :tangle tangle/emacs-init.el :eval yes :results silent
+#+begin_src emacs-lisp :tangle tangle/emacs-10-init.el :eval yes :results silent
 (use-package org-protocol)
 #+end_src
 To install the handler for =org-protocol://= URIs under linux you probably need a =.desktop= file similar to the one below. Place it under =~/.local/share/applications= and run src_shell{update-desktop-database}.
@@ -6068,7 +6069,7 @@ I change the group buffer to something more memorable. This needs to be set befo
 #+end_src
 To synchronize the database across devices I symlink it to my central synchronization directory:
 #+begin_src shell :noweb-ref symlinks :tangle no
-ln -siv ~/sync/bbdb/bbdb ~/.emacs.d/1
+ln -siv ~/sync/bbdb/bbdb ~/.emacs.d/bbdb
 #+end_src
 ** Compile
 Fix ansi colors in compile buffers. From [[https://endlessparentheses.com/ansi-colors-in-the-compilation-buffer-output.html][endlessparentheses]].

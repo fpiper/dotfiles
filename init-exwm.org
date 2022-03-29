@@ -3,7 +3,7 @@
 
 * Starting EXWM
 Either start exwm in =.xinitrc= or if using a display manager setup a desktop file similar to this:
-#+HEADER: :tangle /sudo::/usr/share/xsessions/exwm.desktop
+##+HEADER: :tangle /sudo::/usr/share/xsessions/exwm.desktop
 #+begin_src conf
 [Desktop Entry]
 Name=EXWM
@@ -13,7 +13,7 @@ Exec=exwm-start
 Type=Application
 #+end_src
 With the =exwm-start= script:
-#+HEADER: :tangle /sudo::/usr/local/bin/exwm-start
+##+HEADER: :tangle /sudo::/usr/local/bin/exwm-start
 #+begin_src shell :tangle-mode (identity #o755)
 #!/usr/bin/env sh
 
