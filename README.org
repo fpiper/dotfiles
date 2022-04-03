@@ -7,6 +7,7 @@
   - [[#updating-all-tangled-files][Updating all tangled files]]
   - [[#creating-symlinks][Creating symlinks]]
   - [[#dots-script][=dots= script]]
+  - [[#commiting-changes][Commiting changes]]
 #+END_QUOTE
 
 * My dotfiles
@@ -193,3 +194,20 @@ Create a symlink for this script.
 #+BEGIN_SRC sh :tangle tangle/symlink.sh :results silent :shebang "#!/bin/bash"
 ln -siv $(pwd)/tangle/dots.sh ~/.local/bin/dots
 #+END_SRC
+
+** Commiting changes
+Commiting new changes can be a bit tedious. Assume we have checked out the master branch. We have to either commit our changes and then cherry-pick the commit to its intended program branch or stash the changes and switch to the target branch before committing. Stashing may fail due to other uncommitted changes on files nonexistent in the target branch.
+
+#+begin_src sh
+git add $file
+git commit -m $message
+git stash push --message "Uncommited changes"
+head=$(git rev-parse HEAD)
+branch=$(git rev-parse --abbrev-ref HEAD)
+
+git checkout $target
+git cherry-pick $head
+git checkout $head
+#git update-ref -m reset\:\ moving\ to $head\^ refs/heads/work\+ $head\^ $head
+#git stash pop
+#+end_src
