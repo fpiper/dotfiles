@@ -3322,8 +3322,6 @@ I use a org version with some custom patches. Rather than using something like =
    ("C-c a" . org-agenda)
    ("C-c l" . org-store-link))
   :custom
-  (org-format-latex-options '(:foreground default :background default :scale 1.5 :html-foreground "Black" :html-background "Transparent" :html-scale 1.0 :matchers
-                                          ("begin" "$1" "$" "$$" "\\(" "\\[")))
   (org-catch-invisible-edits 'smart)
   (org-agenda-diary-file "~/sync/diary.org")
   (org-use-speed-commands (lambda () (and (looking-at org-outline-regexp) (looking-back "^\**"))))
@@ -3342,8 +3340,9 @@ I use a org version with some custom patches. Rather than using something like =
    <<org-custom-no-inheritance-tags>>
    ))
   <<org-custom>>
+  :hook
+  <<org-hook>>
   :config
-  (add-hook 'org-mode-hook 'turn-on-org-cdlatex)
   (add-to-list 'org-structure-template-alist (cons "f" "figure"))
   ;; (add-to-list 'org-tags-exclude-from-inheritance "MARKED")
   <<org-config>>
@@ -3407,10 +3406,6 @@ I use a org version with some custom patches. Rather than using something like =
 #+END_SRC
 
 #+begin_src emacs-lisp
-(use-package ox
-  :custom
-  (org-export-with-broken-links 'match)
-  (org-export-backends '(ascii beamer html icalendar latex man md odt org groff koma-letter)))
 (use-package org-pdftools
   :straight t
   :hook (org-load . org-pdftools-setup-link))
@@ -3419,7 +3414,6 @@ I use a org version with some custom patches. Rather than using something like =
   (org-id-link-to-org-use-id 'create-if-interactive-and-no-custom-id)
   <<org-id-custom>>)
 #+end_src
-
 I prefer to use timestamp based ID's as they are
 #+begin_src emacs-lisp :tangle no :noweb-ref org-id-custom
 (org-id-method 'ts)
@@ -3495,11 +3489,19 @@ Here is a list of nice ones: ◉, ○, ►, •. The default ones are ~'("◉" "
   :custom (org-bullets-bullet-list '(" "))
   :config (add-hook 'org-mode-hook (lambda () (org-bullets-mode 1))))
 #+end_src
-Use imagemagick and standalone class for latex preview.
 #+begin_src emacs-lisp
-(setq org-preview-latex-default-process 'imagemagick)
-(setq
- org-format-latex-header
+(use-package org-num
+  :delight
+  :after org
+  :hook (org-mode . org-num-mode))
+#+end_src
+*** Org & Latex
+:PROPERTIES:
+:header-args:emacs-lisp: :tangle no
+:END:
+
+#+begin_src emacs-lisp :noweb-ref org-custom
+(org-format-latex-header
 "\\documentclass{standalone}
 \\usepackage[usenames]{color}
 [PACKAGES]
@@ -3507,20 +3509,85 @@ Use imagemagick and standalone class for latex preview.
 \\pagestyle{empty}             % do not remove")
 #+end_src
 
-Also let us define some more default latex packages.
-#+begin_src emacs-lisp :noweb-ref org-config :tangle no
-(add-to-list 'org-latex-packages-alist '("mathletters" "ucs"))
+#+begin_src emacs-lisp :noweb-ref org-custom
+(org-latex-default-packages-alist
+ '(("mathletters" "ucs")
+   ("AUTO" "inputenc" t ("pdflatex")) 
+   ("T1" "fontenc" t ("pdflatex"))
+   ("" "graphicx" t)
+   ("" "grffile" t)
+   ("" "longtable" nil)
+   ("" "wrapfig" nil)
+   ("" "rotating" nil)
+   ("normalem" "ulem" t)
+   ("" "amsmath" t)
+   ("" "textcomp" t)
+   ("" "amssymb" t)
+   ("" "capt-of" nil)
+   ("" "hyperref" nil)))
+#+end_src
+
+#+begin_src emacs-lisp :noweb-ref org-config
 (add-to-list 'org-latex-packages-alist '("" "siunitx"))
 (add-to-list 'org-latex-packages-alist '("" "personal"))
+(add-to-list 'org-latex-packages-alist '("" "svg"))
 (add-to-list 'org-latex-packages-alist '("" "tikz"))
 (add-to-list 'org-latex-packages-alist '("" "circuitikz"))
 #+end_src
-#+begin_src emacs-lisp
-(use-package org-num
-  :delight
-  :after org
-  :hook (org-mode . org-num-mode))
+
+#+begin_src emacs-lisp :noweb-ref org-hook
+(org-mode . turn-on-org-cdlatex)
 #+end_src
+*** Org Exporter =ox=
+#+begin_src emacs-lisp
+(use-package ox
+  :custom
+  (org-export-with-broken-links 'match)
+  (org-export-backends '(ascii beamer html icalendar latex man md odt org groff koma-letter)))
+#+end_src
+**** Latex & Beamer
+#+begin_src emacs-lisp
+(use-package ox-latex
+  :custom
+  (org-latex-compiler "lualatex")
+  (org-latex-pdf-process
+   '("latexmk -f -pdf -%latex -shell-escape -interaction=nonstopmode -output-directory=%o %f")))
+#+end_src
+Allow ~\framebreak{}~ by default, set a default theme and we also redefine the beamer latex class to use an aspect ratio of 16:9. The frame size will then be 160 mm by 90 mm.
+#+begin_src emacs-lisp
+(use-package ox-beamer
+  :custom
+  (org-beamer-frame-default-options "allowframebreaks")
+  (org-beamer-theme "Hannover")
+  :config
+  (remove (assoc "beamer" org-latex-classes) org-latex-classes)
+  (add-to-list 'org-latex-classes
+	       '("beamer"
+		 "\\documentclass[presentation,aspectratio=169]{beamer}"
+		 ("\\section{%s}" . "\\section*{%s}")
+		 ("\\subsection{%s}" . "\\subsection*{%s}")
+		 ("\\subsubsection{%s}" . "\\subsubsection*{%s}")))
+  )
+#+end_src
+Latex preview
+#+begin_src emacs-lisp :tangle no :noweb-rew org-custom
+(org-preview-latex-default-process 'imagemagick)
+(org-format-latex-options
+ '(:foreground default :background default :scale 1.5 :html-foreground "Black" :html-background "Transparent" :html-scale 1.0 :matchers ("begin" "$1" "$" "$$" "\\(" "\\[")))
+(org-preview-latex-process-alist
+'(
+(dvipng :programs ("latex" "dvipng") :description "dvi > png" :message "you need to install the programs: latex and dvipng." :image-input-type "dvi" :image-output-type "png" :image-size-adjust (1.0 . 1.0) :latex-compiler ("latex -interaction nonstopmode -output-directory %o %f") :image-converter ("dvipng -D %D -T tight -bg Transparent -o %O %f")) 
+(dvisvgm :programs ("latex" "dvisvgm") :description "dvi > svg" :message "you need to install the programs: latex and dvisvgm." :image-input-type "dvi" :image-output-type "svg" :image-size-adjust (1.7 . 1.5) :latex-compiler ("latex -interaction nonstopmode -output-directory %o %f") :image-converter ("dvisvgm %f -n -b min -c %S -o %O")) 
+(imagemagick :programs ("latex" "convert") :description "pdf > png" :message "you need to install the programs: latex and imagemagick." :image-input-type "pdf" :image-output-type "png" :image-size-adjust (1.0 . 1.0) :latex-compiler ("lualatex -interaction nonstopmode -output-directory %o %f") :image-converter ("convert -density %D -trim -antialias %f -quality 100 %O"))
+(pdf2svg :programs ("lualatex" "pdf2svg") :description "pdf > svg" :message "" :image-input-type "pdf" :image-output-type "svg" :image-size-adjust (2.0 . 2.0) :latex-compiler ("lualatex -interaction nonstopmode -output-directory %o %f") :image-converter ("pdf2svg %f %O"))))
+#+end_src
+**** ox-reveal
+#+BEGIN_SRC emacs-lisp
+(use-package ox-reveal
+  :straight t)
+(use-package reveal)
+(setq org-reveal-root "http://cdn.jsdelivr.net/reveal.js/3.0.0/")
+#+END_SRC
 *** Timekeeping & Clocking
 - Remove clocks with zero time.
 - Save a clocking history of the list 50 clocked items.
@@ -4297,7 +4364,7 @@ Also display remote images by downloading them.
 #+end_src
 
 #+begin_src emacs-lisp :noweb-ref ob-hooks :tangle no
-(org-babel-after-execute . org-display-inline-images)
+(org-babel-after-execute . org-redisplay-inline-images)
 #+end_src
 *** Babel
 This function is handy to use in header arguments to create names based on the current org heading. E.g. =:var data=(fpi/format-headline "/tmp/prefix_")=
@@ -4384,15 +4451,6 @@ Some tests for ~fpi/ob-name~:
 
 #+RESULTS:
 | /tmp/babel-gwZcjh/291f3f60f3e5d467584a3b5bda4d7b05 | /tmp/babel-gwZcjh/291f3f60f3e5d467584a3b5bda4d7b05-SUFFIX | /tmp/babel-gwZcjh/PREFIX-291f3f60f3e5d467584a3b5bda4d7b05 | /tmp/babel-gwZcjh/PREFIX-291f3f60f3e5d467584a3b5bda4d7b05-SUFFIX | /tmp/babel-gwZcjh/291f3f60f3e5d467584a3b5bda4d7b05-SUF42FIX |
-
-*** ox-reveal
-#+BEGIN_SRC emacs-lisp
-(use-package ox-reveal
-  :straight t)
-(use-package reveal)
-(setq org-reveal-root (concat "file:///home/fpi/" "reveal.js"))
-;;(setq org-reveal-root "http://cdn.jsdelivr.net/reveal.js/3.0.0/")
-#+END_SRC
 
 *** ol-bbdb
 #+begin_src emacs-lisp
