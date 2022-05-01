@@ -167,11 +167,11 @@ git config --global diff.gpg.textconv "gpg --no-tty --decrypt"
 echo "*.gpg filter=gpg diff=gpg" > .gitattributes
 #+end_src
 A similar behaviour can be achieved using [[https://github.com/AGWA/git-crypt][git-crypt]]. I save private
-details regarding my emacs configuration in =emacs-private.el.gpg= and
-load this file here.
-#+begin_src emacs-lisp
+details regarding my emacs configuration in =.el.gpg= files and
+load them in =init.el= using some code like this.
+#+begin_src emacs-lisp :tangle no
 (mapc (lambda (file) (load file))
-      (directory-files default-directory t "emacs-.*el.gpg"))
+      (directory-files default-directory t "^emacs-.*el.gpg$"))
 #+end_src
 
 This is the content of =init.el=. Notice the ~:tangle tangle/init.el~
@@ -217,6 +217,7 @@ with other package definition and customization.
 ;; (package-initialize)
 (add-to-list 'package-archives '("melpa" . "https://melpa.org/packages/") t)
 (add-to-list 'package-archives '("org" . "http://orgmode.org/elpa/") nil)
+(package-refresh-contents t)
 #+END_SRC
 *** straight.el
 :PROPERTIES:
@@ -2455,7 +2456,8 @@ of src_shell{getconf "PATH"}. See [[elisp:(describe-variable
 #+end_src
 ** Git
 *** Git annex
-There are some great ressources on [[https://git-annex.branchable.com/][git-annex]] integration in emacs in [[https://github.com/mm--/dot-emacs/blob/master/jmm-emacs.org][Josh's config]]. Most of my configuration is copied from there.
+There are some great resources on [[https://git-annex.branchable.com/][git-annex]] integration in emacs in [[https://github.com/mm--/dot-emacs/blob/master/jmm-emacs.org][Josh's config]]. Most of my configuration is copied from there.
+Or use magit-annex instead?
 #+begin_src emacs-lisp :noweb-ref straight-recipe-overrides :tangle no :eval never
 (git-annex :type git :flavor melpa :host github :repo "jwiegley/git-annex-el")
 #+end_src
@@ -2464,7 +2466,7 @@ There are some great ressources on [[https://git-annex.branchable.com/][git-anne
   :straight (:host github :repo "fpiper/git-annex-el" :branch "master")
   :config
   <<git-annex-config>>
-  :after (dired)
+  :after dired
   :bind
   (:map git-annex-dired-map
         <<git-annex-dired-bindings>>)
