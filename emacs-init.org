@@ -1683,7 +1683,12 @@ When switching between monitors with different resolution, scaling the
         (scale (if arg -10 10))
         (new (+ height scale)))
     (set-face-attribute 'default nil :height new)
-    (message "Default height: %s" new)))
+    (message "Default height: %s. Use +,- for further adjustment" new)
+    (set-transient-map
+     (let ((map (make-sparse-keymap)))
+       (define-key map (vector '(?-)) (lambda () (interactive) (fpi/scale-default-face t)))
+       (define-key map (vector '(?+)) (lambda () (interactive) (fpi/scale-default-face nil)))
+       map))))
 #+end_src
 #+begin_src emacs-lisp :tangle no :noweb-ref fpi-bindings
 (fpi/define-key fpi-map (kbd "+") #'fpi/scale-default-face "Zoom")
