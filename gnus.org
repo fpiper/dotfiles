@@ -13,9 +13,8 @@ ln -siv ~/sync/gnus/.gnus.registry.eieio ~/.gnus.registry.eieio
 
 Load private settings.
 #+begin_src emacs-lisp
-(setq secret-file (expand-file-name "emacs-private.el.gpg"
-				    user-emacs-directory))
-(load secret-file)
+(mapc (lambda (file) (load file))
+      (directory-files user-emacs-directory t "^emacs-.*el.gpg$"))
 #+end_src
 * Config
 ** Servers
