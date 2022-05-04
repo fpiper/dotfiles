@@ -1858,6 +1858,16 @@ This was inspired from [[http://endlessparentheses.com/the-toggle-map-and-wizard
 
 <<fpi-bindings>>
 #+END_SRC
+Make next command act on local host.
+#+begin_src emacs-lisp :noweb-ref fpi-bindings
+(defmacro fpi/as-local (func)
+  (let ((default-directory temporary-file-directory))
+    func
+    ;; (shell-command "explorer")
+    ))
+(fpi/as-local (pwd))
+(fpi/as-local default-directory)
+#+end_src
 ** Base commands (simple.el)
 #+begin_src emacs-lisp
 (use-package simple
