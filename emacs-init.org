@@ -2801,7 +2801,7 @@ For example, ARGS could be \"--in=here\""
 #+BEGIN_SRC emacs-lisp
 (use-package magit
   :straight t
-  :custom (magit-completing-read-function 'magit-ido-completing-read)
+  :custom (magit-completing-read-function 'magit-builtin-completing-read)
   :init (global-magit-file-mode))
 #+END_SRC
 
