@@ -4363,7 +4363,7 @@ Make gnorb consider the same refile targets as org.
 
 Resize inline images to 400px but respect width specifications in attribute lines.
 #+begin_src emacs-lisp :noweb-ref org-custom :tangle no
-(org-image-actual-width '(600))
+(org-image-actual-width t)
 #+end_src
 Also display remote images by downloading them.
 #+begin_src emacs-lisp :noweb-ref org-custom :tangle no
@@ -4775,7 +4775,7 @@ Org Edna
 *** org-attach
 =org-attach= is useful to attach reference material to org files. This can be reference images, data or other files. A special link type is available for attached files: ~[[attachment:file]]~.
 
-- Inheritance :: While inheritance for attachments sounds useful, so subheadings can access their parents attachments, I find that the current implementation (Org 9.3.1) instead of inheriting just sets the attachment dir of all children to that of the parent. So for now I decided not to use it.
+- Inheritance :: Note that inheritance here means, that the attachment dir of all children is set to that of the parent.
 - Attachment Folder :: While I do not like the default double nested
   folder structure it creates, I also do not want to set an individual
   =DIR= property for all headings I want to attach something to.
@@ -4784,7 +4784,7 @@ Org Edna
 #+begin_src emacs-lisp
 (use-package org-attach
   :custom
-  (org-attach-use-inheritance nil)
+  (org-attach-use-inheritance t)
   (org-attach-preferred-new-method 'id)
   (org-attach-store-link-p t)
   :config
