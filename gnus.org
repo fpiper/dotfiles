@@ -1,4 +1,4 @@
-#+PROPERTY: header-args:emacs-lisp :tangle tangle/gnus.el :noweb yes
+#+PROPERTY: header-args:emacs-lisp :tangle tangle/gnus.el :noweb yes :tangle-mode (identity #o444)
 
 #+begin_src shell :results silent :tangle tangle/symlink.sh :shebang "#!/bin/bash"
 ln -siv $(pwd)/tangle/gnus.el ~/.gnus.el
@@ -192,13 +192,17 @@ To define different scoring files for different groups I set [[info:gnus#Home Sc
 #+begin_src emacs-lisp
 (setq gnus-home-score-file
       '(("misc@" "nntp_gmane.SCORE")
+        ("ieee" "nn_ieee.SCORE")
         ("^nnimap" "nnimap.SCORE") ;; w/ author scoring
+        ("^INBOX" "nnimap.SCORE") ;; w/ author scoring
         ("gmane" "nntp_gmane.SCORE") ;; w/ author scoring
         ("^nntp\\+localhost" "nntp_global.SCORE") ;; w/o author scoring
         ))
 (setq gnus-home-adapt-file
-      '(("misc@" "nntp_gmane.SCORE")
+      '(("misc@" "nntp_gmane.ADAPT")
+        ("ieee" "nn_ieee.ADAPT")
         ("^nnimap" "nnimap.ADAPT")
+        ("^INBOX" "nnimap.ADAPT")
         ("gmane" "nntp_gmane.ADAPT")
         ("^nntp\\+localhost" "nntp_global.ADAPT")))
 #+end_src
