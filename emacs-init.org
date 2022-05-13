@@ -1862,11 +1862,16 @@ Make next command act on local host.
 #+begin_src emacs-lisp :noweb-ref fpi-bindings
 (defmacro fpi/as-local (func)
   (let ((default-directory temporary-file-directory))
-    func
+    (eval func)
     ;; (shell-command "explorer")
     ))
 (fpi/as-local (pwd))
 (fpi/as-local default-directory)
+(defmacro fpi/explorer-as-local ()
+  (let* ((file (or (dired-get-subdir)
+                   (dired-get-filename)))
+         (cmd (backquote (shell-command ,(format "explorer %s" file)))))
+    (backquote (fpi/as-local ,cmd))))
 #+end_src
 ** Base commands (simple.el)
 #+begin_src emacs-lisp
