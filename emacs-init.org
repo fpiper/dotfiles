@@ -5177,18 +5177,57 @@ A small function to toggle the encryption state of the current entry.
 
 #+end_src
 **** Org Cite
-=org-ref= was replaced by =orgcite= which is built into =org=.
-#+begin_src emacs-lisp
+=org-ref= was replaced by =org-cite= which is built into =org=.
+
+#+begin_src emacs-lisp :noweb yes
 (use-package oc
   :after org
   :custom
-  (org-cite-global-bibliography (if (equal fpi/current-device "DESKTOP-PM1PPEC")
-                                    '("~/git/projects/personal/bib.bib"
-                                      "~/win/Zotero/00_Unsorted.bib"
-                                      "~/win/Zotero/01_Annotated.bib"
-                                      "~/win/Zotero/99_AllZotero.bib")
-                                  '("~/git/projects/personal/bib.bib"))))
+  (org-cite-global-bibliography
+   (if (equal fpi/current-device "DESKTOP-PM1PPEC")
+       '("~/git/projects/personal/bib.bib"
+         "~/win/Zotero/00_Unsorted.bib"
+         "~/win/Zotero/01_Annotated.bib"
+         "~/win/Zotero/99_AllZotero.bib")
+     '("~/git/projects/personal/bib.bib")))
+  <<org-cite-custom>>
+  )
 #+end_src
+
+=Citar= is a package that provides extra actions on org cite links.
+
+#+begin_src emacs-lisp
+(use-package citar
+  :straight t
+  :after oc
+  :custom
+  (citar-bibliography org-cite-global-bibliography)
+  (citar-library-paths '("~/git/projects/annex_work/Lit"))
+  (citar-notes-paths '("~/git/projects/zettel/Lit"))
+  ;; (citar-at-point-function 'embark-act)
+  (citar-templates
+   '((main . "${author editor:30}     ${date year issued:4}     ${title:48}")
+     (suffix . "          ${=key= id:15}    ${=type=:12}    ${tags keywords keywords:*}")
+     (preview . "${author editor} (${year issued date}) ${title}, ${journal journaltitle publisher container-title collection-title}.
+")
+     (note . "${=key=}: ${title}")
+     ))
+  ;; (citar-symbols
+  ;;  `((file (?📁) . " ")
+  ;;    (note (?📓) . " ")
+  ;;    (link (?🔗) . " ")))
+  ;; (citar-symbol-separator "  ")
+  )
+#+end_src
+
+Lets customize =org-cite= to use =citar= by default.
+
+#+begin_src emacs-lisp :noweb-ref org-cite-custom :tangle no
+(org-cite-insert-processor 'citar)
+(org-cite-follow-processor 'citar)
+(org-cite-activate-processor 'citar)
+#+end_src
+
 ***** Capturing entries
 I store my bibtex references in an org file together with my notes. In
 addition to saving the meta information in properties using the same
