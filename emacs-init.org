@@ -6458,14 +6458,14 @@ Automatically make scripts executable upon save if first line is a shebang:
           'executable-make-buffer-file-executable-if-script-p)
 #+end_src
 
-The =Auto-Insert= package helps inserting header templates upon creating files.
+The =Auto-Insert= package helps inserting header templates upon creating files. If you do not turn on =auto-insert-mode= you can manually call =M-x auto-insert= to perform the insertion.
 #+begin_src emacs-lisp
 (use-package autoinsert
   :config
     (define-auto-insert '("\\.sh\\'" . "Shell script skeleton")
     '(""
       "#!/usr/bin/env bash" \n \n))
-    (auto-insert-mode 1))
+    (auto-insert-mode -1))
 #+end_src
 * Language settings
 End sentences with single spaces.
