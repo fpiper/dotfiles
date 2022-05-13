@@ -1,5 +1,5 @@
 # -*- coding: utf-8-unix -*-
-#+PROPERTY: header-args:gnuplot :tangle tangle/.gnuplot :eval query
+#+PROPERTY: header-args:gnuplot :tangle tangle/.gnuplot :eval query :tangle-mode (identity #o444)
 * Symlink
 First create a symlink to the desired config location.
 #+begin_src shell :results silent :tangle tangle/symlink.sh :shebang "#!/bin/bash"
@@ -99,6 +99,11 @@ I store the default grid, border and tics settings in the =gbt= variable. So I c
 gbt(col)=sprintf("set tics nomirror; set border 3 back lc '%s'; set grid back lw 1 lc '%s'",col,col)
 gbt="set tics nomirror; set border 3 back lc 'gray50'; set grid back lw 1 lc 'gray50'"
 @gbt
+#+end_src
+
+Support function to set x/y tic formatting with ~set format x formatter(".0","m")~.
+#+begin_src gnuplot
+formatter(prec,unit)=sprintf("%%%ss %%c%s", prec, unit)
 #+end_src
 * A4 plots
 See [[https://milianw.de/blog/how-to-generate-proper-din-a4-sized-plots-with-gnuplot.html][How to generate proper DIN A4 sized plots with Gnuplot - Milian Wolff]].
