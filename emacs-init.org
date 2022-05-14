@@ -1,5 +1,5 @@
 # -*- coding: utf-8-unix -*-
-#+PROPERTY: header-args:emacs-lisp :tangle tangle/emacs-10-init.el :results silent :noweb yes
+#+PROPERTY: header-args:emacs-lisp :tangle tangle/emacs-10-init.el :results silent :noweb yes :tangle-mode (identity #o444)
 * Contents :QUOTE:TOC_2_gh:
 #+BEGIN_QUOTE
 - [[#overview][Overview]]
@@ -28,6 +28,7 @@
   - [[#tramp][Tramp]]
   - [[#git][Git]]
   - [[#projects][Projects]]
+  - [[#consult][Consult]]
   - [[#working-with-buffers][Working with buffers]]
   - [[#window-configuration][Window configuration]]
   - [[#file-encryption][File encryption]]
@@ -55,6 +56,7 @@
   - [[#context-aware-hydra][Context aware hydra]]
   - [[#ssh-tunnels][SSH tunnels]]
   - [[#minor-utilities][Minor utilities]]
+  - [[#embark][Embark]]
 - [[#language-settings][Language settings]]
   - [[#spellcheck][Spellcheck]]
 - [[#interface][Interface]]
@@ -1904,343 +1906,79 @@ any recursive editing levels."
 * Selection and search methods
 ** Completion frameworks
 Having used ido, ivy, icicles and helm in the past, I'm trying to
-settle for something simple and go back to ido. The settings below
-are for now mostly copied from [[https://gitlab.com/protesilaos/dotemacs/][Protesilaos Stavrou]].
-*** Minibuffer settings
+settle for something simple.
+
+For =vertico= use =M-RET= to end repeated minibuffer reads instead of =RET=.
 #+begin_src emacs-lisp
+;; Vertico & Marginalia
+(use-package vertico
+  :straight t
+  :init (vertico-mode 1))
+(use-package vertico-posframe
+  :straight t
+  :config
+  (defun fpi/vertico-posframe-toggle ()
+    (interactive)
+    (if vertico-posframe-mode
+        (progn
+          (vertico-posframe-cleanup)
+          (vertico-posframe-mode -1))
+      (vertico-posframe-mode 1)))
+  :bind (:map vertico-map
+              ("C-," . fpi/vertico-posframe-toggle))
+  :init (vertico-posframe-mode 1))
+(use-package marginalia
+  :straight t
+  :bind (:map minibuffer-local-map
+              ("M-A" . marginalia-cycle))
+  :init (marginalia-mode 1))
+
+;; Orderless & minibuffer settings
+(use-package orderless
+  :straight t
+  :config
+  (setq orderless-matching-styles
+        '(orderless-regexp
+          orderless-initialism))
+  (defmacro fpi/orderless-dispatcher (name suffix style)
+    "Define a orderless dispatcher function NAME using key SUFFIX to
+call STYLE."
+    (backquote
+     (defun ,name (pattern _index _total)
+       (when (string-suffix-p ,suffix pattern)
+         (backquote (,style ,backquote-unquote-symbol(substring pattern 0 -1)))))))
+  (fpi/orderless-dispatcher
+   fpi/orderless-literal-dispatcher "=" orderless-literal)
+  (fpi/orderless-dispatcher
+   fpi/orderless-initialism-dispatcher "," orderless-initialism)
+  (fpi/orderless-dispatcher
+   fpi/orderless-flex-dispatcher "~" orderless-flex)
+  (setq orderless-style-dispatchers
+        '(fpi/orderless-literal-dispatcher
+          fpi/orderless-initialism-dispatcher
+          fpi/orderless-flex-dispatcher)))
 (use-package minibuffer
-  :config
+  :after (consult orderless)
+  :custom
+  ;; Make tramp host completion work. See vertico documentation.
+  (completion-styles '(orderless basic))
+  (completion-category-overrides '((file (styles basic partial-completion))))
 
-  ;; Super-powerful completion style for out-of-order groups of matches
-  ;; using a comprehensive set of matching styles.
-  (use-package orderless
-    :straight t
-    :config
-    (setq orderless-regexp-separator "[/\s_-]+")
-    (setq orderless-matching-styles
-          '(orderless-flex
-            orderless-strict-leading-initialism
-            orderless-regexp
-            orderless-prefixes
-            orderless-literal))
+  ;; Make completion-at-point use vertico
+  (completion-in-region-function
+   (lambda (&rest args)
+     (apply (if vertico-mode
+                #'consult-completion-in-region
+              #'completion--in-region)
+            args))))
 
-    (defun prot/orderless-literal-dispatcher (pattern _index _total)
-      (when (string-suffix-p "=" pattern)
-        `(orderless-literal . ,(substring pattern 0 -1))))
-
-    (defun prot/orderless-initialism-dispatcher (pattern _index _total)
-      (when (string-suffix-p "," pattern)
-        `(orderless-strict-leading-initialism . ,(substring pattern 0 -1))))
-
-    (setq orderless-style-dispatchers '(prot/orderless-literal-dispatcher
-                                        prot/orderless-initialism-dispatcher))
-    :bind (:map minibuffer-local-completion-map
-                ("SPC" . nil)         ; space should never complete
-                ("?" . nil)))         ; valid regexp character
-
-  (setq completion-styles
-        '(orderless partial-completion))
-  (setq completion-category-defaults nil)
-  (setq completion-cycle-threshold 3)
-  (setq completion-flex-nospace nil)
-  (setq completion-pcm-complete-word-inserts-delimiters t)
-  (setq completion-pcm-word-delimiters "-_./:| ")
-  (setq completion-show-help t)
-  (setq completion-ignore-case t)
-  (setq read-buffer-completion-ignore-case t)
-  (setq read-file-name-completion-ignore-case t)
-  (setq completions-format 'vertical)   ; *Completions* buffer
-  (setq enable-recursive-minibuffers t)
-  (setq read-answer-short t)
-  (setq resize-mini-windows t)
-
-  (file-name-shadow-mode 1)
-  (minibuffer-depth-indicate-mode 1)
-  (minibuffer-electric-default-mode 1)
-
-  (defun prot/focus-minibuffer ()
-    "Focus the active minibuffer.
-
-Bind this to `completion-list-mode-map' to M-v to easily jump
-between the list of candidates present in the \\*Completions\\*
-buffer and the minibuffer (because by default M-v switches to the
-completions if invoked from inside the minibuffer."
-    (interactive)
-    (let ((mini (active-minibuffer-window)))
-      (when mini
-        (select-window mini))))
-
-  (defun prot/focus-minibuffer-or-completions ()
-    "Focus the active minibuffer or the \\*Completions\\*.
-
-If both the minibuffer and the Completions are present, this
-command will first move per invocation to the former, then the
-latter, and then continue to switch between the two.
-
-The continuous switch is essentially the same as running
-`prot/focus-minibuffer' and `switch-to-completions' in
-succession."
-    (interactive)
-    (let* ((mini (active-minibuffer-window))
-           ;; This could be hardened a bit, but I am okay with it.
-           (completions (or (get-buffer-window "*Completions*")
-                            (get-buffer-window "*Embark Live Occur*"))))
-      (cond ((and mini
-                  (not (minibufferp)))
-             (select-window mini nil))
-            ((and completions
-                  (not (eq (selected-window)
-                           completions)))
-             (select-window completions nil)))))
-
-  ;; Technically, this is not specific to the minibuffer, but I define
-  ;; it here so that you can see how it is also used from inside the
-  ;; "Completions" buffer
-  (defun prot/describe-symbol-at-point (&optional arg)
-    "Get help (documentation) for the symbol at point.
-
-With a prefix argument, switch to the *Help* window.  If that is
-already focused, switch to the most recently used window
-instead."
-    (interactive "P")
-    (let ((symbol (symbol-at-point)))
-      (when symbol
-        (describe-symbol symbol)))
-    (when arg
-      (let ((help (get-buffer-window "*Help*")))
-        (when help
-          (if (not (eq (selected-window) help))
-              (select-window help)
-            (select-window (get-mru-window)))))))
-
-  ;; This will be deprecated in favour of the `embark' package
-  (defun prot/completions-kill-save-symbol ()
-    "Add symbol-at-point to the kill ring.
-
-Intended for use in the \\*Completions\\* buffer.  Bind this to a
-key in `completion-list-mode-map'."
-    (interactive)
-    (kill-new (thing-at-point 'symbol)))
-
-
-;;;; DEPRECATED in favour of the `embark' package (see further below),
-;;;; which implements the same functionality in a more efficient way.
-;;  (defun prot/complete-kill-or-insert-candidate (&optional arg)
-;;     "Place the matching candidate to the top of the `kill-ring'.
-;; This will keep the minibuffer session active.
-;;
-;; With \\[universal-argument] insert the candidate in the most
-;; recently used buffer, while keeping focus on the minibuffer.
-;;
-;; With \\[universal-argument] \\[universal-argument] insert the
-;; candidate and immediately exit all recursive editing levels and
-;; active minibuffers.
-;;
-;; Bind this function in `icomplete-minibuffer-map'."
-;;     (interactive "*P")
-;;     (let ((candidate (car completion-all-sorted-completions)))
-;;       (when (and (minibufferp)
-;;                  (or (bound-and-true-p icomplete-mode)
-;;                      (bound-and-true-p live-completions-mode))) ; see next section
-;;         (cond ((eq arg nil)
-;;                (kill-new candidate))
-;;               ((= (prefix-numeric-value arg) 4)
-;;                (with-minibuffer-selected-window (insert candidate)))
-;;               ((= (prefix-numeric-value arg) 16)
-;;                (with-minibuffer-selected-window (insert candidate))
-;;                (top-level))))))
-
-  ;; Defines, among others, aliases for common actions to Super-KEY.
-  ;; Normally these should go in individual package declarations, but
-  ;; their grouping here makes things easier to understand.
-  :bind (("s-f" . find-file)
-         ("s-F" . find-file-other-window)
-         ("s-d" . dired)
-         ("s-D" . dired-other-window)
-         ("s-b" . switch-to-buffer)
-         ("s-B" . switch-to-buffer-other-window)
-         ("s-h" . prot/describe-symbol-at-point)
-         ("s-H" . (lambda ()
-                    (interactive)
-                    (prot/describe-symbol-at-point '(4))))
-         ("s-v" . prot/focus-minibuffer-or-completions)
-         :map minibuffer-local-completion-map
-         ("<return>" . minibuffer-force-complete-and-exit)
-         ("C-j" . exit-minibuffer)
-         ;;;; DEPRECATED in favour of the `embark' package
-         ;; ("M-o w" . prot/complete-kill-or-insert-candidate)
-         ;; ("M-o i" . (lambda ()
-         ;;              (interactive)
-         ;;              (prot/complete-kill-or-insert-candidate '(4))))
-         ;; ("M-o j" . (lambda ()
-         ;;              (interactive)
-         ;;              (prot/complete-kill-or-insert-candidate '(16))))
-         :map completion-list-mode-map
-         ("h" . prot/describe-symbol-at-point)
-         ("w" . prot/completions-kill-save-symbol)
-         ("n" . next-line)
-         ("p" . previous-line)
-         ("f" . next-completion)
-         ("b" . previous-completion)
-         ("M-v" . prot/focus-minibuffer)))
+;; General settings
+(setq enable-recursive-minibuffers t)
+(setq read-answer-short t)
+(file-name-shadow-mode 1)
+(minibuffer-depth-indicate-mode 1)
+(minibuffer-electric-default-mode 1)
 #+end_src
-*** Icomplete
-#+begin_src emacs-lisp
-(use-package icomplete
-  :demand
-  :after minibuffer                     ; Read that section as well
-  :config
-  (setq icomplete-delay-completions-threshold 100)
-  (setq icomplete-max-delay-chars 2)
-  (setq icomplete-compute-delay 0.2)
-  (setq icomplete-show-matches-on-no-input t)
-  (setq icomplete-hide-common-prefix nil)
-  (setq icomplete-prospects-height 1)
-  ;; (setq icomplete-separator " · ")
-  ;; (setq icomplete-separator " │ ")
-  ;; (setq icomplete-separator " ┆ ")
-  ;; (setq icomplete-separator " ¦ ")
-  (setq icomplete-separator (propertize " ┆ " 'face 'shadow))
-  (setq icomplete-with-completion-tables t)
-  (setq icomplete-in-buffer t)
-  (setq icomplete-tidy-shadowed-file-names nil)
-
-  (fido-mode -1)                        ; Emacs 27.1
-  (icomplete-mode 1)
-
-  (defun prot/icomplete-minibuffer-truncate ()
-    "Truncate minibuffer lines in `icomplete-mode'.
-  This should only affect the horizontal layout and is meant to
-  enforce `icomplete-prospects-height' being set to 1.
-
-  Hook it to `icomplete-minibuffer-setup-hook'."
-    (when (and (minibufferp)
-               (bound-and-true-p icomplete-mode))
-      (setq truncate-lines t)))
-
-  ;; Note that the the syntax for `use-package' hooks is controlled by
-  ;; the `use-package-hook-name-suffix' variable.  The "-hook" suffix is
-  ;; not an error of mine.
-  :hook (icomplete-minibuffer-setup-hook . prot/icomplete-minibuffer-truncate)
-  :bind (:map icomplete-minibuffer-map
-              ("<tab>" . icomplete-force-complete)
-              ("<return>" . icomplete-force-complete-and-exit) ; exit with completion
-              ("C-j" . exit-minibuffer) ; force input unconditionally
-              ("C-n" . icomplete-forward-completions)
-              ("<right>" . icomplete-forward-completions)
-              ("<down>" . icomplete-forward-completions)
-              ("C-p" . icomplete-backward-completions)
-              ("<left>" . icomplete-backward-completions)
-              ("<up>" . icomplete-backward-completions)
-              ;; The following command is from Emacs 27.1
-              ("<C-backspace>" . icomplete-fido-backward-updir)))
-#+end_src
-*** Icomplete-vertical
-#+begin_src emacs-lisp
-(use-package icomplete-vertical
-  :straight t
-  :demand
-  :after (minibuffer icomplete) ; do not forget to check those as well
-  :config
-  (setq icomplete-vertical-prospects-height (/ (frame-height) 6))
-  (icomplete-vertical-mode -1)
-
-  (defun prot/kill-ring-yank-complete ()
-    "Insert the selected `kill-ring' item directly at point.
-When region is active, `delete-region'.
-
-Sorting of the `kill-ring' is disabled.  Items appear as they
-normally would when calling `yank' followed by `yank-pop'."
-    (interactive)
-    (let ((kills                    ; do not sort items
-           (lambda (string pred action)
-             (if (eq action 'metadata)
-                 '(metadata (display-sort-function . identity)
-                            (cycle-sort-function . identity))
-               (complete-with-action
-                action kill-ring string pred)))))
-      (icomplete-vertical-do
-          (:separator 'dotted-line :height (/ (frame-height) 4))
-        (when (use-region-p)
-          (delete-region (region-beginning) (region-end)))
-        (insert
-         (completing-read "Yank from kill ring: " kills nil t)))))
-
-  :bind (("s-y" . prot/kill-ring-yank-complete)
-         :map icomplete-minibuffer-map
-         ("C-v" . icomplete-vertical-toggle)))
-#+end_src
-*** Ido
-:PROPERTIES:
-:header-args:emacs-lisp: :tangle no
-:END:
-#+BEGIN_SRC emacs-lisp
-(use-package ido
-  :init
-  (setq ido-everywhere t)
-  (setq ido-enable-flex-matching t)
-  (setq ido-enable-regexp nil)
-  (setq ido-enable-prefix nil)
-  (setq ido-all-frames nil)
-  (setq ido-buffer-disable-smart-matches t)
-  (setq ido-completion-buffer "*Ido Completions*")
-  (setq ido-completion-buffer-all-completions nil)
-  (setq ido-confirm-unique-completion nil)
-  (setq ido-create-new-buffer 'prompt)
-  (setq ido-default-buffer-method 'selected-window)
-  (setq ido-default-file-method 'selected-window)
-  (setq ido-enable-last-directory-history t)
-  (setq ido-use-filename-at-point nil)
-  (setq ido-use-url-at-point nil)
-  (setq ido-use-virtual-buffers t)
-  (setq ido-use-faces t)
-  (setq ido-max-window-height 1)
-  (setq ido-decorations
-                '(" "
-                  "   "
-                  " | "
-                  " | …"
-                  "["
-                  "]"
-                  " [No match]"
-                  " [Matched]"
-                  " [Not readable]"
-                  " [Too big]"
-                  " [Confirm]"
-                  " "
-                  " "))
-  (setq ido-auto-merge-work-directories-length -1)
-  :config
-  (ido-mode 1)
-  :hook
-  (minibuffer-setup . (lambda ()
-                                                  (visual-line-mode 1)
-                                                  (setq-local truncate-lines nil)
-                                                  (setq-local resize-mini-windows nil)
-                                                  (setq-local max-mini-window-height 1))))
-#+END_SRC
-
-#+BEGIN_SRC emacs-lisp :tangle no
-(use-package ido-completing-read+
-  :straight t
-  :after ido
-  :config
-  (ido-ubiquitous-mode 1))
-#+END_SRC
-*** amx
-Ido completion for =M-x=.
-#+BEGIN_SRC emacs-lisp :tangle no
-(use-package amx
-  :straight t
-  :after (ido ido-completing-read+)
-  :init
-  (setq amx-backend 'ido)
-  (setq amx-save-file "~/.emacs.d/amx-items")
-  (setq amx-history-length 10)
-  (setq amx-show-key-bindings nil)
-  :config
-  (amx-mode 1))
-#+END_SRC
 ** isearch enhancements
 
 Once again this is mostly taken from [[https://gitlab.com/protesilaos/dotemacs/][Protesilaos Stavrou]].
@@ -2957,6 +2695,88 @@ Projectile should be fully replaceable with =project.el=. Though some packages m
   ;; (projectile-mode 1)
   :bind (("C-c p" . projectile-command-map)))
 #+END_SRC
+** Consult
+A bundle of common functions. Mostly drop in replacements for ~find-file~, ~grep~, ~find~, etc.
+#+begin_src emacs-lisp
+(define-prefix-command 'fpi/consult-map nil "consult-map")
+(use-package consult
+  :straight t
+  :bind
+  ;; C-x bindings (ctl-x-map)
+  (("C-x b" . consult-buffer)                ;; orig. switch-to-buffer
+   ("C-x 4 b" . consult-buffer-other-window) ;; orig. switch-to-buffer-other-window
+   ("C-x 5 b" . consult-buffer-other-frame)  ;; orig. switch-to-buffer-other-frame
+   ("C-x r b" . consult-bookmark)            ;; orig. bookmark-jump
+   ("C-x p b" . consult-project-buffer)      ;; orig. project-switch-to-buffer
+   )
+  ;; M-g, M-s
+  (("<help> a" . consult-apropos)            ;; orig. apropos-command
+   ;; M-g bindings (goto-map)
+   ("M-g e" . consult-compile-error)
+   ("M-g f" . consult-flymake)               ;; Alternative: consult-flycheck
+   ("M-g g" . consult-goto-line)             ;; orig. goto-line
+   ("M-g M-g" . consult-goto-line)           ;; orig. goto-line
+   ("M-g o" . consult-outline)               ;; Alternative: consult-org-heading
+   ("M-g m" . consult-mark)
+   ("M-g k" . consult-global-mark)
+   ;; M-s bindings (search-map)
+   ("M-s d" . consult-find)
+   ("M-s D" . consult-locate)
+   ("M-s g" . consult-grep)
+   ("M-s G" . consult-git-grep)
+   ("M-s r" . consult-ripgrep)
+   ("M-s l" . consult-line)
+   ("M-s L" . consult-line-multi)
+   ("M-s m" . consult-multi-occur)
+   ("M-s u" . consult-focus-lines)
+   ;; Isearch integration
+   ("M-s e" . consult-isearch-history)
+   :map isearch-mode-map
+   ("M-s e" . consult-isearch-history)       ;; orig. isearch-edit-string
+   ("M-s l" . consult-line)                  ;; needed by consult-line to detect isearch
+   ("M-s L" . consult-line-multi)            ;; needed by consult-line to detect isearch
+   ;; Minibuffer history
+   :map minibuffer-local-map
+   ("M-s" . consult-history)                 ;; orig. next-matching-history-element
+   ("M-r" . consult-history))                ;; orig. previous-matching-history-element
+  (:map fpi/consult-map
+        ;; C-c bindings (mode-specific-map)
+        ("h" . consult-history)
+        ("m" . consult-mode-command)
+        )
+  :config
+  ;; Optionally configure preview. The default value
+  ;; is 'any, such that any key triggers the preview.
+  ;; (setq consult-preview-key 'any)
+  ;; (setq consult-preview-key (kbd "M-."))
+  )
+(use-package consult-flyspell
+  :after consult
+  :bind (("M-s s" . consult-flyspell)))
+(use-package consult-org-roam
+  :straight t
+  :after (consult org-roam)
+  :custom
+  (consult-org-roam-grep-func #'consult-ripgrep)
+  :config
+  ;; Eventually suppress previewing for certain functions
+  ;; (consult-customize
+  ;;  consult-org-roam-forward-links
+  ;;  :preview-key (kbd "M-."))
+  :bind
+  ("C-c n e" . consult-org-roam-file-find)
+  ("C-c n b" . consult-org-roam-backlinks)
+  ("C-c n r" . consult-org-roam-search))
+#+end_src
+
+Fix pdf-tools =goto-page= command:
+#+begin_src emacs-lisp :noweb-ref pdf-tools-config :tangle no
+(define-key pdf-view-mode-map [remap consult-goto-line] 'pdf-view-goto-page)
+#+end_src
+
+#+begin_src emacs-lisp :noweb-ref fpi-bindings :tangle no
+(fpi/define-key fpi-map (kbd ".") #'fpi/consult-map "Consult")
+#+end_src
 ** Working with buffers
 
 This renames buffers with the same name and uniqifies them using angled
@@ -3167,7 +2987,9 @@ make sure to compile the tex document with the option ~--synctex=1~.
   :straight t
   :config
   (setq pdf-info-epdfinfo-program (concat user-emacs-directory "epdfinfo"))
-  (pdf-tools-install))
+  (pdf-tools-install)
+  <<pdf-tools-config>>
+  )
 #+END_SRC
 
 Add support for pdf annotations. Rebind ~pdf-annot-minor-mode-map~ to
@@ -6467,6 +6289,27 @@ The =Auto-Insert= package helps inserting header templates upon creating files. 
       "#!/usr/bin/env bash" \n \n))
     (auto-insert-mode -1))
 #+end_src
+** Embark
+Do things in the order =selection → action= instead of =action → selection=.
+#+begin_src emacs-lisp
+(use-package embark
+  :straight t
+  :bind (("C-." . embark-act)))
+(use-package embark-consult
+  :straight t
+  :after (embark consult))
+#+end_src
+
+As minor-mode maps would override the global map we have to unset the =C-.= binding in flyspell. We can either do this with an ~eval-after-load~
+#+begin_src emacs-lisp :tangle no :eval never
+(eval-after-load "flyspell"
+  '(define-key flyspell-mode-map (kbd "C-.") nil))
+#+end_src
+
+or by (un-)setting the binding explicitly in the =use-package= call of flyspell.
+#+begin_src emacs-lisp :tangle no :noweb-ref flyspell-bindings
+("C-." . nil)
+#+end_src
 * Language settings
 End sentences with single spaces.
 #+begin_src emacs-lisp
@@ -6487,6 +6330,9 @@ Setup mainly from [[https://github.com/howardabrams/dot-files/blob/master/emacs.
 #+begin_src emacs-lisp
 (use-package flyspell
   :delight
+  :bind (:map flyspell-mode-map
+              <<flyspell-bindings>>
+              )
   :init
   (add-hook 'prog-mode-hook 'flyspell-prog-mode)
   (dolist (hook '(text-mode-hook org-mode-hook))
