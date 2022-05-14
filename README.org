@@ -1,4 +1,4 @@
-#+PROPERTY: header-args:shell :noweb yes
+#+PROPERTY: header-args:shell :noweb yes :tangle-mode (identity #o555)
 * Contents :QUOTE:TOC_2_gh:
 #+BEGIN_QUOTE
 - [[#my-dotfiles][My dotfiles]]
