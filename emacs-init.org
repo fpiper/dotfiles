@@ -2539,8 +2539,7 @@ For example, ARGS could be \"--in=here\""
 #+BEGIN_SRC emacs-lisp
 (use-package magit
   :straight t
-  :custom (magit-completing-read-function 'magit-builtin-completing-read)
-  :init (global-magit-file-mode))
+  :custom (magit-completing-read-function 'magit-builtin-completing-read))
 #+END_SRC
 
 The following package is configured in accordance with the guidelines
@@ -2599,12 +2598,11 @@ Found it in this [[https://www.manueluberti.eu/emacs/2020/03/30/lockdown-beam-gi
 #+begin_src emacs-lisp
 (use-package git-identity
   :straight t
+  :init (git-identity-magit-mode 1)
   :custom
   (git-identity-verify t)
   (git-identity-list private/git-identity-list)
   :bind (:map magit-status-mode-map ("I" . git-identity-info)))
-(use-package git-identity-magit
-  :config (git-identity-magit-mode 1))
 #+end_src
 *** diff-hl
 Indicates changed lines in the left fringe. The Hydra can be used to
@@ -3184,30 +3182,33 @@ I use a org version with some custom patches. Rather than using something like =
 #+end_src
 #+begin_src emacs-lisp
 (use-package ob
-  :config  (org-babel-do-load-languages
-            'org-babel-load-languages
-            '((ruby . t)
-              (python . t)
-              ;;(ipython . t)
-              (emacs-lisp . t)
-              (octave . t)
-              (gnuplot . t)
-              (dot . t)
-              (spice . t)
-              (spectre . t)
-              (C . t)
-              (calc . t)
-              (latex . t)
-              (matlab . t)
-              (shell . t)
-              (lua . t)
-              (org . t)
-              (js . t)
-              (ditaa . t)
-              (plantuml . t)
-              ;; (hvm . t)
-              (ledger . t)))
-  :hook <<ob-hooks>>)
+  :after org-roam
+  :config
+  (org-babel-do-load-languages
+   'org-babel-load-languages
+   '((ruby . t)
+     (python . t)
+     ;;(ipython . t)
+     (emacs-lisp . t)
+     (octave . t)
+     (gnuplot . t)
+     (dot . t)
+     (spice . t)
+     (spectre . t)
+     (C . t)
+     (calc . t)
+     (latex . t)
+     (matlab . t)
+     (shell . t)
+     (lua . t)
+     (org . t)
+     (js . t)
+     (ditaa . t)
+     (plantuml . t)
+     ;; (hvm . t)
+     (ledger . t)))
+  :hook
+  <<ob-hooks>>)
 #+end_src
 #+BEGIN_SRC emacs-lisp
 (use-package org-noter
@@ -4313,9 +4314,8 @@ Org-roam mainly provides a display of backlinks to the current file. This allows
 (use-package org-roam
   :straight (:host github
                    :repo "org-roam/org-roam"
-                   :files (:defaults "extensions/*")
                    :no-byte-compile t)
-  :after magit
+  :after (magit org)
   :custom
   (org-roam-directory "~/git/projects/zettel")
   (org-roam-v2-ack t)
@@ -4466,7 +4466,7 @@ As capture templates get more complex storing the template itself in a separate 
   :hook (org-roam-mode . org-roam-bibtex-mode)
   :bind (:map org-mode-map
               (("C-c n a" . orb-note-actions)))
-  :after bibtex
+  :after (bibtex org-roam)
   :custom
   <<orb-custom>>
   :config
