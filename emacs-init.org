@@ -2663,7 +2663,6 @@ some safe local variable values.
 (gac-debounce-interval . 600)
 #+end_src
 ** Projects
-*** project.el
 #+begin_src emacs-lisp
 (use-package project
   :init
@@ -2679,22 +2678,6 @@ some safe local variable values.
      (?v "VC-Dir" project-vc-dir)
      (?e "Eshell" project-eshell))))
 #+end_src
-*** Projectile
-Projectile should be fully replaceable with =project.el=. Though some packages may still use projectile as dependency..
-#+BEGIN_SRC emacs-lisp :tangle no
-(use-package projectile
-  :straight t
-  :delight '(:eval (concat " " (projectile-project-name)))
-  :init
-  (setq projectile-project-search-path '("~/git/projects/"))
-  (setq projectile-indexing-method 'alien)
-  (setq projectile-enable-caching t)
-  (setq projectile-completion-system 'ido)
-  (setq projectile-file-exists-local-cache-expire (* 5 60))
-  :config
-  ;; (projectile-mode 1)
-  :bind (("C-c p" . projectile-command-map)))
-#+END_SRC
 ** Consult
 A bundle of common functions. Mostly drop in replacements for ~find-file~, ~grep~, ~find~, etc.
 #+begin_src emacs-lisp
