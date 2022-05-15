@@ -4991,10 +4991,13 @@ A small function to toggle the encryption state of the current entry.
   (org-cite-global-bibliography
    (if (equal fpi/current-device "DESKTOP-PM1PPEC")
        '("~/git/projects/personal/bib.bib"
-         "~/win/Zotero/00_Unsorted.bib"
-         "~/win/Zotero/01_Annotated.bib"
-         "~/win/Zotero/99_AllZotero.bib")
+         "~/win/Zotero/biblatex/00_Unsorted.bib"
+         "~/win/Zotero/biblatex/01_Annotated.bib"
+         "~/win/Zotero/biblatex/99_AllZotero.bib")
      '("~/git/projects/personal/bib.bib")))
+  (org-cite-export-processors
+        '((latex biblatex "ieee")
+          (t basic)))
   <<org-cite-custom>>
   )
 #+end_src
