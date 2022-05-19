@@ -3221,7 +3221,8 @@ I use a org version with some custom patches. Rather than using something like =
 #+begin_src emacs-lisp
 (use-package org-pdftools
   :straight t
-  :hook (org-load . org-pdftools-setup-link))
+  :after (org pdf-tools)
+  :init (org-pdftools-setup-link))
 (use-package org-id
   :custom
   (org-id-link-to-org-use-id 'create-if-interactive-and-no-custom-id)
@@ -4470,13 +4471,6 @@ As capture templates get more complex storing the template itself in a separate 
   :custom
   <<orb-custom>>
   :config
-  (defun bibtex-autokey-get-year ()
-    "Return year field contents as a string obeying `bibtex-autokey-year-length'."
-    (let* ((yearfield (bibtex-autokey-get-field "year"))
-           (yearfield (when (equal yearfield "")
-                        (substring (bibtex-autokey-get-field "date") 0 4))))
-      (substring yearfield (max 0 (- (length yearfield)
-                                     bibtex-autokey-year-length)))))
   <<orb-config>>)
 #+end_src
 Rewrite of ~bibtex-autokey-get-year~ is a crude way to get bibtex to recognize =date= fields as year.
@@ -4969,32 +4963,42 @@ A small function to toggle the encryption state of the current entry.
 #+begin_src emacs-lisp
 (use-package bibtex
   :custom
-  (bibtex-autokey-titlewords 3)
-  (bibtex-autokey-titlewords-stretch 1)
-  (bibtex-autokey-titleword-length 5)
   (bibtex-completion-library-path "~/git/projects/personal/Lit")
+  <<bibtex-custom>>
   :config
   (bibtex-set-dialect 'BibTeX))
 
-(setq bibtex-completion-bibliography "~/git/projects/personal/bib.bib")
+(setq bibtex-completion-bibliography
+      (if (equal fpi/current-device "DESKTOP-PM1PPEC")
+          '("~/git/projects/personal/bib.bib"
+            "~/win/Zotero/biblatex/00_Unsorted.bib"
+            "~/win/Zotero/biblatex/01_Annotated.bib"
+            "~/win/Zotero/biblatex/99_AllZotero.bib")
+        '("~/git/projects/personal/bib.bib")))
 (setq bibtex-completion-notes-path "~/git/projects/zettel/Lit")
 (setq bibtex-completion-notes-extension ".org")
+#+end_src
 
+The bibtex package provides a customizable implementation for key generation with ~bibtex-generate-autokey~.
+#+begin_src emacs-lisp :noweb-ref bibtex-custom :tangle no
+(bibtex-autokey-year-title-separator "_")
+(bibtex-autokey-title-terminators ".$")
+(bibtex-autokey-titlewords 3)
+(bibtex-autokey-titlewords-stretch 1)
+(bibtex-autokey-titleword-length 5)
+#+end_src
+We can also
+#+begin_src emacs-lisp :noweb-ref orb-custom :tangle no
+(orb-autokey-format "%e{(bibtex-generate-autokey)}")
 #+end_src
 **** Org Cite
 =org-ref= was replaced by =org-cite= which is built into =org=.
 
 #+begin_src emacs-lisp :noweb yes
 (use-package oc
-  :after org
+  :after (org bibtex)
   :custom
-  (org-cite-global-bibliography
-   (if (equal fpi/current-device "DESKTOP-PM1PPEC")
-       '("~/git/projects/personal/bib.bib"
-         "~/win/Zotero/biblatex/00_Unsorted.bib"
-         "~/win/Zotero/biblatex/01_Annotated.bib"
-         "~/win/Zotero/biblatex/99_AllZotero.bib")
-     '("~/git/projects/personal/bib.bib")))
+  (org-cite-global-bibliography bibtex-completion-bibliography)
   (org-cite-export-processors
         '((latex biblatex "ieee")
           (t basic)))
@@ -5034,6 +5038,11 @@ Lets customize =org-cite= to use =citar= by default.
 (org-cite-insert-processor 'citar)
 (org-cite-follow-processor 'citar)
 (org-cite-activate-processor 'citar)
+#+end_src
+
+We also make =org-roam-bibtex= compatible with =org-cite= by changing the cite format:
+#+begin_src emacs-lisp :noweb-ref orb-custom :tangle no
+(orb-pdf-scrapper-citekey-format "[cite:@%s]")
 #+end_src
 
 ***** Capturing entries
