@@ -1,4 +1,4 @@
-#+PROPERTY: header-args:conf :tangle tangle/gpg-agent.conf :comments org
+#+PROPERTY: header-args:conf :tangle tangle/gpg-agent.conf :comments org :tangle-mode (identity #o444)
 
 #+BEGIN_SRC sh :tangle tangle/symlink.sh :results silent :shebang "#!/bin/bash"
 ln -siv $(pwd)/tangle/gpg-agent.conf ~/.gnupg/gpg-agent.conf
