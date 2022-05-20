@@ -1,4 +1,5 @@
 # -*- buffer-auto-save-file-name: nil; -*-
+#+PROPERTY: header-args:conf :tangle-mode (identity #o444)
 * Intro
 
 This file describes my mail setup using
