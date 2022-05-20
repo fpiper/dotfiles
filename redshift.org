@@ -1,5 +1,5 @@
 Website: http://jonls.dk/redshift/
-#+PROPERTY: header-args:conf :tangle tangle/redshift.conf
+#+PROPERTY: header-args:conf :tangle tangle/redshift.conf :tangle-mode (identity #o444)
 ** Config
 #+BEGIN_SRC conf
 [redshift]
