@@ -1,5 +1,5 @@
 #+PROPERTY: header-args:emacs-lisp :results silent
-#+PROPERTY: header-args:emacs-lisp :tangle tangle/init-exwm.el
+#+PROPERTY: header-args:emacs-lisp :tangle tangle/init-exwm.el :tangle-mode (identity #o444)
 
 * Starting EXWM
 Either start exwm in =.xinitrc= or if using a display manager setup a desktop file similar to this:
