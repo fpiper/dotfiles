@@ -5623,33 +5623,6 @@ Match some formatted standard additional information at the start of files.
 (seq bol "- source ::" (* any) eol)
 #+end_src
 
-[[https://github.com/EFLS/zetteldeft][Zetteldeft]] provides further functions to search and link between
-different /Zettel/. As /Zettel/ are scattered in separate files,
-normal org file links using IDs lack in comparison to the introduced
-custom link format.
-
-#+begin_src emacs-lisp
-(use-package zetteldeft
-  :straight t
-  ;; :bind (:map fpi-map (("d d" . deft)
-  ;;                      ("d D" . zetteldeft-deft-new-search)
-  ;;                      ("d R" . deft-refresh)
-  ;;                      ("d s" . zetteldeft-search-at-point)
-  ;;                      ("d c" . zetteldeft-search-current-id)
-  ;;                      ("d f" . zetteldeft-follow-link)
-  ;;                      ("d F" . zetteldeft-avy-file-search-ace-window)
-  ;;                      ("d l" . zetteldeft-avy-link-search)
-  ;;                      ("d t" . zetteldeft-avy-tag-search)
-  ;;                      ("d T" . zetteldeft-tag-buffer)
-  ;;                      ("d i" . zetteldeft-find-file-id-insert)
-  ;;                      ("d I" . zetteldeft-find-file-full-title-insert)
-  ;;                      ("d o" . zetteldeft-find-file)
-  ;;                      ("d n" . zetteldeft-new-file)
-  ;;                      ("d N" . zetteldeft-new-file-and-link)
-  ;;                      ("d r" . zetteldeft-file-rename)
-  ;;                      ("d x" . zetteldeft-count-words)))
-  )
-#+end_src
 #+begin_src emacs-lisp :noweb-ref fpi-bindings :tangle no
 (fpi/define-key fpi-map "dd" #'deft "Deft")
 #+end_src
