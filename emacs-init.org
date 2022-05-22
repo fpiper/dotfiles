@@ -300,7 +300,10 @@ This package allows hydra definitions in use-package.
 (use-package use-package-hydra
   :straight t)
 #+end_src
-*** which-key
+*** REVIEW which-key
+:NOTES:
+- State "REVIEW"     from "TODO"       [2022-05-22 Sun 12:35]
+:END:
 In Emacs you can press =?= or =C-h= after starting a key combination
 to get a list of available commands. =which-key= shows these in a
 small popup, which I think is more handy.
@@ -312,7 +315,10 @@ small popup, which I think is more handy.
   (which-key-lighter "")
   :config (which-key-mode 1))
 #+end_src
-*** Try
+*** REVIEW Try
+:NOTES:
+- State "REVIEW"     from              [2022-05-22 Sun 12:35]
+:END:
 Sometimes I stumble over a package and want to try it out without
 commiting to it and installing it fully – possibly forgetting to
 remove it. =Try= installs packages temporarily for this emacs session
