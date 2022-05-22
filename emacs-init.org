@@ -2368,11 +2368,11 @@ Only highlight the changes within a line, not the whole line.
 #+END_SRC
 **** Forge
 #+begin_src emacs-lisp
-(use-package forge
-  :after magit
-  :straight t
-  :config
-  <<forge-config>>)
+;; (use-package forge
+;;   :after magit
+;;   :straight t
+;;   :config
+;;   <<forge-config>>)
 #+end_src
 Non-standard forges need to be added to ~forge-alist~ manually.
 #+begin_src emacs-lisp :tangle no :noweb-ref forge-config
@@ -2957,8 +2957,8 @@ I use a org version with some custom patches. Rather than using something like =
 #+end_src
 
 #+begin_src emacs-lisp
-(use-package ob-spectre
-  :load-path "~/git/projects/ob-spectre")
+;; (use-package ob-spectre
+;;   :load-path "~/git/projects/ob-spectre")
 #+end_src
 #+begin_src emacs-lisp
 (use-package ob
@@ -2974,7 +2974,7 @@ I use a org version with some custom patches. Rather than using something like =
      (gnuplot . t)
      (dot . t)
      (spice . t)
-     (spectre . t)
+     ;; (spectre . t)
      (C . t)
      (calc . t)
      (latex . t)
@@ -3071,14 +3071,11 @@ I prefer to use timestamp based ID's as they are
   :defer t
   :custom
   (org-confirm-babel-evaluate nil))
-(use-package org-screenshot
-  :after org)
-(use-package org-collector
-  :after org)
-(use-package ol-notmuch
-  :after org)
-(use-package org-habit
-  :after org-agenda)
+;; (use-package org-screenshot)
+;; (use-package org-collector)
+(use-package ox)
+;; (use-package ol-notmuch)
+(use-package org-habit)
 #+end_src
 
 #+begin_src emacs-lisp
@@ -4113,6 +4110,8 @@ Set some prettify symbols for org mode.
 *** org-roam
 Org-roam mainly provides a display of backlinks to the current file. This allows the creation of a one-subject-per-file Zettelkasten.
 #+begin_src emacs-lisp :tangle tangle/emacs-10-init.el :noweb yes :results silent
+(use-package org-ref
+  :straight t)
 (use-package org-roam
   :straight (:host github
                    :repo "org-roam/org-roam"
@@ -6125,17 +6124,17 @@ End sentences with single spaces.
 *** Flyspell
 Setup mainly from [[https://github.com/howardabrams/dot-files/blob/master/emacs.org][Howard Abrams]].
 #+begin_src emacs-lisp
-(use-package flyspell
-  :delight
-  :bind (:map flyspell-mode-map
-              <<flyspell-bindings>>
-              )
-  :init
-  (add-hook 'prog-mode-hook 'flyspell-prog-mode)
-  (dolist (hook '(text-mode-hook org-mode-hook))
-    (add-hook hook (lambda () (flyspell-mode 1))))
-  (dolist (hook '(change-log-mode-hook log-edit-mode-hook org-agenda-mode-hook))
-    (add-hook hook (lambda () (flyspell-mode -1)))))
+;; (use-package flyspell
+;;   :delight
+;;   :bind (:map flyspell-mode-map
+;;               <<flyspell-bindings>>
+;;               )
+;;   :init
+;;   (add-hook 'prog-mode-hook 'flyspell-prog-mode)
+;;   (dolist (hook '(text-mode-hook org-mode-hook))
+;;     (add-hook hook (lambda () (flyspell-mode 1))))
+;;   (dolist (hook '(change-log-mode-hook log-edit-mode-hook org-agenda-mode-hook))
+;;     (add-hook hook (lambda () (flyspell-mode -1)))))
 #+end_src
 * Interface
 ** General
