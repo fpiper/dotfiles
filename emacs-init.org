@@ -5778,11 +5778,15 @@ I change the group buffer to something more memorable. This needs to be set befo
   ;; Make sure we look at every address in a message and not only the
   ;; first one
   (bbdb-message-all-addresses t)
-  :config
+  (bbdb-time-stamp-format "%Y%m%dT%TZ") ;; to be compatible w/ Nextcloud vcard import
+ :config
   (bbdb-initialize 'gnus 'message)
   (bbdb-mua-auto-update-init 'gnus 'message)
   :bind (:map gnus-summary-mode-map
               (";" . bbdb-mua-edit-field)))
+(use-package bbdb-vcard
+  :straight t
+  :after bbdb)
 #+end_src
 To synchronize the database across devices I symlink it to my central synchronization directory:
 #+begin_src shell :noweb-ref symlinks :tangle no
