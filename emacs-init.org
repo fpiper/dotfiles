@@ -5460,7 +5460,8 @@ prefix to my custom keymap.
   :straight t
   :commands (password-store-copy
              password-store-edit
-             password-store-insert)
+             password-store-insert
+             fpi/password-store-copy-pass-or-field)
   :custom (password-store-time-before-clipboard-restore 30)
   :config (defun fpi/password-store-copy-pass-or-field (&optional arg)
             (interactive "P")
