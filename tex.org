@@ -4,7 +4,7 @@ Here are some custom latex packages and stuff.
 
 Let us start by creating the local latex directory. We can also use this source block as a quick way to find the appropriate tangle directory for any latex files.
 #+NAME: lob-localtexdir
-#+begin_src shell :results silent
+#+begin_src sh :results silent
 texdir=$(kpsewhich -var-value "TEXMFHOME")/tex/latex
 mkdir -p $texdir
 echo $texdir
@@ -33,7 +33,7 @@ A package which includes commands, packages and settings I want to be generally 
 Some settings are in external files. We can list these files using basic unix commands and input them in the main file using the noweb syntax.
 
 #+NAME: personal-files
-#+begin_src shell :dir (org-sbe lob-localtexdir) :results raw silent
+#+begin_src sh :dir (org-sbe lob-localtexdir) :results raw silent
 ls personal-*sty | sed -e 's/\(.*\)/\\input{\1}/'
 #+end_src
 
