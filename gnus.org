@@ -84,13 +84,28 @@ RSS/Atom Feeds asynchronously.
 #+end_src
 
 **** Harddrive Maildir
-This is still WIP, because the =nnmaildir= backend sucks.
-#+begin_src emacs-lisp :tangle no
-(add-to-list 'gnus-secondary-select-methods
-             '(nnmaildir "Local Maildir"
-                         (directory "~/.nnmaildir")
-                         (gnus-search-engine gnus-search-notmuch
-                                             (config-file "~/.notmuch-config"))))
+The message files notmuch returns upon searching needs to be associated with the correct group. To do this the maildir prefix (e.g. =/everything/above/the/dir/containing/cur/new/tmp=) needs to be removed, which is done by setting the ~remove-prefix~ option. Unfortunately we can set this on a per server basis, but not for each group. So this is unable to support one =nnmaildir= server containing multiple maildirs in subdirectories (or symlinked).
+#+begin_src emacs-lisp :tangle no :noweb-ref secondary-select-methods
+(when (equal fpi/current-device "xcarb")
+  (add-to-list
+   'gnus-secondary-select-methods
+   '(nnmaildir "mail_gnus"
+               (directory "~/mail_gnus")
+               (gnus-search-engine
+                gnus-search-notmuch
+                (config-file "~/.notmuch-config")
+                ;; (remove-prefix "~/mail_gnus")
+                ))))
+#+end_src
+**** Notmuch
+#+begin_src emacs-lisp :tangle no :noweb-ref secondary-select-methods
+(when (equal fpi/current-device "xcarb")
+  (use-package nnnotmuch
+    :straight (:host github :repo "tlikonen/nnnotmuch" :branch "master")
+    :custom
+    (nnnotmuch-groups
+     '(("" ("in.recent" "date:7days..")))))
+  (add-to-list 'gnus-secondary-select-methods '(nnnotmuch "")))
 #+end_src
 ** Options
 *** General
