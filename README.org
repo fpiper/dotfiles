@@ -1,0 +1,195 @@
+#+PROPERTY: header-args:shell :noweb yes :tangle-mode (identity #o555)
+* Contents :QUOTE:TOC_2_gh:
+#+BEGIN_QUOTE
+- [[#my-dotfiles][My dotfiles]]
+  - [[#initial-setup][Initial setup]]
+  - [[#git-setup][Git setup]]
+  - [[#updating-all-tangled-files][Updating all tangled files]]
+  - [[#creating-symlinks][Creating symlinks]]
+  - [[#dots-script][=dots= script]]
+#+END_QUOTE
+
+* My dotfiles
+The config files are organized in [[https://www.gnu.org/software/emacs/][emacs]] [[https://orgmode.org/][org mode]] files. They are tangled
+and symlinked to the appropriate directories.
+
+[[file:emacs-init.org::tangle-hook][A hook]] tangles all files automatically on each save. In addition there
+are shell scripts that tangle all =.org= files at once.
+
+The symlinks can be created by manually running the appropriate [[https://orgmode.org/worg/org-contrib/babel/][babel]]
+source block in each configuration file or by running the scripts
+below.
+
+** Initial setup
+After cloning this repository run
+
+#+begin_example shell
+make install
+#+end_example
+
+to setup the tangled config files and create the necessary symlinks.
+
+** Git setup
+This repository somewhat abuses git branches. Every program's
+configuration lives in its own separate branch. All branches are then
+merged into =master= using an [[https://git-scm.com/docs/merge-strategies#Documentation/merge-strategies.txt-octopus][octopus merge]]. To keep the git history
+clean I reset =master= for every merge. Here is a small script to do
+that and push the changes. I mark branches, which I want to keep local
+only, with a trailing =+= and then exclude them with the ~+$~ pattern
+in grep.
+
+#+begin_src shell :shebang "#!/bin/bash" :tangle tangle/merge.sh
+git checkout master
+git reset --hard init
+git branch -a | grep -v -e +$ -e master | sed "s/[ *] //" | xargs git merge
+git push --force origin master
+#+end_src
+
+To integrate changes from =origin= perform a rebase instead of merge
+to loose the old merge commit but keep any local changes.
+
+#+begin_src shell :shebang "#!/bin/bash" :tangle tangle/pull.sh
+git fetch
+git rebase origin/master master
+#+end_src
+
+** Updating all tangled files
+This script (re-)tangles all =.org= and =.org.gpg= files in the
+current directory. Run this in case the org files were updated outside
+of your local emacs (e.g. after pulling from a remote). Make sure to
+run it from the dotfiles directory.
+
+#+begin_src shell :shebang "#!/bin/bash" :tangle no
+emacs --batch --eval="\
+  (progn (require 'org)
+         (let ((org-confirm-babel-evaluate nil))
+           (mapc 'org-babel-tangle-file (split-string \"$(ls *.org *.org.gpg)\"))))"
+#+end_src
+
+The above won't quite work for me as I use [[https://orgmode.org/worg/org-tutorials/encrypting-files.html#org697961a][org-crypt]] in some
+configuration files and it also needs to be loaded & setup. For
+details see [[file:emacs-init.org::org-crypt-tangle-setup][emacs-init.org]].
+
+#+begin_src shell :shebang "#!/bin/bash" :tangle tangle/tangle.sh
+files=$(ls *.org *.org.gpg)
+
+<<checkhashes>>
+
+echo "Tangling files:$tanglefiles ..."
+
+emacs --batch --eval="\
+  (progn (require 'org)
+         (require 'org-crypt)
+         (org-crypt-use-before-save-magic)
+         (setq org-tags-exclude-from-inheritance '(\"crypt\"))
+         (setq org-crypt-key \"F1EF502F9E81D81381B1679AF973BBEA6994521B\")
+         (defun save-without-hook ()
+           (let ((before-save-hook nil))
+             (save-buffer)))
+         (setq org-babel-pre-tangle-hook '(org-decrypt-entries save-without-hook))
+         (advice-add 'org-babel-tangle :after '(lambda (&rest r)
+                                                 (org-encrypt-entries)
+                                                 (save-without-hook)))
+         (let ((org-confirm-babel-evaluate nil))
+           (mapc 'org-babel-tangle-file (split-string \"$tanglefiles\"))))"
+#+end_src
+
+*** Saving commit hashes to reduce tangling
+To reduce the amount of unnecessary tangling, save the commit hash
+upon tangling and check it before tangling again.
+
+Get the commit hash of a file using ~git log~.
+
+#+NAME: gethash
+#+begin_src shell
+function gethash {
+    git log -n 1 --pretty=format:%H -- $1
+}
+#+end_src
+
+We can save all commit hashes by looping over all files.
+
+#+NAME: savehashes
+#+begin_src shell
+HASHDIR="hash"
+<<gethash>>
+for file in $files
+do
+    gethash $file > $HASHDIR/$file
+done
+#+end_src
+
+But we really want to check the saved hash against the current hash
+first. If they do not match keep the file for tangling.
+
+#+NAME: checkhashes
+#+begin_src shell
+HASHDIR="hash"
+mkdir -p $HASHDIR
+tanglefiles=""
+<<gethash>>
+
+exec 3>&2
+exec 2> /dev/null # disable stderr
+
+for file in $files
+do
+    if [ $(cat $HASHDIR/$file) == $(gethash $file) ]
+    then
+        : # noop
+    else # if strings not equal or ~cat~ fails
+        tanglefiles="$tanglefiles $file"
+        gethash $file > $HASHDIR/$file # save hash
+    fi
+done
+
+exec 2>&3 #reset stderr
+#+end_src
+
+** Creating symlinks
+Each config files contains a source block which creates symlinks of
+the tangled configurations to their respective target locations. These
+blocks all have the ~:tangle tangle/symlink.sh~ and ~:shebang
+#!/bin/bash~ header arguments. The symlinks are created with ~ln -siv~
+to list created symlinks (~-v~) and to ask when overwriting existing
+files (~-i~). To always replace all symlinks you can pipe ~yes~ into
+the ~ln -siv~ calls: ~yes | tangle/link.sh~. Make sure to run it from
+the dotfiles directory.
+
+As the symlink shell source blocks are scattered in all configuration
+files, all files are collected together using ~cat~ and then all blocks
+with the correct ~:tangle~ target are tangled. Unfortunately there is
+no function to directly only tangle blocks with a certain target, so
+this is not straightforward.
+#+begin_src shell :shebang "#!/bin/bash" :tangle tangle/link.sh
+catFile="concat.org"
+symlinkFile="tangle/symlink.sh"
+
+cat <(cat *.org) <(ls *.org.gpg | xargs gpg --decrypt) > $catFile
+
+emacs --batch --eval="\
+  (progn (require 'org)
+         (let ((org-confirm-babel-evaluate nil))
+           (find-file \"$catFile\")
+           (search-forward \":tangle $symlinkFile\")
+           (org-babel-tangle '(16))))"
+
+rm $catFile
+
+$symlinkFile
+#+end_src
+
+** =dots= script
+I place this script in my =PATH= to execute commands in the dotfiles
+directory from anywhere.
+
+#+begin_src shell :shebang "#!/bin/bash" :tangle tangle/dots.sh
+cd ~/git/projects/dotfiles
+$@
+#+end_src
+
+Create a symlink for this script.
+
+#+BEGIN_SRC sh :tangle tangle/symlink.sh :results silent :shebang "#!/bin/bash"
+ln -siv $(pwd)/tangle/dots.sh ~/.local/bin/dots
+#+END_SRC

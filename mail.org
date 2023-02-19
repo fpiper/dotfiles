@@ -1,0 +1,472 @@
+# -*- buffer-auto-save-file-name: nil; -*-
+#+PROPERTY: header-args:conf :tangle-mode (identity #o444)
+* Intro
+
+This file describes my mail setup using
+- =mbsync= (isync) to get mail from the mail server and save it
+  locally
+- =notmuch= for tagging-based mail searching and organization
+  integrated into emacs
+- =afew= to provide initial tagging for new mail to notmuch
+- =msmtp= to actually send the mail written in emacs
+
+* mbsync
+:PROPERTIES:
+:header-args: :tangle tangle/.mbsyncrc :eval never :exports code :results silent
+:END:
+
+The config for mbsync is described in =~/.mbsyncrc=.
+#+BEGIN_SRC conf
+# IMAP keeps an "internaldate" attribute for messages, which is separate
+# from the date given in the message header, set based upon when the
+# message was first received.  Fastmail's webmail interface at least
+# uses this attribute to properly order messages chronologically.
+#   The CopyArrivalDate option isn't well documented but it seems that when
+# synchronising a new message it uses the Maildir file's Modify date as the
+# IMAP internaldate attribute and vice versa. Otherwise it seemed the
+# synchronisation time was being used instead. By setting the option here it's
+# enabled by default for all Channels.
+#+END_SRC
+
+#+BEGIN_SRC conf
+# 1st Account GMX
+IMAPAccount gmx
+# Address to connect to
+Host imap.gmx.net
+#+end_src
+** My mail address                                                   :crypt:
+-----BEGIN PGP MESSAGE-----
+
+hQGMA/lzu+pplFIbAQv6Ap/2jmc78BmLzE/M/u/8kMyiBmXuGY6p2S92aRXi2A5a
+RzZgox9A3hs1OtUlrFS3n+/qGJu6ufzHFU+NC/xblDCPHJakn8LHiGufqG09B5v5
+F1iDYO7x8+ehcNvfjqBjsrOdqJfkpq57yyzKgO0EwZ65tP+OxOcunINfyOmzDXId
+K6Y+ZTVLYKVHpGhdC52t8jXmFCEZyatBlMKMUizVBrGUoHjKXpwbU3D5OyJoSqA7
+QidGC6XNxlGQNjtJLMapSBrNy3srWkprZDhXFersxDNIpfY1+HWAGmnhUbp/1XI8
+rH86gtzZ1xeaVAC7Q0ZUssQ23naIdRlxDM7zMpeH0LXkvC2ElT7JpK1H8XuVe0eH
+PBPGleotvWXG6/DT/WLkHvNE/vHXOa4QhJCa2xaEWQP+n1REIXiSuM8YhoM90tY9
+++Xiux4APeeHKGds3Z8FxDS1TxKQ2ijZOXHLXJAcYKdIFBlA+voN79H2IzVz6k1l
+TW2HS1eDpVImUrAkKs2Z0pwBcRFcsiTG6FQxJ0Y4qJGjsZK2llwDqptlDApshg7x
+13f9wpJnm3qBHQT13sNhzz1Dy4AQsZXj3QEz+u00NqRWy6oVmwKTLQ5W0cXimLn5
+rOfIyOw2zAU9ZLP9yS8/KdONFgrv17bDcToYfjZFeJipHF4b/K0Uk2NSqoX6Hxtd
+D9OhyiSwxcYYpY1+0OGQoYcKyAqS3fSu+0vgS48=
+=ktHf
+-----END PGP MESSAGE-----
+** Rest of the configuration
+#+begin_src conf :padline no
+# Use SSL
+SSLType IMAPS
+# The following line should work. If get certificate errors, uncomment the two following lines and read the "Troubleshooting" section.
+CertificateFile /etc/ssl/certs/ca-certificates.crt
+#CertificateFile ~/.cert/imap.gmail.com.pem
+#CertificateFile ~/.cert/Equifax_Secure_CA.pem
+
+IMAPStore gmx-remote
+Account gmx
+
+MaildirStore gmx-local
+# The trailing "/" is important
+Path ~/Maildir/gmx/
+Inbox ~/Maildir/gmx/INBOX
+Flatten .
+SubFolders Verbatim
+
+Channel gmx
+Master :gmx-remote:
+Slave :gmx-local:
+# Exclude everything under the internal [Gmail] folder, except the interesting folders
+#Patterns * ![Gmail]* "[Gmail]/Sent Mail" "[Gmail]/Starred" "[Gmail]/All Mail"
+# Or include everything
+Patterns *
+# Automatically create missing mailboxes, both locally and on the server
+Create Both
+# Save the synchronization state files in the relevant directory
+SyncState *
+# Remove messages on master marked for deletion
+Expunge Master
+
+Channel gmx-quick
+Master :gmx-remote:
+Slave :gmx-local:
+Patterns INBOX
+SyncState *
+Sync Pull New
+
+##########################################################
+#+END_SRC
+
+** More mail accounts                                                :crypt:
+-----BEGIN PGP MESSAGE-----
+
+hQGMA/lzu+pplFIbAQv/VIvFz9ywYSXo4DJPC0AoRgjUGTs/ECam7bosV+QAo8JA
+4S+AlonfxROa+tuqC7Sd3GrK4BngJhf+lf7BqmJPr7/yjEAW/SA2IWxOypem3/6o
+C62fhqtxAw2b6WT+zCpeCzG95zDIXJNxgqe2fATVpMtno3odV5NkinFxj3AQ20yw
+80PIAxOGzPf4xtWmvAcNGD0jwKT8DYHo7Yexr78JYgp3cZNYs3jmO8NYfKoNFzV1
+fSBb07XYz/4v07alP4kwQETOg+ssGflGRknxk6W65XgQO2nm9QTtMhoGcVJtstpG
+PYF8UUmg71mJv2GZb2+SxC7IFYbwLOJaYBVCOsZqwxKzy1EBmyhuIzgaJKZbB8EM
+yMGKP6pJPoy6BKskALbsptF1cNrDVLWxdrOny3OcK+8JfhfH5MPGiV/u2xMa9sig
+ERz6Hy1VY0S/MYt2P+m73G1AMTbN+Qiqp+/023cc3J5ZxaY0R+eZcd785mRQMh+O
+fjLU+tlhx0xUUxoRLAT80ukB1sAqaJnn345dR1KMklHC5TFr81wp3zMu+2JoKnqu
+/K8SCTo+1t/QkOaf51uGEa9uQ57mqTf9vQdXnQ/gdPGM59K/r75lR/ehVmus9rUW
+qeOtBKSRdqTGVHVqLAK9aJ6blNpINSXWWQts0vsZistMpXrhQ5QSK1qIyHBa04Vj
+tjzGHtNvRRSkj+eCKQynJDzxVFpw1ElyoHxs0lPItDOSLV3r9HQ9fCCD5e9hoRBm
+zzkp4BCBc8WyB1kIUnz/TQvsTCNacbFxume6arysNzMWzQNNHusx/L/83AbTyJ28
+UK26CHvbSkKGYrxKHt5IEenrZFNr7gYNKMhYc/PH3+1hANA7kUXdasFQuIT7Ij1u
+fHl7egsKI/k7wyKfKmgKa/FVT5MJ4V7fO3YX2oGAhuH704fhmG4mCMrot4Nz7Gq0
+uzAI7I2eayXQ2ZS83aE0FUhdk2BFCfR4R282PN/1uadAp/8MFDjIW7dhoktMDtST
+JeODbnIrqD0kfnq+cCLTSqlHi06v1TeJvB0CS7AugsE4rgiitkN6ELUzKMZsruBx
+hQom2CHPKQ7ZSa8tQnLNePIySWy9QO5KNT15ZuScRvXsxUU0awsQExk7asTpawHD
+gdZE/n3ekRq9QAnsv0EmCITzGVBy573JCwNDNUwbGseLVeoW5sYJNDXtilRrXhdY
+icCbQge6rn7fHqAnBWnxgvDKVcBFZJpVYa//6tIzSHLGDmYi3Kt0HXkf6PwYIvjz
+jRHf1Xpy7VRNOA9JTCV5cw6khvpU2u8p+j90f68fsIDqMiLdlgsZSoSwLf2hvjqU
+ZgB9W87oQr7yCEuVI41esNF0IhykxlAiJnSfEb8YYnp3DxDvwRF5SLyQCwuFOUpO
+sf3KVSye/78roQRIkGLJXp5tdelOPAw+fJi7hv90o29xcieoEoPuwNDhCps4vylH
+qPVtv0fcMBZEC1HQwSrrrmBUf0U4kTJntrs/YHAJcEdtGFry5Y7O9eWYX1IKnu2H
+q/oq9Qp6mtv66nn61KEYfxx6Jc2dYwo6D+CVEHlLtICqqfPMLZi/toGaz7KPlPTq
+/gYSbqIGwzKF6SvLy4vD84we3u65u+fcTnb9uqiLq/oUE83CP6sFapphARl6No9A
+zLgC9FzBj5hqh3g2Kg4=
+=q0eG
+-----END PGP MESSAGE-----
+* afew
+:PROPERTIES:
+:header-args: :tangle tangle/afew.config :eval never :exports code :results silent
+:END:
+
+Config expected to be in =~/.config/afew/config=.
+
+~ArchiveSentMailsFilter~ entfernt den /new/ tag und danach werden keine
+CustomFilter mehr angewendet. Um auch gesendete Mails richtig zu
+taggen, wird ~ArchiveSentMailsFilter~ erst am Ende aufgerufen.
+#+BEGIN_SRC conf
+#default filter chain
+[SpamFilter]
+[KillThreadsFilter]
+[ListMailsFilter]
+[SentMailsFilter]
+sent_tag = sent
+#+end_src
+** custom filters                                                    :crypt:
+-----BEGIN PGP MESSAGE-----
+
+hQGMA/lzu+pplFIbAQv+LYa99pjG6frcwF8PbG43jAbZobloStIR4LrIwxMaZtYw
+1mvUyZKG2L6VHRQaN2h8SiTzhnojw0iaT8Q0AyJTBiCaL6uJx+A5JNPrhC6vWLnK
+MSBA4Bj8WTQrLstsl0FBu6az25QM0AE9RObqWeO3E+cym4x9ZpIKA8RXMqd6tIx6
+tsGE2XGCCm7N7pPoRmSnZS1/UmFD69zgSqG/DX0UdFA2I44kERSzQjTdFVxEmc+U
+0RVtK3ykeQfmqv1gxBCp96jXzjhHkt0UeiHmsjUQfQA5SSAKY0kMODGh789P6uVa
+tfUs7TnrnQJAsEm+Wa+y4ffr+7zoyCyVsupE/EXRf84sXHs34gReh2AJy7mx138I
+x1hdEG+eO0xnByxvkcOdGs4CeyuXp46nHEHSzOuwX0tJ2BrGvV5lDYCVjuYQPQsi
+gGhickbpzARIrQp767oKNMkIca67VsOoRKf2h4bogI01997e3bR/rIsL+Fco9JOd
+o6SXcZm9Twrip3s+MP2G0ukBkXs0lxDQw/2zQWXjjRBUqAeb+kYCGCNVpRRoBWZK
+OK09HRuAtgwGQh+B1+JeXhCGoK+JB0EIChIbSJj9NypfTxCe8Iqm9iV8aXfbboK8
+dTGONnltE7PXT/4piF13zZiDkPEHWU7wgIXKcIjtblqYPakkXD26IveZZtaPEJdR
+uKuCU6WtgPc28gt5vokzny59kQPJVAWQKY9zTiQGkUz1tWhJCh+KR3sjp/zgYPXb
+Mze40oi+LRpEAgDhu+J8zztnXQgfQuFqjO+erW4qTkoxaw11d/IbGFUIdf4EcZF7
+S8eJKUAksNUqUxvMSKkG5dJqr/ApcBEfNtZjuBorphm9VSimWcQblpc4jy8rS0lq
+ZeGHkzW2b5Oni6dp0VX+86gp7eHrxLoIQAec6IbD58r+uZfucC4mcdFI4D9+WeSV
+ZmT9KwnY5xvQBW3RYVF+LhqQfEvYedlq+Y8Infpm2YgzhkskTO4vEHoLB3DNIAcf
+nsR+tyuF0XxamWHaz8QorIIgQlxJ+RKrcJsAS8eiaGhMm0GnVFvazt8zIDruSf3e
+GsgCHlUjvz+u8bIBNEIzif5nxv3DTjaSq3bYrQFIkWieGwzBOnyEUil0NV5NKxrb
+Xpzkgp64TIGQJSqBrM1Fx7rlMXRJp+XxhWgv1sfprk9uDnzS1N8F8wI+bvQXBC0I
+InbYkw69UuTAFhLf2M/JCf87dyo6Ve7jRI3ujJoMW/i65MjVijhVz/ddfBGmg5MP
+yXdYe/VIdiugbjSWGapmYiWwN6zjf00MzY41K9XLvQtX8BMmX1QgYiOEDEsZqhTB
+h9GxlPTuH9OkgVDpKs+/vNKUrUhdWnpK
+=guIu
+-----END PGP MESSAGE-----
+** more stuff
+#+begin_src conf
+[Filter.1]
+message = "Get mailing lists out"
+query = tag:lists and tag:new
+tags =  -new;
+
+[ArchiveSentMailsFilter]
+
+[InboxFilter]
+#+END_SRC
+Move archived messages from inbox to remote Archive. Archived Messages older
+than 1 year are moved to local Archive.
+
+#+begin_src conf :tangle no
+[MailMover]
+folders = Inbox Sent Spam
+rename = true
+
+# rules
+Inbox = 'date:-1800d..-60d':archive 'tag:spam':Spam
+#+end_src
+** MailMover section                                                 :crypt:
+-----BEGIN PGP MESSAGE-----
+
+hQGMA/lzu+pplFIbAQv/Y9HmsMJS6hVR+LJtOJgL/uDTQv8mMKp1yKg9o5iX1oro
+Gs/aaJcy8HpjsYnZd7Yx3PpuFh/yfM4XmNRhE68K2MtljTxrLmhm9oScQNv8QlFK
+PwQbN9gKydrYbkxRrpNgbGBSFkrXd7uQ7NAyyvPdHY1Z0w/rDM4LZZKCTx9/1S1Q
+3OZniVklBO94fIaPRDXcZK0dhuvXuOYFY6pSnByRJHzK/y0JzU6j50ZoEPre9frb
+L/OiQLbsCwOZGXu96uHD6IN1YoTg+y3wSHUt+/rQyBIt9wH65oR2UJzQGiBevWoy
+ZB/roXHFUA3qWBtye2zwUUgn9zwfHhxpVXh/CUF+H/nJpu4onr2NFZpVQBjTv3PM
+LfS3QFRzArCSwFxAWpwzk8LHAeFTMoL5Ojz5bHGsrJbq3+WO2LPepN0Mb6HJbL+T
+p1dYEfdIWLTVOJ+h+OGKg2FhHuN9+sEamrW1MhBqpgiTLN+RcxYLdqzUUYkX5y2l
+R3rwiARy20KmQdvPDkgi0sCbAXh3Qkm2FP+naUkpMG8hygfDAIvlKzPPNrfQIF+c
+K0sgSSHg6zDY8WD5O+jgsJMb+MDFVVavmy7evA+w5lPXToVrVNItz5iVvXjAY74k
+4mUSKkY7RTRDpHihNYNKZ/7iz5QqpCCdAPiZt9neZ/2TR8zD8ESkxFRHt296Tw+Z
+U9A5+cmTq05c7KoVsp4S1DADL0V4w5ELbXEAkeZ+fJoYMjTLJ9QxH9FGHduxN161
+uEED+B2SztY/8YWHGk+C6JtRgFqlCIdcshJVRWTlJg36R9jzXKuxhM+GJ4FQ+BSV
+GhhV58pAPg/OzvR2o8TmlYm2QUhufZY08PH1HqJWu/GQigpHQlM5sXZgDRlu5ovv
+f+hcnYxlWVjh6tquhT4uHo6uVwh//SaOPpYmEVAe9O9PdwL47pFJu6k0MMkH4qrK
+7zUsvb+IgDtvGL3JLgMP7+qEF5NhrjoQVowImx8=
+=oUMI
+-----END PGP MESSAGE-----
+* notmuch
+:PROPERTIES:
+:header-args: :tangle tangle/.notmuch-config :eval never :exports code :results silent
+:END:
+
+Config in =~/.notmuch-config=.
+#+BEGIN_SRC conf
+# .notmuch-config - Configuration file for the notmuch mail system
+#
+# For more information about notmuch, see https://notmuchmail.org
+
+# Database configuration
+#
+# The only value supported here is 'path' which should be the top-level
+# directory where your mail currently exists and to where mail will be
+# delivered in the future. Files should be individual email messages.
+# Notmuch will store its database within a sub-directory of the path
+# configured here named ".notmuch".
+#
+[database]
+path=/home/fpi/Maildir
+#+end_src
+** User configuration                                                       :crypt:
+-----BEGIN PGP MESSAGE-----
+
+hQGMA/lzu+pplFIbAQwAyADHr9/dxo+qBiAnayNbHLRsCOZlRI/LdY8zL9AUN2Dm
+V3RvD9vgJAg/FQR3Q3/St+EWrYd8ktPshr/54zE9EpqbQf/iZf1nHx8hQdyZLmFQ
+teYuX+d4+r65LV6dwMKc3IYRNVefy0qMYYJcGxisgvg2FmJbZw5pInEfRjlu3e7c
+yuiYPfbE1JfbF5Q+UK+jnq1MA/12XRYB+vSaEz+oYAY1B8L/oIifTFTBM2LlSYrs
+e1oR1oYcEqZ6/NNcM8oFJV8mKo3ppvLQT3T9mIZinq9wdBssqSm7JjCghh+rBjrA
+ZCk9+7n4WgsBIzclKXLPUpQrNt7i/j2o/lJZMe1X6uhwEvY4k2Ef/URRd5T3L0lz
+XXHIkcNZQGfko+AnwSIeG2fsDA9h5HOx5t/9gQX5JqVXHNxUomyaumxafEkAw51N
+hWN78JIZNTTIeNdlbKs+7tPqc/0Pg5KQsBrOIjsI8Q0/xy0U6ggNflce3jRXQ8b1
+ugcZK5XwVXVChho2w5340sEtAY7o7yrPPB0guACFB6T+pddMGlR2KRFqkL7n3UTt
+R0BuuPcAaYwu4NA0dGG3HWEsHHnrCjADQNRimM5vxa2yl74YDBa/sA+eZ48ee3oV
+bHXerSuERu0TZd/PxcFGyHLjbe6CR26a+q6O87pYbmlzCANddGSFmhInFv9dzpi9
+1EnTRr8KS2t+KPOAOYGnyuJD/gBsPuA43DAfZG+CFDIve4593QadyovvntJMgb2v
+p1P899T9n76zuLd+kpi0vE/1U2XZkJQfp6eZh/1KiP5tnSAQfFaPBICg412vAg/D
+7EbWn4xav4MQA7BPz2WWVuIktsJ/22ZhX+EmIB2pKSqad6q0mGt8/nu4ZzUY3HLb
+fZA1qaBdSkIZIef4mNkiT2Sl+sbwzv/M8Lg0BZAPAS6hCrt4kNOeRhpcJNTlSaOD
+mVq6dwrfvvPiY3tFMkbCLVT+4OztYsgHg+D+e4eGnA6geVCCvVtb79pK1tQKcAED
+Y20tp9QZ7jVAP1zOVTZn8x9fe2VTa6+oyAayWtvgxQbSLhfmKc7et0LCngtTaasT
+mHQXwQ7r0EIVyrkrhC0/Dlo7pgyoQ9spaBpCPg8hszDoNTJ0gunf2NxYBjjyO5hI
+Zxz8+V8+wgKl/CfIoX0EoF3VcOs0EL+GvqFqcM9tsg==
+=H1dY
+-----END PGP MESSAGE-----
+** More configuration
+#+begin_src conf
+# Configuration for "notmuch new"
+#
+# The following options are supported here:
+#
+#	tags	A list (separated by ';') of the tags that will be
+#		added to all messages incorporated by "notmuch new".
+#
+#	ignore	A list (separated by ';') of file and directory names
+#		that will not be searched for messages by "notmuch new".
+#
+#		NOTE: *Every* file/directory that goes by one of those
+#		names will be ignored, independent of its depth/location
+#		in the mail store.
+#
+[new]
+tags=new
+ignore=.mbsyncstate;.uidvalidity
+
+# Search configuration
+#
+# The following option is supported here:
+#
+#	exclude_tags
+#		A ;-separated list of tags that will be excluded from
+#		search results by default.  Using an excluded tag in a
+#		query will override that exclusion.
+#
+[search]
+exclude_tags=deleted;spam;
+
+# Maildir compatibility configuration
+#
+# The following option is supported here:
+#
+#	synchronize_flags      Valid values are true and false.
+#
+#	If true, then the following maildir flags (in message filenames)
+#	will be synchronized with the corresponding notmuch tags:
+#
+#		Flag	Tag
+#		----	-------
+#		D	draft
+#		F	flagged
+#		P	passed
+#		R	replied
+#		S	unread (added when 'S' flag is not present)
+#
+#	The "notmuch new" command will notice flag changes in filenames
+#	and update tags, while the "notmuch tag" and "notmuch restore"
+#	commands will notice tag changes and update flags in filenames
+#
+[maildir]
+synchronize_flags=true
+
+# Cryptography related configuration
+#
+# The following *deprecated* option is currently supported:
+#
+#	gpg_path
+#		binary name or full path to invoke gpg.
+#		NOTE: In a future build, this option will be ignored.
+#		Setting $PATH is a better approach.
+#
+[crypto]
+gpg_path=gpg
+#+END_SRC
+* msmtp
+:PROPERTIES:
+:header-args: :tangle tangle/.msmtprc :eval never :exports code :results silent
+:END:
+
+Config in =~/.msmtprc=.
+#+BEGIN_SRC conf
+# Set default values for all following accounts.
+defaults
+# Use the mail submission port 587 instead of the SMTP port 25.
+port 587
+# Always use TLS.
+tls on
+# don't use auto_from
+auto_from off
+
+# Log to syslog/systemd
+syslog on
+
+tls_trust_file /etc/ssl/certs/ca-certificates.crt
+
+# Additionally, you should use the tls_crl_file command to check for revoked
+# certificates, but unfortunately getting revocation lists and keeping them
+# up to date is not straightforward.
+#tls_crl_file ~/.tls-crls
+
+#+end_src
+** Account configuration                                             :crypt:
+-----BEGIN PGP MESSAGE-----
+
+hQGMA/lzu+pplFIbAQv/Z+gf1HDfl3ujUmWlhnNSgtDYvJ0p1F5ocDQFbycYcMnK
+y0pgNbBHTt4EnpyBzcO4fJeWnytd8VWivcNyie36fwInOfZGDWwGGbg6mbDSTZ7R
+TE6oGnUIJZGZGi3Tc48Pfi2/dnLFaqIFjpCBHoF3SJt35HlHCaH5fo1VCym0WRW/
+zCXZUbbLgncDYnzb1TLvMZcDTqPiIKsMkqXiO2tf/P9WJTqk0gZBPvMWTQKqrjtm
+tj5+PAUCG2YATra5MBGeQED7DflV9UMyxcP8pHGV8HStoih0xTQ72X0N0mL5JquK
+A0LW4p0jGNig0v5EdgP8yZtygv2Rx+3IRJzuedubM37dnRF+jzAfkmC1ALY5zEfW
+8l//9iwcARtEde8AS2vAoPVXlS0xIEF12d6VzkWWzncZmcXIHyXDrFY1+z3tEe0V
+e8fBSx4LsBfCTJineSCcDkh+AuGr2JyvM71b8eX3BE1FqrfNppV2pqXlkVIL19R8
+/kr4nDHmtG+59+lmbzyD0ukB0OUbXqHJMnnMbJRjHsEbuQUAazGfOZDUyjd4zJx2
+2fNFuPEPkKiiJUWOFeYqnbG12e+sl0LP2CMTGNdd4aT51IDrWXlSxbkwxBiK3spt
+n2LhqzZs0xK0ZGkSiH+7BnxtVgkzBIbF4sGmhq696gWyGuY3EfmIBSNRidlpCGtC
+iJwK29G9DUKX7s6cR3+n7A2wWK47fQazRN/lcUQ7XD0JOhsasR0SMUQvQRwnfR9e
+ft8romZ4uGBeRhm7n2cA7d5CJJPVJfsq5QdZFLewPmQPDbH4Fkeg8i4Oeh7Lu2fs
+EOLOhao5ejocKlY9ZdGpNzhDxHLkZJ4ShX9+OoV9Uz3Sf2rmtz8r94pkNDmaaQ8c
+990I3/caiy4PpsWTp1QJ4EUvhT3EWUsE2EYvM3SQSGpF+HOT0j6vrIaoecMCqoLX
+WkUvZap6obg3KiSqodGn007iiqQ8pwJZl76FZMbse0jei0XcyiHt+hY2EO1FhMyv
+pKRiHcwx8rICoiw2oGn13Zb9UbVmXU5SMeurE59C/0PFUC6SzafMnPTJXUQ7NlUq
+ne9se0qmT7JoqHXshuotRSsYRVpxns2JZuE7tqHA7/Ud5hVPLy3ZOl+Zk6ddagc9
+lPhqal3qX0U9nSWQsCXBa8+MhduFG4hYuNj9X5uviTNK2q3wLgRUCo2gRXK2cp+k
+FMBa71Nk8D4/EBU9giq5FAPG91uer+UcmSZVknLncY0pd1uAdtBsIUT/+zZvIJMJ
+8FNjguacnEefSewhLAcMVrKOQ2WYOvOP5nLr9TaKnJ5nS5GSRXVJy9nBKFtEAZf+
+2wmHTkmFSwP3lqi1ZaIxovF3rs2lHc5Y+l2TYUMpZ7IoENt3mHV5NpMf8n9YMXvH
+iml2sfR/j4AwOMKGoq4kd/+X5T3+YDXceV9Na5dVS8Gi988FYJ7mUQgpQEBh97PF
+Rfk0cIaKPIfioUlzYQqH1j2iJJ3oR1cY7zOaPZiWsvbIthhMLOFfkHh70Ohcu/b+
+/gV5ByyC9yQDRuyjleeUMuWjQP8rr9eA2ieri6QajNz1xDuf2VwB13NhMAWx
+=wmLO
+-----END PGP MESSAGE-----
+* Checkmail.sh
+:PROPERTIES:
+:header-args: :tangle tangle/checkmail.sh :exports code
+:END:
+
+This script calls everything necessary to receive mail. An optional 'quick'
+argument can be supplied to only sync the inbox.
+
+#+BEGIN_SRC shell :shebang "#!/bin/sh" :results silent
+STATE=`nmcli networking connectivity`
+run=$1
+
+# no of old unread mails
+OLD_UNREAD=`notmuch count "tag:unread and tag:inbox"`
+
+# Delete deleted mails
+COUNT=`notmuch count "tag:deleted and (tag:spam or not tag:spam)"`
+if [ $COUNT != 0 ]
+then
+    echo "- deleting $COUNT messages ..."
+    notmuch search --format=text0 --output=files "tag:deleted and (tag:spam or not tag:spam)" | xargs -0 --no-run-if-empty rm
+fi
+
+if [ $STATE = 'full' ]
+then
+    #~/.local/bin/msmtp-runqueue.sh
+    if [ $run = 'quick' ]
+    then
+	# echo 'Quick Sync'
+	mbsync gmx-quick
+    else
+	# echo 'Normal Sync'
+	mbsync all
+    fi
+    notmuch new
+    # tag mail
+    afew -tn
+    # move mail
+    # all mail to move archived messages
+    afew -ma
+    #notmuch tag -inbox tag:inbox AND tag:lists
+
+    NEW_UNREAD=`notmuch count "tag:unread and tag:inbox"`
+    if (( $NEW_UNREAD > $OLD_UNREAD ))
+    then
+	msgs=( $(notmuch search --output=threads 'tag:unread and tag:inbox'))
+	for i in $(seq 0 $(($NEW_UNREAD - $OLD_UNREAD -1)))
+	do
+	    subject=$(notmuch search ${msgs[i]}|grep -oP "(?<=\] ).*(?=( \())")
+	    emacsclient -e "(sauron-add-event 'mail 3 \"$subject\" '(lambda () (other-window 1) (notmuch-show \"${msgs[i]}\" nil nil \"tag:unread and tag:inbox\")))"
+	    notify-send -u low "New mail:" "$subject"
+	done
+    fi
+
+    exit 0
+fi
+# echo "No Internets!"
+exit 0
+#+END_SRC
+
+A simple cronjob then regulary calls this script. Setup like this it
+performs a quick sync every minute and a full sync every ten minutes
+and also logs stdout to systemd.
+#+BEGIN_SRC conf :eval never :tangle no
+,*   *   *   *  * systemd-cat /home/fpi/.checkmail.sh quick
+,*/10   *   *   *  * systemd-cat /home/fpi/.checkmail.sh full
+#+END_SRC
+* Emacs setup
+:PROPERTIES:
+:header-args: :tangle tangle/emacs-mail.el :eval never :exports code :results silent
+:END:
+
+See [[id:1e1d7ae0-3e88-4e14-b67f-72c6be66e565][emacs init file]].
+* Create symlinks
+
+Finally symbolic links to the desired locations are created for all
+the tangled files.
+
+#+BEGIN_SRC shell :tangle tangle/symlink.sh :shebang "#!/bin/bash" :shebang "#!/bin/bash"
+ln -siv $(pwd)/tangle/.mbsyncrc ~/
+ln -siv $(pwd)/tangle/afew.config ~/.config/afew/config
+ln -siv $(pwd)/tangle/.notmuch-config ~/
+ln -siv $(pwd)/tangle/.msmtprc ~/
+ln -siv $(pwd)/tangle/checkmail.sh ~/
+#+END_SRC

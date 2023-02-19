@@ -1,0 +1,646 @@
+#+PROPERTY: header-args:emacs-lisp :tangle tangle/gnus.el :noweb yes :tangle-mode (identity #o444)
+
+#+begin_src shell :results silent :tangle tangle/symlink.sh :shebang "#!/bin/bash"
+ln -siv $(pwd)/tangle/gnus.el ~/.gnus.el
+#+end_src
+
+I use =nextcloud= to synchronize gnus state files across devices. Alternatively one may use [[info:gnus#The Gnus Cloud][info:gnus#Gnus Cloud]]. Here i symlink the relevant files/directories to my synchronization directory.
+#+begin_src shell :results silent :tangle tangle/symlink.sh :shebang "#!/bin/bash"
+ln -siv ~/sync/gnus/News ~/News
+ln -siv ~/sync/gnus/.newsrc.eld ~/.newsrc.eld
+ln -siv ~/sync/gnus/.gnus.registry.eieio ~/.gnus.registry.eieio
+#+end_src
+
+Load private settings.
+#+begin_src emacs-lisp
+(mapc (lambda (file) (load file))
+      (directory-files user-emacs-directory t "^emacs-.*el.gpg$"))
+#+end_src
+* Config
+** Servers
+I use =imap= as my primary server. Setup some generic options:
+#+begin_src emacs-lisp :noweb-ref imap :tangle no
+nnimap ,@private/imap-info
+(nnimap-stream ssl)
+(nnir-search-engine imap)
+#+end_src
+Only fetch partial articles. This saves time on opening messages with
+large attachments. Load any text based parts and also load any
+signature if the message is signed. Unfortunately to correctly verify
+the signature the full message needs to be loaded, which is why I
+disabled partial fetching for now.
+#+begin_src emacs-lisp :noweb-ref imap :tangle no
+;; (nnimap-fetch-partial-articles "\\(text/\\|signature\\)")
+#+end_src
+Set my default inbox folder. This is the folder mail is split out of.
+#+begin_src emacs-lisp :noweb-ref imap :tangle no
+(nnimap-inbox "INBOX")
+#+end_src
+Use fancy splitting and setup splitting rules. See [[info:gnus#Fancy Mail Splitting][info:gnus#Fancy Mail Splitting]] for details.
+#+begin_src emacs-lisp :noweb-ref imap :tangle no
+(nnimap-split-methods nnimap-split-fancy)
+(nnimap-split-fancy
+ (| (: nnmail-split-fancy-with-parent)
+    ,@private/imap-split-fancy
+    "INBOX"
+    ))
+#+end_src
+
+Noweb the primary server settings together.
+#+begin_src emacs-lisp :noweb yes
+(setq gnus-select-method
+      `(
+        <<imap>>
+        ))
+#+end_src
+
+To avoid confusion I enable namespaces for imap groups.
+#+begin_src emacs-lisp
+(setq nnimap-use-namespaces t)
+#+end_src
+*** Secondary servers
+#+begin_src emacs-lisp
+<<secondary-select-methods>>
+#+end_src
+**** Personal mailbox
+#+begin_src emacs-lisp :tangle no :noweb-ref secondary-select-methods
+(mapc
+ (lambda (info)
+   (add-to-list
+    'gnus-secondary-select-methods
+    `(nnimap
+      ,@info
+      (nnimap-stream ssl)
+      (nnir-search-engine imap)
+      (nnimap-inbox "INBOX"))))
+ private/personal-imap-info)
+#+end_src
+
+**** RSS/Atom over nntp
+Setup a secondary imap server and a local nntp server I use to fetch
+RSS/Atom Feeds asynchronously.
+#+begin_src emacs-lisp :tangle no :noweb-ref secondary-select-methods
+(add-to-list 'gnus-secondary-select-methods '(nntp "localhost" 4321))
+#+end_src
+
+**** Harddrive Maildir
+This is still WIP, because the =nnmaildir= backend sucks.
+#+begin_src emacs-lisp :tangle no
+(add-to-list 'gnus-secondary-select-methods
+             '(nnmaildir "Local Maildir"
+                         (directory "~/.nnmaildir")
+                         (gnus-search-engine gnus-search-notmuch
+                                             (config-file "~/.notmuch-config"))))
+#+end_src
+** Options
+*** General
+**** Startup
+Load only groups with level < 2 for faster startup.
+#+begin_src emacs-lisp
+(setq gnus-activate-level 2)
+#+end_src
+**** Message related
+Bcc self to archive sent messages & ensure proper sending
+#+begin_src emacs-lisp
+(setq message-default-mail-headers
+       (format "Bcc: %s\n" user-mail-address))
+#+end_src
+Sent mails are read.
+#+begin_src emacs-lisp
+(setq gnus-gcc-mark-as-read t)
+#+end_src
+Save sent mails in my imap folder
+#+begin_src emacs-lisp
+(setq gnus-message-archive-method "dummy string")
+(setq gnus-message-archive-group private/imap-sent-folder)
+#+end_src
+Enable responding to meeting invites.
+#+begin_src emacs-lisp
+(use-package gnus-icalendar
+  :config
+  (gnus-icalendar-setup)
+  (setq gnus-icalendar-org-capture-file "~/sync/appointments.org")
+  (setq gnus-icalendar-org-capture-headline '("Calendar")) ;;make sure to create Calendar heading first
+  (gnus-icalendar-org-setup)
+  )
+#+end_src
+Enable message delaying (scheduling)
+#+begin_src emacs-lisp
+(gnus-delay-initialize)
+#+end_src
+***** BBDB integration
+Enable =mail-aliases= and create aliases for all mail adresses if an entry has multiple.
+#+begin_src emacs-lisp
+(add-hook 'message-setup-hook 'bbdb-mail-aliases)
+(setq bbdb-mail-alias 'all)
+#+end_src
+***** Mail encryption & signing
+Verify mail signatures with known protocols.
+#+begin_src emacs-lisp
+(setq mm-verify-option 'known)
+#+end_src
+Show buttons for result of signature verification & for multipart mails. To show the message fully buttonized use =K b= in the summary buffer.
+#+begin_src emacs-lisp
+(setq gnus-buttonized-mime-types '("multipart/signed" "multipart/alternative"))
+#+end_src
+**** Mail splitting
+Setup for fancy mail splitting. Also see the parameters in ~gnus-select-method~.
+#+begin_src emacs-lisp
+(setq nnmail-split-methods 'nnimap-split-fancy)
+
+(setq nnmail-cache-accepted-message-ids t)
+(setq nnmail-message-id-cache-length 10000)
+#+end_src
+**** Search
+Use gnus search language. See [[info:gnus#Search Queries][gnus#Search Queries]] for info.
+#+begin_src emacs-lisp
+(setq gnus-search-use-parsed-queries t)
+#+end_src
+**** Demon
+Background fetching for gnus. See the manual and [[https://www.emacswiki.org/emacs/GnusDemon][emacswiki]].
+#+begin_src emacs-lisp
+(defun gnus-demon-scan-news-level (level only)
+  (let ((win (current-window-configuration))
+	(gnus-read-active-file 'some)
+	(gnus-check-new-newsgroups nil)
+	(gnus-verbose 2)
+	(gnus-verbose-backends 5))
+    (while-no-input
+      (unwind-protect
+          (save-window-excursion
+            (when (gnus-alive-p)
+              (with-current-buffer gnus-group-buffer
+                (gnus-group-get-new-news level only))))
+        (set-window-configuration win)))))
+(defun gnus-demon-scan-news-2 ()
+  (gnus-demon-scan-news-level 2 nil))
+(defun gnus-demon-scan-news-3 ()
+  (gnus-demon-scan-news-level 3 t))
+(defun gnus-demon-scan-news-4 ()
+  (gnus-demon-scan-news-level 4 t))
+(defun gnus-demon-scan-news-5 ()
+  (gnus-demon-scan-news-level 5 t))
+
+(setq gnus-demon-timestep 10)
+(gnus-demon-add-handler 'gnus-demon-scan-news-2 3 nil)
+(gnus-demon-add-handler 'gnus-demon-scan-news-3 60 t)
+(gnus-demon-add-handler 'gnus-demon-scan-news-4 130 1)
+(gnus-demon-add-handler 'gnus-demon-scan-news-5 140 1)
+#+end_src
+**** Scoring
+To define different scoring files for different groups I set [[info:gnus#Home Score File][home score files]] based on the group name.
+#+begin_src emacs-lisp
+(setq gnus-home-score-file
+      '(("misc@" "nntp_gmane.SCORE")
+        ("ieee" "nn_ieee.SCORE")
+        ("^nnimap" "nnimap.SCORE") ;; w/ author scoring
+        ("^INBOX" "nnimap.SCORE") ;; w/ author scoring
+        ("gmane" "nntp_gmane.SCORE") ;; w/ author scoring
+        ("^nntp\\+localhost" "nntp_global.SCORE") ;; w/o author scoring
+        ))
+(setq gnus-home-adapt-file
+      '(("misc@" "nntp_gmane.ADAPT")
+        ("ieee" "nn_ieee.ADAPT")
+        ("^nnimap" "nnimap.ADAPT")
+        ("^INBOX" "nnimap.ADAPT")
+        ("gmane" "nntp_gmane.ADAPT")
+        ("^nntp\\+localhost" "nntp_global.ADAPT")))
+#+end_src
+For information about adaptive scoring see [[info:gnus#Adaptive Scoring][info:gnus#Adaptive Scoring]] and this [[https://notes.whatthefuck.computer/1417593600.0-note.html][blog post]] by Ryan Rix.
+
+Temporary scores by default expire after 7 days. I want a slightly longer threshold.
+#+begin_src emacs-lisp
+(setq gnus-score-expiry-days 14)
+#+end_src
+***** Score File Setup
+#+begin_src emacs-lisp
+(setq gnus-use-adaptive-scoring '(word line))
+(setq gnus-adaptive-word-length-limit 5)
+(setq gnus-adaptive-word-no-group-words t)
+(setq gnus-summary-mark-below -300)
+(setq gnus-default-adaptive-score-alist
+      '(
+        <<gnus-adaptive-scoring-wo-from>>))
+(setq gnus-default-adaptive-word-score-alist
+      `((,gnus-read-mark . 10)
+        (,gnus-catchup-mark . -4)
+        (,gnus-killed-mark . -15)
+        (,gnus-del-mark . -8))
+      )
+;; (setq gnus-adaptive-word-score-alist gnus-default-adaptive-word-score-alist)
+#+end_src
+****** Scoring rules
+Scoring based on the =from= header does not make sense for rss feeds with only one author or newsgroups with unset author. These files therefore contain my default adaptive scoring rules with or without =from= scoring.
+#+NAME: gnus-adaptive-scoring-w-from
+#+begin_src emacs-lisp :tangle no :eval never
+(gnus-unread-mark)
+(gnus-ticked-mark (from 4))
+(gnus-dormant-mark (from 5))
+(gnus-del-mark (from -4) (subject -50))
+(gnus-read-mark (from 5) (subject 100))
+(gnus-expirable-mark)
+(gnus-killed-mark (from -5) (subject -300) (followup -150))
+(gnus-kill-file-mark)
+(gnus-ancient-mark)
+(gnus-low-score-mark)
+(gnus-catchup-mark (from -2) (subject -40))
+#+end_src
+#+NAME: gnus-adaptive-scoring-wo-from
+#+begin_src emacs-lisp :tangle no :eval never
+(gnus-unread-mark)
+(gnus-ticked-mark)
+(gnus-dormant-mark)
+(gnus-del-mark (subject -50))
+(gnus-read-mark (subject 100))
+(gnus-expirable-mark)
+(gnus-killed-mark (subject -300) (followup -150))
+(gnus-kill-file-mark)
+(gnus-ancient-mark)
+(gnus-low-score-mark)
+(gnus-catchup-mark (subject -40))
+#+end_src
+Unfortunately setting these on a per group basis does not work currently as it would (at least) override the word scoring setting. So I stick with the same adaptive scoring rules for all groups set above.
+***** Misc Options
+To ensure filenames compatible with Windows and stuff:
+#+begin_src emacs-lisp
+(setq nnheader-file-name-translation-alist '((?: . ?_) (?[ . ?_) (?] . ?_)))
+#+end_src
+
+Slow scoring decay prevents huge scores from building up. Only run on =.ADAPT= score files and decay each scoring rule by 1 point or 1%, whichever is larger.
+#+begin_src emacs-lisp
+(setq gnus-decay-scores "\\.ADAPT\\'"
+      gnus-score-decay-constant 1
+      gnus-score-decay-scale 0.01)
+#+end_src
+***** Ignored Words
+Do not score on some common german words. I extracted these from my score file after a few weeks of using scoring.
+#+begin_src emacs-lisp
+(setq gnus-ignored-adaptive-words
+      '("loswerden" "teilweise" "übernahme" "betrieb" "kündigt" "schnittstelle" "abgewendet" "hälfte" "massiv" "massivst" "angeblich" "verschleppt" "startup" "auslistung" "wichtiger" "öffentliches" "verwenden" "asynchron" "lieber" "arbeite" "zahlreiche" "november" "entscheidung" "käufer" "findet" "mittlere" "vorstoß" "starker" "erreicht" "letzte" "geplant" "september" "nachfolger" "ankündigen" "mildern" "antrieb" "lassen" "aufsteigen" "entdeckt" "hinweise" "bedingungen" "miniserie" "funktioniert" "umfragen" "angreifbare" "fiasko" "prüfstand" "sparsamer" "steigt" "zugangsdaten" "tutorial" "details" "verfahren" "verschiebt" "enorme" "schlechtere" "erwarten" "optimierungen" "aushalten" "kratzer" "stürze" "gelöscht" "getestet" "stalker" "showcase" "warnung" "maßnahmenplan" "konstruieren" "deutsches" "großen" "probefahrt" "interesse" "preise" "verteilt" "leaken" "günstiger" "umgerüstet" "ausflug" "edition" "definitive" "schützen" "zeiten" "größte" "sicherer" "falsches" "schnelles" "wollte" "angebunden" "externe" "aktualisiertes" "zweiten" "limitiert" "überraschend" "unsicher" "schonfrist" "strukturiert" "historisches" "riesige" "gründet" "mitarbeiter" "geleakt" "mutmaßlichem" "idiotensicher" "stunden" "zornige" "schwächer" "funktionierende" "meinen" "meisten" "geringer" "gewinnen" "rennen" "halten" "synchronisation" "normal" "riesiges" "bessere" "enthält" "integriert" "project" "zurücknehmen" "verursacht" "bleibt" "angeschlossene" "verbrauchen" "berichtet" "ausmachen" "unterschied" "stoppen" "weiterhin" "ausschluss" "schaffen" "exklusives" "riesiger" "keinen" "verbesserter" "steckt" "kündigen" "dienste" "erwägt" "dürfen" "demonstriert" "unerlaubter" "möglichkeiten" "unendlicher" "unbegrenzte" "vermehrt" "greift" "veröffentlicht" "komplett" "warten" "blockiert" "freier" "erscheinen" "reicht" "fliegen" "eigene" "erweitert" "sollen" "könnte" "erscheint" "können" "arbeiten" "eigenen" "lieferbar" "kostet" "kommen" "startet" "zurück" "bestätigt" "schnell" "bietet" "unterstützen" "zahlen" "bekommt" "ersten" "schneller" "verkauft" "kaufen" "machen" "vorgestellt" "bringt" "offenbar" "geräte" "präsentiert" "videos" "stellt" "schließt" "werden" "erhält" "wieder" "endlich" "verfügbar" "deutsche"
+        ))
+#+end_src
+**** Registry
+Use the [[info:gnus#The Gnus Registry][Gnus Registry]]. This is required to use [[id:990e2668-11d6-45eb-9c9b-1dc0b89b556d][Gnorb]].
+#+begin_src emacs-lisp
+(gnus-registry-initialize)
+#+end_src
+Remove some groups from being saved to the registry
+#+begin_src emacs-lisp
+(setq gnus-registry-split-strategy 'majority)
+(setq gnus-registry-ignored-groups
+      '(("^nnrss" t)
+        ("^nnreddit" t)
+        ("^nntp" t)
+        ("delayed$" t)
+        ("drafts$" t)
+        ("queue$" t)
+        ("INBOX$" t)
+        ("^nnmairix:" t)
+        ("^nnir:" t)
+        ("archive" t)
+        ))
+#+end_src
+#+begin_src emacs-lisp :tangle no :noweb-ref secondary-select-methods
+(add-to-list 'gnus-secondary-select-methods '(nngnorb "Gnorb server"))
+#+end_src
+Enable gnorb tracking
+#+begin_src emacs-lisp
+(gnorb-tracking-initialize)
+#+end_src
+Hint for existing relevant tracked conversations in the summary buffer (see [[info:gnorb#Hinting in Gnus][info:gnorb#Hinting in Gnus]]). Already tracked messages are marked with =&= and new maybe relevant messages with =¡=.
+#+begin_src fundamental :tangle no :noweb-ref gnorb-summary-line-format
+%ug
+#+end_src
+Display [[info:gnorb#Tagging Messages and Contacts][message tags]] in the summary line. Stop other summary line content at column 120 and insert the tags after.
+#+begin_src fundamental :tangle no :noweb-ref gnorb-summary-tags
+%-120=%uG
+#+end_src
+Also automatically set message tags
+#+begin_src emacs-lisp
+(setq gnorb-gnus-auto-tag-messages t)
+#+end_src
+**** Gnus Cloud
+The [[info:gnus#The Gnus Cloud][Gnus Cloud]] lets you synchronize marks and general data (whatever that is) across different machines. +This seems more complete than manually (with Nextcloud, …) syncing the news related files (=~/.newsrc.eld=, =~/News=, …).+
+
+To enable it go to the gnus server buffer and mark the servers to be synced with =i= and the (imap) server which is used as host with =I=.
+
+Commands to interact with the gnus cloud are prefixed with =~= in the group buffer.
+
+#+begin_src emacs-lisp :noweb yes
+(use-package gnus-cloud
+  :custom
+  (gnus-cloud-method (concat "nnimap:" (caar private/personal-imap-info)))
+  (gnus-cloud-synced-files '("~/.authinfo.gpg"
+                             ;; "~/.gnus.registry.eieio"
+                             ;; (:directory "~/News" :match ".*.\\(SCORE\\|ADAPT\\)")
+                             (:directory "~/git/projects/dotfiles" :match "[0-9]+-.*\\.patch")))
+  (gnus-cloud-storage-method 'epg)
+  :config
+  <<gnus-cloud-config>>
+  )
+#+end_src
+
+***** Only download specific files
+Gnus Cloud sync all newsrc data and the specified files. Sometimes one would only want to download and update only specific files without overwriting all newsrc data.
+
+This function is very similar to ~gnus-cloud-download-data~ but takes a regexp to match against filenames. Note that it does not update ~gnus-cloud-sequence~ (for now). So when only doing partial downloads repeatedly you may need to update ~gnus-cloud-sequence~ manually.
+#+begin_src emacs-lisp :noweb-ref gnus-cloud-config
+(defun fpi/gnus-cloud-download-some (regexp &optional sequence-override)
+  "Download and install files matching REGEXP."
+  (interactive "sRegexp to match: ")
+  (let ((articles nil)
+	(highest-sequence-seen gnus-cloud-sequence)
+        chunks)
+    (dolist (header (gnus-cloud-available-chunks))
+      (let ((this-sequence (gnus-cloud-chunk-sequence (mail-header-subject header))))
+	(when (> this-sequence (or sequence-override gnus-cloud-sequence -1))
+
+	  (if (string-match (format "storage-method: %s" gnus-cloud-storage-method)
+			    (mail-header-subject header))
+	      (progn
+		(push (mail-header-number header) articles)
+		(setq highest-sequence-seen (max highest-sequence-seen this-sequence)))
+	    (gnus-message 1 "Skipping article %s because it didn't match the Gnus Cloud method %s: %s"
+			  (mail-header-number header)
+			  gnus-cloud-storage-method
+			  (mail-header-subject header))))))
+    (when articles
+      (nnimap-request-articles (nreverse articles) gnus-cloud-group-name)
+      (with-current-buffer nntp-server-buffer
+        (goto-char (point-min))
+        (while (re-search-forward "^Gnus-Cloud-Version " nil t)
+          (beginning-of-line)
+          (push (gnus-cloud-parse-chunk) chunks)
+          (forward-line 1))))
+    (mapcar (lambda (chunk) (fpi/gnus-cloud-update-some chunk regexp)) chunks)))
+
+(defun fpi/gnus-cloud-update-some (elems regexp)
+  (dolist (elem elems)
+    (let ((type (plist-get elem :type))
+          (name (plist-get elem :file-name)))
+      (when (and (memq type '(:delete :file))
+                 (with-temp-buffer
+                   (insert name)
+                   (beginning-of-buffer)
+                   (re-search-forward regexp nil t)))
+        (message "Match: Updating %s" name)
+        (gnus-cloud-update-file elem type)))))
+(define-key gnus-group-mode-map (kbd "~ p") 'fpi/gnus-cloud-download-some)
+#+end_src
+*** Display
+Sort by newest first
+#+begin_src emacs-lisp
+(setq gnus-article-sort-functions '((not gnus-thread-sort-by-date))
+      gnus-thread-sort-functions  '((not gnus-thread-sort-by-date)))
+#+end_src
+Unicode reply symbol
+#+begin_src emacs-lisp
+(setq gnus-summary-to-prefix "→ ")
+#+end_src
+Rename the group buffer to something more memorable. This is not intended to be customized. So some bugs may occur. So far it only seems important to set it before starting gnus the first time. So e.g. set it in your main emacs =init.el=.
+#+begin_src emacs-lisp
+(setq gnus-group-buffer "*Gnus*")
+#+end_src
+**** On threads
+Gather loose threads, whose parent is currently not displayed, under a
+dummy article. I find the default ~'adopt~ to be too confusing.
+#+begin_src emacs-lisp
+(setq gnus-summary-make-false-root 'dummy)
+(setq gnus-summary-dummy-line-format "  %(:                                    :%) %S
+")
+(setq gnus-summary-make-false-root-always t)
+#+end_src
+Also try to connect threads by guessing which articles are missing
+#+begin_src emacs-lisp
+(setq gnus-fetch-old-headers nil)
+(setq gnus-build-sparse-threads 'more)
+#+end_src
+Better thread display (from [[https://www.emacswiki.org/emacs/GnusFormatting][emacswiki/GnusFormatting)]].
+#+begin_src emacs-lisp
+(setq gnus-summary-line-format (concat "%U%R%z"
+                                      "<<gnorb-summary-line-format>>"
+                                      " %(%&user-date;  %-15,15f  %B%s%) "
+                                      "<<gnorb-summary-tags>>" "\n")
+     gnus-user-date-format-alist '((t . "%y-%m-%d %H:%M"))
+     gnus-summary-thread-gathering-function 'gnus-gather-threads-by-references
+     gnus-sum-thread-tree-false-root ""
+     gnus-sum-thread-tree-indent " "
+     gnus-sum-thread-tree-leaf-with-other "├► "
+     gnus-sum-thread-tree-root ""
+     gnus-sum-thread-tree-single-leaf "╰► "
+     gnus-sum-thread-tree-vertical "│")
+#+end_src
+**** Topics
+Disable indenting a topic. I always do it by accident.
+#+begin_src emacs-lisp
+(use-package gnus-topic
+  :delight
+  :config
+  (defun fpi/gnus-topic-toggle-topic ()
+    "Toggle display of the topic."
+    (interactive)
+    (when (gnus-group-topic-p)
+      (if (equal 'visible
+                 (nth 1 (cadr (gnus-topic-find-topology (gnus-current-topic)))))
+          (gnus-topic-hide-topic)
+        (gnus-topic-show-topic))))
+  (define-key gnus-topic-mode-map (kbd "<tab>") 'fpi/gnus-topic-toggle-topic)
+  (define-key gnus-topic-mode-map (kbd "TAB") 'fpi/gnus-topic-toggle-topic))
+#+end_src
+Function to toggle display of group levels in the group buffer.
+#+begin_src emacs-lisp
+(defvar gnus-group-line-format-wo-levels nil)
+(defun fpi/gnus-group-toggle-levels ()
+  (interactive)
+  (if gnus-group-line-format-wo-levels
+      (setq gnus-group-line-format gnus-group-line-format-wo-levels
+            gnus-group-line-format-wo-levels nil)
+    (setq gnus-group-line-format-wo-levels gnus-group-line-format
+          gnus-group-line-format (concat "[%L] " gnus-group-line-format)))
+  ;; Hack to update display
+  (gnus-group-get-new-news 0))
+(define-key gnus-topic-mode-map (kbd "T L") 'fpi/gnus-group-toggle-levels)
+#+end_src
+**** Window Layout
+See [[info:gnus#Window Layout][info:gnus#Window Layout]].
+#+begin_src emacs-lisp
+(setq gnus-use-full-window nil)
+#+end_src
+**** Article Display
+#+begin_src emacs-lisp
+(use-package gnus-art
+  :hook (gnus-article-mode . prose-mode))
+#+end_src
+**** Modeline indicator
+From the [[https://www.emacswiki.org/emacs/GnusNotify][emacswiki Gnus Notify]].
+#+begin_quote
+[…] use ~G p~ in the group buffer, then add ~(modeline-notify t)~ […]
+#+end_quote
+Activate with [[elisp:gnus-mst-show-groups-with-new-messages]].
+Code:
+#+begin_src emacs-lisp
+;;; gnus-notify.el --- use the modeline to indicate groups with new messages
+
+;; Author: Mark Triggs <mark@dishevelled.net>
+;;
+;; Contributions from: Frederic Couchet <fcouchet AT april.org>
+
+;; This file is free software; you can redistribute it and/or modify
+;; it under the terms of the GNU General Public License as published by
+;; the Free Software Foundation; either version 2, or (at your option)
+;; any later version.
+
+;; This file is distributed in the hope that it will be useful,
+;; but WITHOUT ANY WARRANTY; without even the implied warranty of
+;; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+;; GNU General Public License for more details.
+
+;; You should have received a copy of the GNU General Public License
+;; along with GNU Emacs; see the file COPYING.  If not, write to
+;; the Free Software Foundation, Inc., 59 Temple Place - Suite 330,
+;; Boston, MA 02111-1307, USA.
+
+;;; Commentary:
+
+;; This code provides modeline notification of when certain groups contain
+;; unread messages. Groups for whom unread messages should be indicated are
+;; chosen by setting a group parameter.
+
+;; Clicking on a group in the modeline will enter that group and view the new
+;; message.
+
+;; Code:
+
+(require 'cl-lib)
+
+(defvar gnus-notify-show-unread-counts t
+  "If true, show the number of unread messages in the modeline in addition to shortened group names.")
+
+
+(when (fboundp 'gnus-define-group-parameter)
+  (gnus-define-group-parameter
+   modeline-notify
+   :type bool
+   :parameter-type '(const :tag "Notify of new messages for this group." t)
+   :parameter-document "\
+
+If this is set, the name of this group will be placed on the modeline when it
+contains new messages"))
+
+(defvar gnus-mst-display-new-messages "")
+(defvar gnus-mst-notify-groups '())
+(defvar gnus-notify-jump-to-group-hook '()
+  "This hook is invoked before jumping to a gnus group with unread messages.
+  Each hook should take a single argument - the GROUP to be selected")
+
+
+(add-hook 'gnus-exit-gnus-hook
+          (lambda ()
+            (setq gnus-mst-display-new-messages "")))
+
+
+(defun gnus-mst-notify-modeline-form ()
+  gnus-mst-display-new-messages)
+
+
+(if (featurep 'xemacs)
+    (unless (member 'gnus-mst-display-new-messages global-mode-string)
+      (if (null global-mode-string)
+          (setq global-mode-string '("" gnus-mst-display-new-messages))
+        (setq global-mode-string
+              (append global-mode-string
+                      '(gnus-mst-display-new-messages)))))
+  (unless (member '(:eval (gnus-mst-notify-modeline-form)) global-mode-string)
+    (setq global-mode-string
+          (append global-mode-string
+                  (list '(:eval (gnus-mst-notify-modeline-form)))))))
+
+
+(defun gnus-mst-notify-shorten-group-name (group)
+  "shorten the group name to make it better fit on the modeline"
+  (let ((name (if (string-match ":" group)
+                  (cadr (split-string group "[:]"))
+                group)))
+    (mapconcat 'identity
+               (mapcar
+                (lambda (segment)
+                  (string (elt segment 0)))
+                (split-string name "[\\./]"))
+               ".")))
+
+
+(defun gnus-mst-notify-update-modeline ()
+  "Update the modeline to show groups containing new messages"
+  (if gnus-mst-notify-groups
+      (setq gnus-mst-display-new-messages
+            (append (list " [m: ")
+                    (cl-maplist
+                     (lambda (sublist)
+                       (let ((group (car sublist))
+                             (map (make-sparse-keymap)))
+                         (define-key map [mode-line mouse-1]
+                           `(lambda ()
+                              (interactive)
+                              (run-hook-with-args
+                               'gnus-notify-jump-to-group-hook ,group)
+                              (gnus-group-read-group nil nil ,group)))
+                         (cl-list*
+                          (list ':propertize
+                                (if gnus-notify-show-unread-counts
+                                    (format "[%s %s]"
+                                            (gnus-mst-notify-shorten-group-name
+                                             (car sublist))
+                                            (gnus-group-unread (car sublist)))
+                                  (format "%s"
+                                          (gnus-mst-notify-shorten-group-name
+                                           (car sublist))))
+                                'face 'bold
+                                'keymap map
+                                'help-echo "Visit this group")
+                          (if (cdr sublist)
+                              (list ", ")
+                            nil))))
+                     gnus-mst-notify-groups)
+                    (list "] ")))
+    (setq gnus-mst-display-new-messages "")))
+
+
+(defun gnus-mst-notify-group (group)
+  "Add notification for this group"
+  (unless (member group gnus-mst-notify-groups)
+    (add-to-list 'gnus-mst-notify-groups group t)
+    (gnus-mst-notify-update-modeline)))
+
+
+(defun gnus-mst-show-groups-with-new-messages (&rest ignored)
+  (interactive)
+  (setq gnus-mst-notify-groups '())
+  (gnus-mst-notify-update-modeline)
+  (mapc #'(lambda (g)
+           (let* ((group (car g))
+                  (unread (gnus-group-unread group)))
+             (when (and (cdr (assoc 'modeline-notify
+                                    (gnus-group-find-parameter group)))
+                        (and (numberp unread) (> unread 0)))
+               (gnus-mst-notify-group group))))
+        gnus-newsrc-alist))
+
+
+(add-hook 'gnus-after-getting-new-news-hook
+          'gnus-mst-show-groups-with-new-messages)
+
+
+(add-hook 'gnus-summary-exit-hook
+          'gnus-mst-show-groups-with-new-messages)
+
+
+(provide 'gnus-notify)
+;;; gnus-notify.el ends here
+#+end_src
+*** Misc
+**** nnreddit
+#+begin_src emacs-lisp
+(use-package nnreddit
+  :straight t)
+(add-to-list 'gnus-secondary-select-methods '(nnreddit ""))
+#+end_src

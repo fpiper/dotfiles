@@ -1,0 +1,215 @@
+# -*- coding: utf-8-unix -*-
+#+PROPERTY: header-args:gnuplot :tangle tangle/.gnuplot :eval query :tangle-mode (identity #o444)
+* Symlink
+First create a symlink to the desired config location.
+#+begin_src shell :results silent :tangle tangle/symlink.sh :shebang "#!/bin/bash"
+ln -siv $(pwd)/tangle/.gnuplot ~/
+#+end_src
+* General Configuration
+Start off by resetting most settings.
+#+begin_src gnuplot
+reset
+#+end_src
+
+Plot data using linepoints and make solid regions transparent.
+#+begin_src gnuplot
+set style data lp
+set style fill transparent solid 0.4 noborder
+#+end_src
+
+Enable macros and make gnuplot interpret =NaN= as missing data.
+#+begin_src gnuplot
+set macros
+set datafile missing NaN
+#+end_src
+
+A macro to easily reset gnuplot and also reload my settings.
+#+begin_src gnuplot
+init="load '~/.gnuplot'"
+before_refresh="" # Commands to eval before each refresh
+r="@before_refresh;refresh"
+#+end_src
+
+Here is a handy function to define colors with individual rgb integers instead of the hex notation. Example usage: ~plot x w l lc rgb rgb(255,80,0)~. Alternatively gnuplot also supports hsv colors with ~hsv2rgb(h,s,v)~.
+#+begin_src gnuplot
+rgb(r,g,b) = 65536 * int(r) + 256 * int(g) + int(b)
+#+end_src
+
+When setting the column using a variable you can not use the shorthand syntax ~$2~. Instead setup a function so I only have to write ~c(i)~ instead of ~column(i)~.
+#+begin_src gnuplot
+c(a)=column(a)
+#+end_src
+* Mathematical functions
+A collection of functions that can calculate a running average.
+#+begin_src gnuplot
+# running averages
+samples(x,n) = $0>(n-1) ? n : ($0+1)
+init(x)=(back1=back2=back3=back4=back5=back6=back7=back8=back9=back10=back11=back12=sum=0)
+if(init(0)){} # what is the best way to run functions without showing output?
+avg1(x)=(back1=x,back1)
+avg2(x)=(back2=back1,(avg1(x)+back2)/samples($0,2))
+avg3(x)=(back3=back2,(samples($0,2)*avg2(x)+back3)/samples($0,3))
+avg4(x)=(back4=back3,(samples($0,3)*avg3(x)+back4)/samples($0,4))
+avg5(x)=(back5=back4,(samples($0,4)*avg4(x)+back5)/samples($0,5))
+avg6(x)=(back6=back5,(samples($0,5)*avg5(x)+back6)/samples($0,6))
+avg7(x)=(back7=back6,(samples($0,6)*avg6(x)+back7)/samples($0,7))
+avg8(x)=(back8=back7,(samples($0,7)*avg7(x)+back8)/samples($0,8))
+avg9(x)=(back9=back8,(samples($0,8)*avg8(x)+back9)/samples($0,9))
+avg10(x)=(back10=back9,(samples($0,9)*avg9(x)+back10)/samples($0,10))
+avg11(x)=(back11=back10,(samples($0,10)*avg10(x)+back11)/samples($0,11))
+avg12(x)=(back12=back11,(samples($0,11)*avg11(x)+back12)/samples($0,12))
+#+end_src
+
+And some derivatives functions.
+#+begin_src gnuplot
+d(y) = ($0 == 0) ? (y1 = y, 1/0) : (y2 = y1, y1 = y, y1-y2)
+d2(x,y) = ($0 == 0) ? (x1 = x, y1 = y, 1/0) : (x2 = x1, x1 = x, y2 = y1, y1 = y, (y1-y2)/(x1-x2))
+#+end_src
+
+Functions to convert between radians and degrees.
+#+begin_src gnuplot
+rad(deg)=deg/180*pi
+deg(rad)=rad/pi*180
+#+end_src
+* Colors
+=podo= is a good standard colorblind friendly colorsequence.
+#+begin_src gnuplot
+# use colorblind friendly colorsequence
+set colorsequence podo
+#+end_src
+
+I just reorder the =podo= colors, mainly to make black not the default color.
+#+begin_src gnuplot
+# use colorsequence podo but reorder some colors
+set linetype 1 lc rgb "#0072b2" lw 2 pt 1 ps default
+set linetype 2 lc rgb "#d55e00" lw 2 pt 2 ps default
+set linetype 3 lc rgb "#009e73" lw 2 pt 3 ps default
+set linetype 4 lc rgb "#cc79a7" lw 2 pt 4 ps default
+set linetype 5 lc rgb "#56b4e9" lw 2 pt 5 ps default
+set linetype 6 lc rgb "#e69f00" lw 2 pt 6 ps default
+set linetype 7 lc rgb "#f0e442" lw 2 pt 7 ps default
+set linetype 8 lc rgb "black"   lw 2 pt 8 ps default
+#+end_src
+* Grid, Border, Tics
+I store the default grid, border and tics settings in the =gbt= variable. So I can easily reset these with the macro call ~@gbt~. The =gbt(col)= function also allows setting grid and border to some other color, but needs to be called using eval, e.g. ~eval(gbt("black"))~.
+#+begin_src gnuplot
+# grid border tics settings
+# call @gbt for defaults
+# call eval(gbt("color")) to use color instead of default
+gbt(col)=sprintf("set tics nomirror; set border 3 back lc '%s'; set grid back lw 1 lc '%s'",col,col)
+gbt="set tics nomirror; set border 3 back lc 'gray50'; set grid back lw 1 lc 'gray50'"
+@gbt
+#+end_src
+
+Support function to set x/y tic formatting with ~set format x formatter(".0","m")~.
+#+begin_src gnuplot
+formatter(prec,unit)=sprintf("%%%ss %%c%s", prec, unit)
+#+end_src
+* A4 plots
+See [[https://milianw.de/blog/how-to-generate-proper-din-a4-sized-plots-with-gnuplot.html][How to generate proper DIN A4 sized plots with Gnuplot - Milian Wolff]].
+
+#+begin_src gnuplot
+a4="set size ratio 0.71; set terminal postscript enhanced landscape;"
+#+end_src
+Also set output to a =.ps= file. After that:
+#+begin_src bash :eval never
+ps2ps -sPAGESIZE=a4 yourfilename.ps new_dina4_file.ps
+#+end_src
+To finish either use something like =ps2pdf= or view the =.ps= file with =ghostview=.
+* Interactive Label Placement
+[[http://www.gnuplotting.org/interactive-label-placing/][Source]]. I adapted the =label_loop= function to newer gnuplot syntax &
+added functionality for multiple arguments. The function call to
+=label_loop= is stored inside a string and can then be executed as a
+macro like this: ~@iLabel "label1" "label2"~
+
+#+begin_src gnuplot
+iLabel = "call '~/git/projects/dotfiles/tangle/label_loop.gp' "
+#+end_src
+
+#+begin_src gnuplot :tangle tangle/label_loop.gp
+# label_loop
+# This loop adds a label to a plot by pressing the left mouse key.
+# If you are not convinced with your chosen position, just klick the mouse key
+# again and it will be positioned at another place. If you are finished, just
+# press another key.
+#
+# Original AUTHOR: Hagen Wierstorf
+
+# Initialize a label number
+if (!exists("label_number")) { label_number = 1 }
+
+do for [ELEMENT in ARG1." ".ARG2." ".ARG3." ".ARG4." ".ARG5] {
+  while (1) {
+    # Waiting for the  key press
+    pause mouse any ELEMENT
+
+    # Check if the left mouse key is pressed and add the given label to the plot.
+    # Otherwise stop the loop and count the added label
+    if( MOUSE_BUTTON==1 ) {
+      set label label_number ELEMENT at MOUSE_X,MOUSE_Y textcolor ls 1
+      print " at ",MOUSE_X,MOUSE_Y
+      replot
+    } else {
+      label_number = label_number+1
+      print "\n"
+      break
+    }
+  }
+}
+#+end_src
+
+We can also interactively place rotated labels. Getting the label rotation correct is somewhat tricky and heavily relies on macros. Also the use of ~refresh~ limits the usefulness of this for multiplots.
+#+begin_src gnuplot :tangle tangle/label.gp
+# label
+# Script to interactively position a rotated label.
+#
+# To update after changing graph size rotation angles are scaled with
+# the scaling() function. List of useful macros you should define:
+# scaling(_)= (1.0*(GPVAL_TERM_YMAX-GPVAL_TERM_YMIN)/(GPVAL_TERM_XMAX-GPVAL_TERM_XMIN))/((GPVAL_Y_MAX-GPVAL_Y_MIN)/(GPVAL_X_MAX-GPVAL_X_MIN))
+# label_reset= "@label_unset;@label_labels;replot;"
+# label_init= "undefine label_labels label_unset"
+
+if (!exists("label_number")) {label_number = 1}
+if (!exists("label_labels")) {label_labels = ""}
+if (!exists("label_unset")) {label_unset = ""}
+
+do for [ELEMENT in ARG1." ".ARG2." ".ARG3." ".ARG4." ".ARG5] {
+  print(ELEMENT)
+  while (1) {
+  next=0
+
+  array pointsX[2]; array pointsY[2]
+  do for [point=1:2]{
+    pause mouse any
+    if( MOUSE_BUTTON==1 ) {
+    pointsX[point]=MOUSE_X
+    pointsY[point]=MOUSE_Y
+    } else { next=1;break }
+  }
+  if(next){break}
+  if (pointsX[2] == pointsX[1]){ dx = 1e-20 }
+  else { dx = pointsX[2] - pointsX[1] }
+  dy = pointsY[2] - pointsY[1]
+
+  cmd=sprintf("set label %i \"%s\" at %f,%f rotate by deg(atan(%f*scaling(NaN)));",\
+    label_number, ELEMENT, pointsX[1], pointsY[1],dy/dx)
+  eval(cmd); refresh
+  }
+  print cmd
+  label_labels = label_labels.cmd
+  label_unset = label_unset.sprintf("unset label %i;", label_number)
+  label_number=label_number+1
+}
+refresh
+#+end_src
+
+To make using the script easier define a few macros/functions.
+#+begin_src gnuplot
+scaling(_)= (1.0*(GPVAL_TERM_YMAX-GPVAL_TERM_YMIN)/(GPVAL_TERM_XMAX-GPVAL_TERM_XMIN))/((GPVAL_Y_MAX-GPVAL_Y_MIN)/(GPVAL_X_MAX-GPVAL_X_MIN)) # functions need to have at least one argument
+label="call '~/git/projects/dotfiles/tangle/label.gp' "
+
+label_reset= "@label_unset;@label_labels;refresh;"
+before_refresh = before_refresh."set output GPVAL_OUTPUT;@label_unset;@label_labels;"
+label_init= "@label_unset;label_labels='';label_unset=''"
+@label_init # clear labels each @init
+#+end_src

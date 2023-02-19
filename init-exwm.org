@@ -1,0 +1,451 @@
+#+PROPERTY: header-args:emacs-lisp :results silent
+#+PROPERTY: header-args:emacs-lisp :tangle tangle/init-exwm.el :tangle-mode (identity #o444)
+
+* Starting EXWM
+Either start exwm in =.xinitrc= or if using a display manager setup a desktop file similar to this:
+##+HEADER: :tangle /sudo::/usr/share/xsessions/exwm.desktop
+#+begin_src conf
+[Desktop Entry]
+Name=EXWM
+Comment=Emacs X Window Manager
+TryExec=exwm-start
+Exec=exwm-start
+Type=Application
+#+end_src
+With the =exwm-start= script:
+##+HEADER: :tangle /sudo::/usr/local/bin/exwm-start
+#+begin_src shell :tangle-mode (identity #o755)
+#!/usr/bin/env sh
+
+export VISUAL=emacsclient
+export EDITOR="$VISUAL"
+
+# exec dbus-launch --exit-with-session emacs --eval "(progn (load \"/home/fpi/git/projects/dotfiles/tangle/init-exwm.el\") (exwm-enable))"
+# exec dbus-launch --exit-with-session emacs
+gpg-agent --daemon
+export SSH_AUTH_SOCK=$(gpgconf --list-dirs agent-ssh-socket)
+
+# exec dbus-launch --exit-with-session /home/fpi/.local/bin/emacs
+export DBUS_SESSION_BUS_ADDRESS=unix:path=/run/user/1000/bus
+exec /home/fpi/.local/bin/emacs
+#+end_src
+* EXWM config
+#+begin_src emacs-lisp
+(use-package exwm
+  :straight t)
+#+end_src
+When starting the client from .xinitrc, `save-buffer-kill-terminal' will
+force-kill Emacs before it can run through `kill-emacs-hook'.
+#+BEGIN_SRC emacs-lisp
+(global-set-key (kbd "C-x C-c") 'save-buffers-kill-emacs)
+#+END_SRC
+
+set keyboard
+#+BEGIN_SRC emacs-lisp
+(shell-command "setxkbmap -layout \"de(neo),us,ru,de\"")
+#+END_SRC
+
+** Monitor setup
+#+BEGIN_SRC emacs-lisp
+(use-package exwm-randr
+  :config
+  (setq exwm-randr-workspace-output-plist
+        (when (equal fpi/current-device "pan") '(0 "DisplayPort-4" 1 "DisplayPort-6")))
+  ;; (when (equal system-name "pan")
+  ;;   (start-process-shell-command "xrandr" nil "xrandr --output DisplayPort-0 --off --output DisplayPort-1 --off --output DisplayPort-2 --off --output HDMI-A-0 --off --output DisplayPort-3 --mode 2560x1440 --pos 0x612 --rotate normal --output DisplayPort-4 --off --output DisplayPort-5 --mode 2560x1440 --pos 2560x0 --rotate right --output DisplayPort-6 --off")
+  ;;   (exwm-workspace-add))
+  (exwm-randr-enable))
+#+END_SRC
+** functions
+#+BEGIN_SRC emacs-lisp
+(defun ambrevar/switch-to-last-buffer ()
+  "Switch to last open buffer in current window."
+  (interactive)
+  (switch-to-buffer (other-buffer (current-buffer) 1)))
+
+(defun ambrevar/toggle-window-dedicated ()
+  "Toggle whether the current active window is dedicated or not.
+Run it in each window you want to 'freeze', i.e. prevent Emacs
+from acting on it."
+  (interactive)
+  (message
+   (if (let ((window (get-buffer-window (current-buffer))))
+         (set-window-dedicated-p window
+                                 (not (window-dedicated-p window))))
+       "Window '%s' is dedicated"
+     "Window '%s' is normal")
+   (current-buffer)))
+
+(defun ambrevar/toggle-window-split ()
+  "Switch between vertical and horizontal split.
+It only works for frames with exactly two windows."
+  (interactive)
+  (if (= (count-windows) 2)
+      (let* ((this-win-buffer (window-buffer))
+             (next-win-buffer (window-buffer (next-window)))
+             (this-win-edges (window-edges (selected-window)))
+             (next-win-edges (window-edges (next-window)))
+             (this-win-2nd (not (and (<= (car this-win-edges)
+                                         (car next-win-edges))
+                                     (<= (cadr this-win-edges)
+                                         (cadr next-win-edges)))))
+             (splitter
+              (if (= (car this-win-edges)
+                     (car (window-edges (next-window))))
+                  'split-window-horizontally
+                'split-window-vertically)))
+        (delete-other-windows)
+        (let ((first-win (selected-window)))
+          (funcall splitter)
+          (if this-win-2nd (other-window 1))
+          (set-window-buffer (selected-window) this-win-buffer)
+          (set-window-buffer (next-window) next-win-buffer)
+          (select-window first-win)
+          (if this-win-2nd (other-window 1))))))
+
+(defun ambrevar/toggle-single-window ()
+  "Un-maximize current window.
+If multiple windows are active, save window configuration and
+delete other windows.  If only one window is active and a window
+configuration was previously save, restore that configuration."
+  (interactive)
+  (if (= (count-windows) 1)
+      (when single-window--last-configuration
+        (set-window-configuration single-window--last-configuration))
+    (setq single-window--last-configuration (current-window-configuration))
+    (delete-other-windows)))
+#+END_SRC
+*** Window swapping
+#+BEGIN_SRC emacs-lisp
+(defun ambrevar/swap-windows (&optional w1 w2)
+  "If 2 windows are up, swap them.
+Else if W1 is a window, swap it with current window.
+If W2 is a window too, swap both."
+  (interactive)
+  (unless (or (= 2 (count-windows))
+              (windowp w1)
+              (windowp w2))
+    (error "Ambiguous window selection"))
+  (let* ((w1 (or w1 (car (window-list))))
+         (w2 (or w2
+                 (if (eq w1 (car (window-list)))
+                     (nth 1 (window-list))
+                   (car (window-list)))))
+         (b1 (window-buffer w1))
+         (b2 (window-buffer w2))
+         (s1 (window-start w1))
+         (s2 (window-start w2)))
+    (with-temp-buffer
+      ;; Some buffers like EXWM buffers can only be in one live buffer at once.
+      ;; Switch to a dummy buffer in w2 so that we don't display any buffer twice.
+      (set-window-buffer w2 (current-buffer))
+      (set-window-buffer w1 b2)
+      (set-window-buffer w2 b1))
+    (set-window-start w1 s2)
+    (set-window-start w2 s1))
+  (select-window w1))
+
+(defun ambrevar/swap-windows-left ()
+  "Swap current window with the window to the left."
+  (interactive)
+  (ambrevar/swap-windows (window-in-direction 'left)))
+(defun ambrevar/swap-windows-below ()
+  "Swap current window with the window below."
+  (interactive)
+  (ambrevar/swap-windows (window-in-direction 'below)))
+(defun ambrevar/swap-windows-above ()
+  "Swap current window with the window above."
+  (interactive)
+  (ambrevar/swap-windows (window-in-direction 'above)))
+(defun ambrevar/swap-windows-right ()
+  "Swap current window with the window to the right."
+  (interactive)
+  (ambrevar/swap-windows (window-in-direction 'right)))
+#+END_SRC
+*** Volume & Brightness
+#+BEGIN_SRC emacs-lisp
+(defun exwm-brightness (incdec)
+  (shell-command (concat "xbacklight " incdec "10"))
+  (notifications-notify :title (substring (shell-command-to-string "xbacklight") 0 -1)
+			:replaces-id 6969
+			:urgency 'low
+			:timeout 550))
+
+(defun exwm-volume (incdec)
+  (notifications-notify
+   :title (format
+	   "Volume %s"
+	   (substring
+	    (shell-command-to-string
+	     (format "amixer -D pulse set Master 5%%%s|tail -n 1|cut -d '[' -f 2|cut -d ']' -f 1"
+		     incdec)) 0 -1))
+   :replaces-id 6968
+   :urgency 'low
+   :timeout 550))
+(defun exwm-togglemute ()
+  (interactive)
+  (notifications-notify
+   :title (format
+	   "Volume %s"
+	   (substring
+	    (shell-command-to-string
+	     "amixer -D pulse set Master toggle|tail -n 1|cut -d '[' -f 3|cut -d ']' -f 1") 0 -1))
+   :replaces-id 6968
+   :urgency 'low
+   :timeout 550))
+#+END_SRC
+*** XF86 Multimedia keys
+#+BEGIN_SRC emacs-lisp
+(defun exwm-xf86audio (cmd)
+  ;; Control Spotify
+  (shell-command (concat "dbus-send --type=method_call --dest=org.mpris.MediaPlayer2.spotify /org/mpris/MediaPlayer2 org.mpris.MediaPlayer2.Player." cmd)))
+#+END_SRC
+*** Browser switching
+#+BEGIN_SRC emacs-lisp
+(defun fpi/helm-exwm-switch (class &optional program other-window)
+  "Switch to some EXWM windows belonging to CLASS.
+If current window is not showing CLASS, switch to the last open CLASS window.
+If there is none, start PROGRAM.
+
+If PROGRAM is nil, it defaults to CLASS.
+With prefix argument or if OTHER-WINDOW is non-nil, open in other window."
+  ;; If current window is not in `exwm-mode' we switch to it.  Therefore we must
+  ;; also make sure that current window is not a Helm buffer, otherwise calling
+  ;; this function will lose focus in Helm.
+  (unless helm-alive-p
+    (setq program (or program class)
+          other-window (or other-window current-prefix-arg))
+    (let ((filter (lambda ()
+                    (member (downcase (or exwm-class-name "")) class))))
+      (if (and (eq major-mode 'exwm-mode)
+               (funcall filter))
+          (let ((helm-buffer-details-flag nil))
+            (helm-exwm filter))
+	(let ((last (buffer-list)))
+          (while (and last
+                      (not (with-current-buffer (car last)
+                             (and (eq major-mode 'exwm-mode)
+                                  (funcall filter)))))
+            (setq last (cdr last)))
+          (if last
+              (funcall (if other-window 'switch-to-buffer-other-window 'switch-to-buffer) (car last))
+            (when other-window (select-window (split-window-sensibly)))
+            (start-process-shell-command program nil program)))))))
+
+(defun fpi/helm-exwm-switch-browser ()
+  "Switch to some `browse-url-generic-program' windows.
+
+See `helm-exwm-switch'."
+  (interactive)
+  (fpi/helm-exwm-switch (quote ("qutebrowser"
+				"firefox"))
+			browse-url-generic-program))
+#+END_SRC
+** config
+Time & Battery display
+#+BEGIN_SRC emacs-lisp
+(display-time)
+(when (eq (fpi/current-device-info :type) 'mobile)
+  (display-battery-mode))
+#+END_SRC
+Rename buffer to window title.\\
+Spotify's title does not include "spotify" while playing music so just
+append it.
+#+BEGIN_SRC emacs-lisp
+(defun fpie/exwm-rename-buffer-to-title ()
+  (let ((newname (if (string-match "Spotify" (buffer-name))
+		     (concat exwm-title " - Spotify")
+		   exwm-title)))
+    (exwm-workspace-rename-buffer newname)))
+
+(add-hook 'exwm-update-title-hook 'fpie/exwm-rename-buffer-to-title)
+#+END_SRC
+#+BEGIN_SRC emacs-lisp
+(add-hook 'exwm-floating-setup-hook 'exwm-layout-hide-mode-line)
+(add-hook 'exwm-floating-exit-hook 'exwm-layout-show-mode-line)
+#+END_SRC
+
+Non-floating resizing with mouse
+#+BEGIN_SRC emacs-lisp
+(setq window-divider-default-bottom-width 2
+      window-divider-default-right-width 2)
+(window-divider-mode)
+#+END_SRC
+System tray
+#+BEGIN_SRC emacs-lisp
+(use-package exwm-systemtray
+  :straight exwm)
+(exwm-systemtray-enable)
+(setq exwm-systemtray-height 16)
+#+END_SRC
++auto focus+
+#+BEGIN_SRC emacs-lisp :tangle no
+(setq mouse-autoselect-window t
+      focus-follows-mouse t)
+#+END_SRC
+List all buffers
+#+BEGIN_SRC emacs-lisp
+(setq exwm-workspace-show-all-buffers t)
+(setq exwm-layout-show-all-buffers t)
+#+END_SRC
+*** Helm
+#+BEGIN_SRC emacs-lisp :results silent
+(with-eval-after-load 'helm
+  ;; Need `with-eval-after-load' here since 'helm-map is not defined in 'helm-config.
+  (define-key helm-map (kbd "s-\\") 'helm-toggle-resplit-and-swap-windows)
+  (exwm-input--set-key (kbd "s-p") 'helm-run-external-command)
+  (exwm-input-set-key (kbd "s-c") 'helm-resume)
+  (exwm-input-set-key (kbd "s-b") 'helm-mini)
+  (exwm-input-set-key (kbd "s-f") 'helm-find-files)
+  (exwm-input-set-key (kbd "s-F") 'helm-locate)
+  ;;(when (fboundp 'ambrevar/helm-locate-meta)
+  ;;  (exwm-input-set-key (kbd "s-F") #'ambrevar/helm-locate-meta))
+  ;;(exwm-input-set-key (kbd "s-g") 'ambrevar/helm-grep-git-or-ag)
+  ;;(exwm-input-set-key (kbd "s-G") 'ambrevar/helm-grep-git-all-or-ag)
+  )
+
+(use-package helm-exwm
+  :straight t)
+(exwm-input-set-key (kbd "s-w") #'fpi/helm-exwm-switch-browser)
+(exwm-input-set-key (kbd "s-W") #'helm-exwm-switch-browser-other-window)
+#+END_SRC
+*** Keys
+Global bindings
+#+BEGIN_SRC emacs-lisp
+(exwm-input-set-key (kbd "s-K") #'exwm-reset)
+(exwm-input-set-key (kbd "s-x") #'exwm-input-toggle-keyboard)
+
+(exwm-input-set-key (kbd "s-s") #'windmove-left)
+(exwm-input-set-key (kbd "s-n") #'windmove-down)
+(exwm-input-set-key (kbd "s-r") #'windmove-up)
+(exwm-input-set-key (kbd "s-t") #'windmove-right)
+
+(exwm-input-set-key (kbd "s-B") #'ibuffer-list-buffers)
+(exwm-input-set-key (kbd "s-X") #'kill-this-buffer)
+
+(exwm-input-set-key (kbd "s-M") #'exwm-workspace-switch)
+
+(exwm-input-set-key (kbd "s-\\") 'ambrevar/toggle-window-split)
+(exwm-input-set-key (kbd "s-S") 'ambrevar/swap-windows-left)
+(exwm-input-set-key (kbd "s-N") 'ambrevar/swap-windows-below)
+(exwm-input-set-key (kbd "s-R") 'ambrevar/swap-windows-above)
+(exwm-input-set-key (kbd "s-T") 'ambrevar/swap-windows-right)
+
+(exwm-input-set-key (kbd "s-<tab>") #'ambrevar/switch-to-last-buffer)
+(exwm-input-set-key (kbd "s-<return>") #'vterm)
+(exwm-input-set-key (kbd "S-s-<return>") (lambda ()
+					 (interactive)
+					 (start-process "term" nil "tilix")))
+(exwm-input-set-key (kbd "s-h") 'bury-buffer)
+
+(exwm-input-set-key (kbd "s-g") 'previous-buffer)
+(exwm-input-set-key (kbd "s-G") 'next-buffer)
+#+END_SRC
+#+BEGIN_SRC emacs-lisp
+(exwm-input-set-key (kbd "s-!") 'helm-pass)
+#+END_SRC
+Volume & Brightness
+#+BEGIN_SRC emacs-lisp
+(exwm-input-set-key [XF86AudioLowerVolume] (lambda () (interactive) (exwm-volume "-")))
+(exwm-input-set-key [XF86AudioRaiseVolume] (lambda () (interactive) (exwm-volume "+")))
+(exwm-input-set-key [XF86AudioMute] 'exwm-togglemute)
+(exwm-input-set-key [XF86MonBrightnessUp] (lambda () (interactive) (exwm-brightness "+")))
+(exwm-input-set-key [XF86MonBrightnessDown] (lambda () (interactive) (exwm-brightness "-")))
+#+END_SRC
+XF86 Multimedia Keys
+#+BEGIN_SRC emacs-lisp
+(exwm-input--set-key [XF86AudioPlay] (lambda () (interactive) (exwm-xf86audio "PlayPause")))
+(exwm-input--set-key [XF86AudioPause] (lambda () (interactive) (exwm-xf86audio "PlayPause")))
+(exwm-input--set-key [XF86AudioNext] (lambda () (interactive) (exwm-xf86audio "Next")))
+(exwm-input--set-key [XF86AudioPrev] (lambda () (interactive) (exwm-xf86audio "Previous")))
+#+END_SRC
+**** Local bindings
+#+BEGIN_SRC emacs-lisp
+(push ?\s-  exwm-input-prefix-keys)
+(define-key exwm-mode-map (kbd "s-SPC") #'exwm-floating-toggle-floating)
+(define-key exwm-mode-map (kbd "s-i") #'follow-delete-other-windows-and-split) ;; any useful?
+(define-key exwm-mode-map (kbd "s-o") #'ambrevar/toggle-single-window)
+(define-key exwm-mode-map (kbd "s-O") #'exwm-layout-toggle-fullscreen)
+
+(define-key exwm-mode-map (kbd "C-q") #'exwm-input-send-next-key)
+#+END_SRC
+Allow access to my personal keymap.
+#+BEGIN_SRC emacs-lisp
+(push ?\C-z exwm-input-prefix-keys)
+#+END_SRC
+
+**** Simulation keys
+#+BEGIN_SRC emacs-lisp
+(setq exwm-input-simulation-keys
+      '(([?\C-b] . [left])
+        ([?\C-f] . [right])
+        ([?\C-p] . [up])
+        ([?\C-n] . [down])
+        ([?\C-a] . [home])
+        ([?\C-e] . [end])
+        ([?\M-v] . [prior])
+        ([?\C-v] . [next])
+        ([?\C-d] . [delete])))
+        ;;([?\C-k] . [S-end delete]))) ; doesn't work in tilix
+#+END_SRC
+*** Configure helm-raise-command
+~(shell-command "emacsclient -e ...")~ does not work. Advice
+~helm-run-or-raise~ instead and overshadow ~shell-command~.
+
+For now ~helm-run-or-raise~ is redefined after helm is loaded in
+~emacs-init.org~ instead of advised.
+#+begin_src emacs-lisp
+(defun fpi/get-proc-buffers (proc)
+  (let ((cand (helm-exwm-candidates)))
+    (remove
+     nil (mapcar
+	  (lambda (c)
+	    (if (equal
+		 (downcase proc)
+		 (downcase (with-current-buffer c (or exwm-class-name ""))))
+		c
+	      nil)) cand))))
+(defun fpi/switch-to-proc-buffer (proc)
+  (switch-to-buffer (car (fpi/get-proc-buffers proc))))
+
+;; (setq helm-raise-command "emacsclient -e '(fpi/switch-to-proc-buffer \"%s\")'")
+(setq helm-raise-command t)
+#+end_src
+*** Screenshots
+UncleDave has a nice exwm configuration in his [[https://github.com/daedreth/UncleDavesEmacs/blob/master/config.org][config]]. These snippets
+are taken from there.
+
+A nice alternative for screenshots in org-mode is ~org-screenshot.el~.
+It uses ~scrot~ to take screenshots of windows and insert a link the
+image into the current org buffer.
+
+**** Screenshotting the entire screen
+#+BEGIN_SRC emacs-lisp
+  (defun daedreth/take-screenshot ()
+    "Takes a fullscreen screenshot of the current workspace"
+    (interactive)
+    (when window-system
+    (loop for i downfrom 3 to 1 do
+          (progn
+            (message (concat (number-to-string i) "..."))
+            (sit-for 1)))
+    (message "Cheese!")
+    (sit-for 1)
+    (start-process "screenshot" nil "import" "-window" "root" 
+               (concat (getenv "HOME") "/" (subseq (number-to-string (float-time)) 0 10) ".png"))
+    (message "Screenshot taken!")))
+  (global-set-key (kbd "<print>") 'daedreth/take-screenshot)
+#+END_SRC
+
+**** Screenshotting a region
+#+BEGIN_SRC emacs-lisp
+(defun daedreth/take-screenshot-region ()
+  "Takes a screenshot of a region selected by the user."
+  (interactive)
+  (when window-system
+    (call-process "import" nil nil nil ".newScreen.png")
+    (call-process "convert" nil nil nil ".newScreen.png" "-shave" "1x1"
+                  (concat (getenv "HOME") "/" (subseq (number-to-string (float-time)) 0 10) ".png"))
+    (call-process "rm" nil nil nil ".newScreen.png")))
+;; (global-set-key (kbd "<Scroll_Lock>") 'daedreth/take-screenshot-region)
+#+END_SRC

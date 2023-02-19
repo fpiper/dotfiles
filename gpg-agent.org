@@ -1,0 +1,51 @@
+#+PROPERTY: header-args:conf :tangle tangle/gpg-agent.conf :comments org :tangle-mode (identity #o444)
+
+#+BEGIN_SRC sh :tangle tangle/symlink.sh :results silent :shebang "#!/bin/bash"
+ln -siv $(pwd)/tangle/gpg-agent.conf ~/.gnupg/gpg-agent.conf
+ln -siv $(pwd)/tangle/sshcontrol ~/.gnupg/sshcontrol
+ln -siv $(pwd)/tangle/pam-gnupg ~/.config/pam-gnupg
+#+END_SRC
+
+
+#+BEGIN_SRC conf
+default-cache-ttl 10800
+max-cache-ttl 172800
+#+END_SRC
+* ssh password caching
+#+BEGIN_SRC conf
+default-cache-ttl-ssh 10800
+max-cache-ttl-ssh 172800
+#+END_SRC
+* Emacs pinentry
+#+BEGIN_SRC conf
+allow-emacs-pinentry
+allow-loopback-pinentry
+#+END_SRC
+* Enable use as ssh keys
+#+begin_src conf
+enable-ssh-support
+#+end_src
+
+#+begin_src conf :tangle tangle/sshcontrol :comments no
+4AFDEF6B35160F892F61666CE891B2456D755807
+#+end_src
+* Unlocking upon login
+
+[[https://github.com/cruegge/pam-gnupg][pam-gnupg]] is an alternative to =gnome-keyring= to unlock gpg keys upon login. This only works when user and gpg key share the same passphrase.
+
+Start it by adding this to the relevant login pam files (in =/etc/pam.d=).
+#+begin_src conf :tangle no
+auth        optional    pam_gnupg.so store-only
+session     optional    pam_gnupg.so
+#+end_src
+Allow preset passphrases for =pam-gnupg=.
+#+begin_src conf
+allow-preset-passphrase
+#+end_src
+
+
+The =pam-gnupg= config file only contains a list of keygrips of keys you want to unlock upon login. It works for both gpg and ssh keys.
+#+begin_src conf :tangle tangle/pam-gnupg :comments no
+DE37E13DE16DB3219D74410F4C20021624CC19E3
+4AFDEF6B35160F892F61666CE891B2456D755807
+#+end_src

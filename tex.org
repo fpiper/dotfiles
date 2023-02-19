@@ -1,0 +1,64 @@
+#+PROPERTY: header-args :tangle-mode (identity #o444)
+#+PROPERTY: header-args:latex :eval never
+Here are some custom latex packages and stuff.
+
+Let us start by creating the local latex directory. We can also use this source block as a quick way to find the appropriate tangle directory for any latex files.
+#+NAME: lob-localtexdir
+#+begin_src sh :results silent
+texdir=$(kpsewhich -var-value "TEXMFHOME")/tex/latex
+mkdir -p $texdir
+echo $texdir
+#+end_src
+* defeq.sty
+This first latex package defines a better looking version of =:==.
+#+begin_src latex :tangle (expand-file-name "defeq.sty" (org-sbe "lob-localtexdir"))
+% Tangled from dotfiles/tex.org
+% Defines a better looking version of := 
+\NeedsTeXFormat{LaTeX2e}[1999/12/01]
+\ProvidesPackage{defeq}
+    [2016/03/28 v0.1 defeq]
+
+\RequirePackage{textcomp}
+\RequirePackage{marvosym}
+\RequirePackage{amsmath}
+
+\newcommand*{\defeq}{\mathrel{\vcenter{\baselineskip0.5ex \lineskiplimit0pt \hbox{\scriptsize.}\hbox{\scriptsize.}}} =}
+
+\endinput
+%%
+%% End of file `defeq.sty'.
+#+end_src
+* personal.sty
+A package which includes commands, packages and settings I want to be generally available.
+Some settings are in external files. We can list these files using basic unix commands and input them in the main file using the noweb syntax.
+
+#+NAME: personal-files
+#+begin_src sh :dir (org-sbe lob-localtexdir) :results raw silent
+ls personal-*sty | sed -e 's/\(.*\)/\\input{\1}/'
+#+end_src
+
+#+begin_src latex :tangle (expand-file-name "personal.sty" (org-sbe "lob-localtexdir")) :tangle-mode (identity #o444) :noweb yes
+% Tangled from dotfiles/tex.org
+\ProvidesPackage{personal}
+\RequirePackage{defeq}
+\RequirePackage{unicode-math}
+\RequirePackage{textcomp}
+\RequirePackage{marvosym}
+\RequirePackage{amsmath}
+
+% Command for non-italic subscripts
+\newcommand{\V}[1]{\textrm{#1}}
+\catcode`\~=\active
+\newcommand{~}[1]{_{\textrm{#1}}}
+
+\def\μ{\si{\micro}}
+% \def\Ω{\si{\ohm}}
+
+\RequirePackage{tikz}
+\usetikzlibrary{scopes, intersections, positioning}
+\usepackage{gnuplot-lua-tikz}
+
+% Include other files
+<<personal-files()>>
+#+end_src
+
